@@ -1,3 +1,4 @@
+package com.example.WatchLog;
 public class Movie {
     private String title;
     private int year;
