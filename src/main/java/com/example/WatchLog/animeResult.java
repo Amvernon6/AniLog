@@ -1,13 +1,13 @@
 package com.example.WatchLog;
-public class TVShow {
+public class animeResult {
     private String title;
     private int year;
-    private String director;
+    private String animator;
 
-    public TVShow(String title, int year, String director) {
+    public animeResult(String title, int year, String animator) {
         this.title = title;
         this.year = year;
-        this.director = director;
+        this.animator = animator;
     }
 
     public String getTitle() {
@@ -16,6 +16,10 @@ public class TVShow {
 
     public int getYear() {
         return year;
+    }
+
+    public String getAnimator() {
+        return animator;
     }
 
 }

@@ -1,28 +1,37 @@
+1. **Get Search functionality working with aniList**
+2. **Get TMDB episode by episode ratings**
+3. **Create Watchlist**
+4. **Create watched list with ranking**
+5. **Anonymous Reviews**
+
+
+
 **Starting Features:**
 
 * Search for TV Shows
 * Watchlist
-* Rank, review Watched Shows by season, full show, episode? 
+* Rank, review Watched Shows by season, full show, episode?
 * Ranking by genre (anime, drama, sci-fi)
 * Episode Ratings
 * Mark watched date/time
 * Each watch can include:
 
-&nbsp;	Free-text reflection
+ 	Free-text reflection
 
-&nbsp;	Mood selector (relaxed, tired, focused, emotional)
+ 	Mood selector (relaxed, tired, focused, emotional)
 
-&nbsp;	Context tags (background watch, date night, rewatch)
+ 	Context tags (background watch, date night, rewatch)
 
 * Offline-First \& Ownership
 
-&nbsp;	Journal entries cached locally
+ 	Journal entries cached locally
 
-&nbsp;	Export to JSON / PDF
+ 	Export to JSON / PDF
 
-&nbsp;	Manual backups
+ 	Manual backups
 
 * Streaming On
+
 
 
 **Future Features:**
