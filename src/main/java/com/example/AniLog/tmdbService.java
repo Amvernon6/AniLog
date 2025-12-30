@@ -1,4 +1,4 @@
-// package com.example.WatchLog;
+// package com.example.AniLog;
 
 // import java.util.ArrayList;
 // import java.util.Collections;
