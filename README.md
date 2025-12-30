@@ -4,6 +4,15 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 
 ---
 
+## 🛠 Tech Stack
+
+- **Backend:** Java Spring Boot ⚙️  
+- **Frontend:** React (planned) 💻  
+- **Database:** PostgreSQL / MySQL (TBD) 🗄️  
+- **APIs:** TMDB, AniList 🔗
+
+---
+
 ## 🎞 Current Features
 
 - **Search & Discover:** Users can search for anime or manga by **title, genre, animation studio**, and other criteria. 🔍🎥
@@ -20,15 +29,6 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 - **Episode-Level Ratings:** Get ratings for individual episodes via TMDB or other sources. 📼💯  
 - **Recommendations & Explore:** Personalized recommendations and explore pages powered by AniList or similar APIs. 🎥✨  
 - **Anonymous Reviews:** Users can provide feedback without revealing their identity. 🎭📝
-
----
-
-## 🛠 Tech Stack
-
-- **Backend:** Java Spring Boot ⚙️  
-- **Frontend:** React (planned) 💻  
-- **Database:** PostgreSQL / MySQL (TBD) 🗄️  
-- **APIs:** TMDB, AniList 🔗
 
 ---
 
