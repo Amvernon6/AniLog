@@ -15,7 +15,7 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 
 ## 🎞 Current Features
 
-- **Search & Discover:** Users can search for anime or manga by **title, genre, animation studio**, and other criteria. 🔍🎥
+- **Search & Discover:** Users can search for anime or manga by **title, genre, type, review score**, and other criteria. 🔍🎥
 
 ---
 
