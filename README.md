@@ -7,7 +7,7 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 ## 🛠 Tech Stack
 
 - **Backend:** Java Spring Boot ⚙️  
-- **Frontend:** React (planned) 💻  
+- **Frontend:** React 💻  
 - **Database:** PostgreSQL / MySQL (TBD) 🗄️  
 - **APIs:** TMDB, AniList 🔗
 
