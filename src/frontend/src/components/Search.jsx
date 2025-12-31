@@ -10,6 +10,7 @@ const Search = () => {
     const [genres, setGenres] = useState([]);
     const [sortBy, setSortBy] = useState('POPULARITY_DESC');
     const [results, setResults] = useState([]);
+    const [searchExecuted, setSearchExecuted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
@@ -28,21 +29,29 @@ const Search = () => {
             console.error('Error fetching search results:', error);
         } finally {
             setLoading(false);
+            setSearchExecuted(true);
         }
     };
 
     return (
         <div className="search-page">
-            <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search for anime or manga..."
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button onClick={handleSearch} disabled={loading}>
-                {loading ? 'Searching...' : 'Search'}
-            </button>
+            {selectedItem == null ? (
+                <div className="search-bar">
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => { setQuery(e.target.value); setSearchExecuted(false); }}
+                            placeholder="Search for anime or manga..."
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        <div className="search-filters">
+                            {/* Filters can be added here in the future */}
+                        </div>
+                        <button onClick={handleSearch} disabled={loading}>
+                            {loading ? 'Searching...' : 'Search'}
+                        </button>
+                </div>
+            ) : null}
             <div className="search-results">
                 {selectedItem ? (
                     <div className="detail-view">
@@ -66,9 +75,8 @@ const Search = () => {
                             {selectedItem.volumes && <div className="volumes"><strong>Volumes:</strong> {selectedItem.volumes}</div>}
                             {selectedItem.genres && selectedItem.genres.length > 0 && (
                                 <div className="genres">
-                                    <h4>Genres</h4>
                                     <div className="genre-list">
-                                        {selectedItem.genres.join(', ')}
+                                        <strong>Genres:</strong> {selectedItem.genres.join(', ')}
                                     </div>
                                 </div>
                             )}
@@ -79,7 +87,7 @@ const Search = () => {
                             )}
                             {selectedItem.synonyms && selectedItem.synonyms.length > 0 && (
                                 <div className="synonyms">
-                                    <strong>Synonyms:</strong> {selectedItem.synonyms.join(', ')}
+                                    <strong>Other Names:</strong> {selectedItem.synonyms.join(', ')}
                                 </div>
                             )}
                             <div className="status"><strong>Status:</strong> {selectedItem.status}</div>
@@ -109,7 +117,7 @@ const Search = () => {
                 ) : results.length > 0 ? (
                     <ul>
                         {results.map((item, index) => (
-                            <li key={index} onClick={() => setSelectedItem(item)} className="result-item">
+                            <li key={index} onClick={() => { setSelectedItem(item)}} className="result-item">
                                 <div className="media-type">{item.type} • {item.format}</div>
                                 <h3>{item.title?.english || item.title?.romaji || 'Unknown'}</h3>
                                 {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji} className="cover-image" />}
@@ -122,7 +130,7 @@ const Search = () => {
                             </li>
                         ))}
                     </ul>
-                ) : query && !loading ? (
+                ) : query && !loading && searchExecuted ? (
                     <p className="no-results">No results found.</p>
                 ) : null}
             </div>

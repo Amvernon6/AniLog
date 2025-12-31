@@ -1,8 +1,15 @@
+* Remove hentai from search results (genreNotIn)
+* Adult content warning not being shown - problem with how we're getting data?
+
+
+
 1. **Get Search functionality working with aniList**
 2. **Get TMDB episode by episode ratings**
-3. **Create Watchlist**
-4. **Create watched list with ranking**
-5. **Anonymous Reviews**
+3. **Login - get language and age**
+4. **Create Watchlist**
+5. **Create watched list with ranking**
+6. **Explore/Recommendations Page - Recommendation endpoint in AniList?**
+7. **Anonymous Reviews**
 
 
 
@@ -36,6 +43,7 @@
 
 **Future Features:**
 
+* Rank Characters feature?
 * Movies
 * Public, Social Aspects
 * Show status (complete, in-progress, etc.)

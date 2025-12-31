@@ -2,6 +2,7 @@ package com.example.AniLog;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -72,6 +73,8 @@ public class searchService implements searchInterface {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("search", query);
+        String[] genreNotIn = {"Hentai"};
+        variables.put("genreNotIn", genreNotIn);
 
         return aniListClient.executeQuery(gql, variables);
     }
