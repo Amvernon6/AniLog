@@ -38,9 +38,3 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 2. Integrate episode-level ratings and recommendations 🎥💡  
 3. Expand anonymous review capabilities 🎭📝  
 4. Enhance search filters and discovery features 🔍✨
-
----
-
-## 🎬 Contributing
-
-AniLog is a work in progress! Contributions, feedback, and suggestions are welcome. Open issues or pull requests if you want to help implement future features or improve the UX.
