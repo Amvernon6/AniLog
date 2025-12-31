@@ -30,6 +30,7 @@ public class searchService implements searchInterface {
                                         english
                                         native
                                     }
+                                    description
                                     format
                                     episodes
                                     chapters

@@ -6,6 +6,7 @@ import java.util.List;
 public class anilistResult {
     private final String type;
     private final Title title;
+    private final String description;
     private final String format;
     private final Integer episodes;
     private final Integer chapters;
@@ -25,6 +26,7 @@ public class anilistResult {
     public anilistResult(
             String type,
             Title title,
+            String description,
             String format,
             Integer episodes,
             Integer chapters,
@@ -42,6 +44,7 @@ public class anilistResult {
             boolean isAdult) {
         this.type = type;
         this.title = title;
+        this.description = description;
         this.format = format;
         this.episodes = episodes;
         this.chapters = chapters;

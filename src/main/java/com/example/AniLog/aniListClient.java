@@ -5,6 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.example.AniLog.anilistResult.*;
+import com.example.AniLog.anilistResult.NextAiringEpisode;
+import com.example.AniLog.anilistResult.StreamingEpisode;
+import com.example.AniLog.anilistResult.Title;
+import com.example.AniLog.anilistResult.Trailer;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -16,8 +21,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
-import com.example.AniLog.anilistResult.*;
 
 public class aniListClient {
     private final String apiUrl;
@@ -81,6 +84,7 @@ public class aniListClient {
 
                 Title title = parseTitle(item);
                 String type = getString(item, "type");
+                String description = getString(item, "description");
                 String format = getString(item, "format");
                 Integer episodes = getInteger(item, "episodes");
                 Integer chapters = getInteger(item, "chapters");
@@ -100,6 +104,7 @@ public class aniListClient {
                 results.add(new anilistResult(
                         type,
                         title,
+                        description,
                         format,
                         episodes,
                         chapters,
