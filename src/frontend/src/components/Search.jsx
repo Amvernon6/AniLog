@@ -1,4 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+const formatOptions = [
+    'TV',
+    'TV_SHORT',
+    'MOVIE',
+    'SPECIAL',
+    'OVA',
+    'ONA',
+    'MUSIC',
+    'MANGA',
+    'NOVEL',
+    'ONE_SHOT'
+];
 
 const Search = () => {
     const [query, setQuery] = useState('');
@@ -13,15 +26,50 @@ const Search = () => {
     const [searchExecuted, setSearchExecuted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
+    const [formatOpen, setFormatOpen] = useState(false);
+    const formatRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (formatRef.current && !formatRef.current.contains(event.target)) {
+                setFormatOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleFormat = (value) => {
+        setFormat((prev) => {
+            const next = prev.includes(value)
+                ? prev.filter((item) => item !== value)
+                : [...prev, value];
+            return next;
+        });
+    };
 
     const handleSearch = async () => {
         if (!query.trim()) return;
         
         setLoading(true);
         try {
-            const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-            
-            // console.log('Response Limit:', "Used " + response.headers.get("x-ratelimit-remaining") + " of " + response.headers.get('x-ratelimit-limit'));
+            const response = await fetch('/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query,
+                    type,
+                    format,
+                    status,
+                    isAdult,
+                    averageScore,
+                    genres,
+                    sortBy
+                })
+            });
 
             const data = await response.json();
             setResults(data);
@@ -45,7 +93,62 @@ const Search = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                         />
                         <div className="search-filters">
-                            {/* Filters can be added here in the future */}
+                            <div className="filter-card">
+                                <label htmlFor="type-select" className="filter-label">Type</label>
+                                <select id="type-select" value={type} onChange={(e) => setType(e.target.value)}>
+                                    <option value="">Any</option>
+                                    <option value="ANIME">Anime</option>
+                                    <option value="MANGA">Manga</option>
+                                </select>
+                            </div>
+
+                            <div className="filter-card">
+                                <label className="filter-label">Format</label>
+                                <div className="multi-dropdown" ref={formatRef}>
+                                    <button
+                                        type="button"
+                                        className="multi-dropdown-button"
+                                        onClick={() => setFormatOpen((open) => !open)}
+                                    >
+                                        {format.length ? `${format.length} selected` : 'Select formats'}
+                                        <span className="chevron">▾</span>
+                                    </button>
+                                    {formatOpen && (
+                                        <div className="multi-dropdown-menu">
+                                            {formatOptions.map((option) => {
+                                                const selected = format.includes(option);
+                                                return (
+                                                    <label key={option} className="multi-dropdown-item">
+                                                        <button
+                                                            type="button"
+                                                            aria-pressed={selected}
+                                                            className={selected ? 'selected' : ''}
+                                                            onClick={() => toggleFormat(option)}
+                                                        >
+                                                            <span className="option-label">{option}</span>
+                                                            <span className="checkmark" aria-hidden="true">{selected ? '✓' : ''}</span>
+                                                        </button>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="filter-card">
+                                <label htmlFor="sort-select" className="filter-label">Sort</label>
+                                <select id="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                    <option value="POPULARITY_DESC">Popularity Descending</option>
+                                    <option value="POPULARITY">Popularity Ascending</option>
+                                    <option value="TRENDING_DESC">Trending Descending</option>
+                                    <option value="TRENDING">Trending Ascending</option>
+                                    <option value="SCORE_DESC">Rating Descending</option>
+                                    <option value="SCORE">Rating Ascending</option>
+                                    <option value="TITLE_ENGLISH_DESC">Title A-Z</option>
+                                    <option value="TITLE_ENGLISH">Title Z-A</option>
+                                </select>
+                            </div>
                         </div>
                         <button onClick={handleSearch} disabled={loading}>
                             {loading ? 'Searching...' : 'Search'}

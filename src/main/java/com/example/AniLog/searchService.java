@@ -14,67 +14,101 @@ public class searchService implements searchInterface {
     }
 
     @Override
-        public List<anilistResult> searchAniList(String query) {
+        public List<anilistResult> searchAniList(
+            String query,
+            String type,
+            List<String> format,
+            List<String> status,
+            boolean isAdult,
+            List<String> genres,
+            String sortBy) {
             String gql = """
-                        query ($search: String, $page: Int, $perPage: Int) {
-                            Page(page: $page, perPage: $perPage) {
-                                pageInfo {
-                                    total
-                                    currentPage
-                                    lastPage
-                                    hasNextPage
-                                }
-                                media(search: $search) {
-                                    type
-                                    title {
-                                        romaji
-                                        english
-                                        native
+                        query (
+                                $search: String, 
+                                $page: Int, 
+                                $perPage: Int,
+                                $type: MediaType,
+                                $format: [MediaFormat],
+                                $status: MediaStatus,
+                                $isAdult: Boolean,
+                                $genres: [String],
+                                $genresNotIn: [String],
+                                $sortBy: [MediaSort]
+                            ) {
+                                Page(page: $page, perPage: $perPage) {
+                                    pageInfo {
+                                        total
+                                        currentPage
+                                        lastPage
+                                        hasNextPage
                                     }
-                                    description
-                                    format
-                                    episodes
-                                    chapters
-                                    volumes
-                                    averageScore
-                                    nextAiringEpisode {
-                                        episode
-                                        timeUntilAiring
-                                    }
-                                    startDate {
-                                        year
-                                    }
-                                    coverImage {
-                                        extraLarge
-                                    }
-                                    status
-                                    genres
-                                    streamingEpisodes {
-                                        site
-                                        thumbnail
-                                        title
-                                        url
-                                    }
-                                    studios {
-                                        nodes {
-                                            name
+                                    media(
+                                        search: $search,
+                                        type: $type,
+                                        format_in: $format,
+                                        status: $status,
+                                        isAdult: $isAdult,
+                                        genre_in: $genres,
+                                        genre_not_in: $genresNotIn,
+                                        sort: $sortBy
+                                    ) {
+                                        type
+                                        title {
+                                            romaji
+                                            english
+                                            native
                                         }
+                                        description
+                                        format
+                                        episodes
+                                        chapters
+                                        volumes
+                                        averageScore
+                                        nextAiringEpisode {
+                                            episode
+                                            timeUntilAiring
+                                        }
+                                        startDate {
+                                            year
+                                        }
+                                        coverImage {
+                                            extraLarge
+                                        }
+                                        status
+                                        genres
+                                        streamingEpisodes {
+                                            site
+                                            thumbnail
+                                            title
+                                            url
+                                        }
+                                        studios {
+                                            nodes {
+                                                name
+                                            }
+                                        }
+                                        synonyms
+                                        trailer {
+                                            site
+                                            thumbnail
+                                        }
+                                        isAdult
                                     }
-                                    synonyms
-                                    trailer {
-                                        site
-                                        thumbnail
-                                    }
-                                    isAdult
                                 }
                             }
-                        }
                         """;
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("search", query);
-        String[] genreNotIn = {"Hentai"};
-        variables.put("genreNotIn", genreNotIn);
+        if (type != null && !type.isEmpty()) variables.put("type", type);
+        if (format != null && !format.isEmpty()) variables.put("format", format);
+        if (status != null && !status.isEmpty()) variables.put("status", status);
+        if (!isAdult) variables.put("isAdult", isAdult);
+        if (genres != null && !genres.isEmpty()) variables.put("genres", genres);
+        if (sortBy != null && !sortBy.isEmpty()) variables.put("sortBy", List.of(sortBy));
+        String[] genresNotIn = {"Hentai"};
+        variables.put("genresNotIn", genresNotIn);
+
 
         return aniListClient.executeQuery(gql, variables);
     }

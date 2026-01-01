@@ -54,6 +54,7 @@ public class aniListClient {
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 System.err.println("Request failed with status code: " + response.code());
+                System.err.println("Response message: " + (response.body() != null ? response.body().string() : "null"));
                 return results;
             }
 
