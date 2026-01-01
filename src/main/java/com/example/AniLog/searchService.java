@@ -17,7 +17,7 @@ public class searchService implements searchInterface {
         public List<anilistResult> searchAniList(
             String query,
             String type,
-            String format,
+            List<String> format,
             List<String> status,
             boolean isAdult,
             List<String> genres,
@@ -100,8 +100,8 @@ public class searchService implements searchInterface {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("search", query);
-        if (type != null && !type.isEmpty()) variables.put("type", type);
-        if (format != null && !format.isEmpty() && !format.equals("Any")) variables.put("format", List.of(format));
+        if (type != null && !type.isEmpty() && !type.equals("Any")) variables.put("type", type);
+        if (format != null && !format.isEmpty()) variables.put("format", format);
         if (status != null && !status.isEmpty()) variables.put("status", status);
         if (!isAdult) variables.put("isAdult", isAdult);
         if (genres != null && !genres.isEmpty()) variables.put("genres", genres);
