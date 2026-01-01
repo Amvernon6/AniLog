@@ -13,13 +13,54 @@ const formatOptions = [
     'ONE_SHOT'
 ];
 
+const typeOptions = [
+    { value: '', label: 'Any' },
+    { value: 'ANIME', label: 'Anime' },
+    { value: 'MANGA', label: 'Manga' }
+];
+
+const genreOptions = [
+    'Action',
+    'Adventure',
+    'Comedy',
+    'Drama',
+    'Fantasy',
+    'Horror',
+    'Mystery',
+    'Psychological',
+    'Romance',
+    'Sports',
+    'Sci-Fi',
+    'Slice of Life',
+    'Supernatural',
+    'Thriller'
+];
+
+const statusOptions = [
+    'RELEASING',
+    'FINISHED',
+    'NOT_YET_RELEASED',
+    'CANCELLED',
+    'HIATUS'
+];
+
+const sortOptions = [
+    { value: 'POPULARITY_DESC', label: 'Popularity Descending' },
+    { value: 'POPULARITY', label: 'Popularity Ascending' },
+    { value: 'TRENDING_DESC', label: 'Trending Descending' },
+    { value: 'TRENDING', label: 'Trending Ascending' },
+    { value: 'SCORE_DESC', label: 'Rating Descending' },
+    { value: 'SCORE', label: 'Rating Ascending' },
+    { value: 'TITLE_ENGLISH_DESC', label: 'Title A-Z' },
+    { value: 'TITLE_ENGLISH', label: 'Title Z-A' }
+];
+
 const Search = () => {
     const [query, setQuery] = useState('');
     const [type, setType] = useState('');
     const [format, setFormat] = useState([]);
     const [status, setStatus] = useState([]);
     const [isAdult, setIsAdult] = useState(false);
-    const [averageScore, setAverageScore] = useState([0, 100]);
     const [genres, setGenres] = useState([]);
     const [sortBy, setSortBy] = useState('POPULARITY_DESC');
     const [results, setResults] = useState([]);
@@ -27,12 +68,32 @@ const Search = () => {
     const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [formatOpen, setFormatOpen] = useState(false);
+    const [typeOpen, setTypeOpen] = useState(false);
+    const [genreOpen, setGenreOpen] = useState(false);
+    const [statusOpen, setStatusOpen] = useState(false);
+    const [sortOpen, setSortOpen] = useState(false);
     const formatRef = useRef(null);
+    const typeRef = useRef(null);
+    const genreRef = useRef(null);
+    const statusRef = useRef(null);
+    const sortRef = useRef(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (formatRef.current && !formatRef.current.contains(event.target)) {
                 setFormatOpen(false);
+            }
+            if (typeRef.current && !typeRef.current.contains(event.target)) {
+                setTypeOpen(false);
+            }
+            if (genreRef.current && !genreRef.current.contains(event.target)) {
+                setGenreOpen(false);
+            }
+            if (statusRef.current && !statusRef.current.contains(event.target)) {
+                setStatusOpen(false);
+            }
+            if (sortRef.current && !sortRef.current.contains(event.target)) {
+                setSortOpen(false);
             }
         };
 
@@ -49,8 +110,38 @@ const Search = () => {
         });
     };
 
+    const toggleGenre = (value) => {
+        setGenres((prev) => {
+            const next = prev.includes(value)
+                ? prev.filter((item) => item !== value)
+                : [...prev, value];
+            return next;
+        });
+    };
+
+    const toggleStatus = (value) => {
+        setStatus((prev) => {
+            const next = prev.includes(value)
+                ? prev.filter((item) => item !== value)
+                : [...prev, value];
+            return next;
+        });
+    };
+
+    const selectType = (value) => {
+        setType(value);
+    };
+
+    const selectSort = (value) => {
+        setSortBy(value);
+    };
+
     const handleSearch = async () => {
-        if (!query.trim()) return;
+        if (!query.trim() 
+            && !type.trim() 
+            && format.length === 0
+            && status.length === 0
+            && genres.length === 0) return;
         
         setLoading(true);
         try {
@@ -65,7 +156,6 @@ const Search = () => {
                     format,
                     status,
                     isAdult,
-                    averageScore,
                     genres,
                     sortBy
                 })
@@ -94,12 +184,37 @@ const Search = () => {
                         />
                         <div className="search-filters">
                             <div className="filter-card">
-                                <label htmlFor="type-select" className="filter-label">Type</label>
-                                <select id="type-select" value={type} onChange={(e) => setType(e.target.value)}>
-                                    <option value="">Any</option>
-                                    <option value="ANIME">Anime</option>
-                                    <option value="MANGA">Manga</option>
-                                </select>
+                                <label className="filter-label">Type</label>
+                                <div className="multi-dropdown" ref={typeRef}>
+                                    <button
+                                        type="button"
+                                        className={`multi-dropdown-button ${type ? 'has-selection' : ''}`}
+                                        onClick={() => setTypeOpen((open) => !open)}
+                                    >
+                                        {typeOptions.find(opt => opt.value === type)?.label || 'Any'}
+                                        <span className="chevron">▾</span>
+                                    </button>
+                                    {typeOpen && (
+                                        <div className="multi-dropdown-menu">
+                                            {typeOptions.map((option) => {
+                                                const selected = type === option.value;
+                                                return (
+                                                    <label key={option.value} className="multi-dropdown-item">
+                                                        <button
+                                                            type="button"
+                                                            aria-pressed={selected}
+                                                            className={selected ? 'selected' : ''}
+                                                            onClick={() => selectType(option.value)}
+                                                        >
+                                                            <span className="option-label">{option.label}</span>
+                                                            <span className="checkmark" aria-hidden="true">{selected ? '✓' : ''}</span>
+                                                        </button>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="filter-card">
@@ -135,19 +250,104 @@ const Search = () => {
                                     )}
                                 </div>
                             </div>
-
                             <div className="filter-card">
-                                <label htmlFor="sort-select" className="filter-label">Sort</label>
-                                <select id="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                    <option value="POPULARITY_DESC">Popularity Descending</option>
-                                    <option value="POPULARITY">Popularity Ascending</option>
-                                    <option value="TRENDING_DESC">Trending Descending</option>
-                                    <option value="TRENDING">Trending Ascending</option>
-                                    <option value="SCORE_DESC">Rating Descending</option>
-                                    <option value="SCORE">Rating Ascending</option>
-                                    <option value="TITLE_ENGLISH_DESC">Title A-Z</option>
-                                    <option value="TITLE_ENGLISH">Title Z-A</option>
-                                </select>
+                                <label className="filter-label">Genre</label>
+                                <div className="multi-dropdown" ref={genreRef}>
+                                    <button
+                                        type="button"
+                                        className={`multi-dropdown-button ${genres.length > 0 ? 'has-selection' : ''}`}
+                                        onClick={() => setGenreOpen((open) => !open)}
+                                    >
+                                        {genres.length ? `${genres.length} selected` : 'Select genres'}
+                                        <span className="chevron">▾</span>
+                                    </button>
+                                    {genreOpen && (
+                                        <div className="multi-dropdown-menu">
+                                            {genreOptions.map((option) => {
+                                                const selected = genres.includes(option);
+                                                return (
+                                                    <label key={option} className="multi-dropdown-item">
+                                                        <button
+                                                            type="button"
+                                                            aria-pressed={selected}
+                                                            className={selected ? 'selected' : ''}
+                                                            onClick={() => toggleGenre(option)}
+                                                        >
+                                                            <span className="option-label">{option}</span>
+                                                            <span className="checkmark" aria-hidden="true">{selected ? '✓' : ''}</span>
+                                                        </button>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="filter-card">
+                                <label className="filter-label">Status</label>
+                                <div className="multi-dropdown" ref={statusRef}>
+                                    <button
+                                        type="button"
+                                        className={`multi-dropdown-button ${status.length > 0 ? 'has-selection' : ''}`}
+                                        onClick={() => setStatusOpen((open) => !open)}
+                                    >
+                                        {status.length ? `${status.length} selected` : 'Select status'}
+                                        <span className="chevron">▾</span>
+                                    </button>
+                                    {statusOpen && (
+                                        <div className="multi-dropdown-menu">
+                                            {statusOptions.map((option) => {
+                                                const selected = status.includes(option);
+                                                return (
+                                                    <label key={option} className="multi-dropdown-item">
+                                                        <button
+                                                            type="button"
+                                                            aria-pressed={selected}
+                                                            className={selected ? 'selected' : ''}
+                                                            onClick={() => toggleStatus(option)}
+                                                        >
+                                                            <span className="option-label">{option.replace(/_/g, ' ')}</span>
+                                                            <span className="checkmark" aria-hidden="true">{selected ? '✓' : ''}</span>
+                                                        </button>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="filter-card">
+                                <label className="filter-label">Sort</label>
+                                <div className="multi-dropdown" ref={sortRef}>
+                                    <button
+                                        type="button"
+                                        className="multi-dropdown-button has-selection"
+                                        onClick={() => setSortOpen((open) => !open)}
+                                    >
+                                        {sortOptions.find(opt => opt.value === sortBy)?.label || 'Popularity Descending'}
+                                        <span className="chevron">▾</span>
+                                    </button>
+                                    {sortOpen && (
+                                        <div className="multi-dropdown-menu">
+                                            {sortOptions.map((option) => {
+                                                const selected = sortBy === option.value;
+                                                return (
+                                                    <label key={option.value} className="multi-dropdown-item">
+                                                        <button
+                                                            type="button"
+                                                            aria-pressed={selected}
+                                                            className={selected ? 'selected' : ''}
+                                                            onClick={() => selectSort(option.value)}
+                                                        >
+                                                            <span className="option-label">{option.label}</span>
+                                                            <span className="checkmark" aria-hidden="true">{selected ? '✓' : ''}</span>
+                                                        </button>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <button id="search-button" onClick={handleSearch} disabled={loading}>

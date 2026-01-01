@@ -29,7 +29,7 @@ public class searchService implements searchInterface {
                                 $perPage: Int,
                                 $type: MediaType,
                                 $format: [MediaFormat],
-                                $status: MediaStatus,
+                                $statusIn: [MediaStatus],
                                 $isAdult: Boolean,
                                 $genres: [String],
                                 $genresNotIn: [String],
@@ -46,7 +46,7 @@ public class searchService implements searchInterface {
                                         search: $search,
                                         type: $type,
                                         format_in: $format,
-                                        status: $status,
+                                        status_in: $statusIn,
                                         isAdult: $isAdult,
                                         genre_in: $genres,
                                         genre_not_in: $genresNotIn,
@@ -99,10 +99,10 @@ public class searchService implements searchInterface {
                         """;
 
         Map<String, Object> variables = new HashMap<>();
-        variables.put("search", query);
+        if (query != null && !query.isEmpty()) variables.put("search", query);
         if (type != null && !type.isEmpty() && !type.equals("Any")) variables.put("type", type);
         if (format != null && !format.isEmpty()) variables.put("format", format);
-        if (status != null && !status.isEmpty()) variables.put("status", status);
+        if (status != null && !status.isEmpty()) variables.put("statusIn", status);
         if (!isAdult) variables.put("isAdult", isAdult);
         if (genres != null && !genres.isEmpty()) variables.put("genres", genres);
         if (sortBy != null && !sortBy.isEmpty()) variables.put("sortBy", List.of(sortBy));
