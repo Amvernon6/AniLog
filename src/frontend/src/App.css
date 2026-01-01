@@ -55,7 +55,7 @@ main {
   color: #8892a0;
 }
 
-.search-page button {
+.search-page #search-button {
   width: 100%;
   padding: 15px;
   font-size: 1.1rem;
@@ -235,6 +235,9 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-height: 46px;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .multi-dropdown-button:hover,
@@ -242,6 +245,11 @@ main {
   border-color: #667eea;
   outline: none;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+}
+
+.multi-dropdown-button.has-selection {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea !important;
 }
 
 .multi-dropdown-menu {

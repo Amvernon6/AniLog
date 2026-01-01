@@ -107,7 +107,7 @@ const Search = () => {
                                 <div className="multi-dropdown" ref={formatRef}>
                                     <button
                                         type="button"
-                                        className="multi-dropdown-button"
+                                        className={`multi-dropdown-button ${format.length > 0 ? 'has-selection' : ''}`}
                                         onClick={() => setFormatOpen((open) => !open)}
                                     >
                                         {format.length ? `${format.length} selected` : 'Select formats'}
@@ -150,7 +150,7 @@ const Search = () => {
                                 </select>
                             </div>
                         </div>
-                        <button onClick={handleSearch} disabled={loading}>
+                        <button id="search-button" onClick={handleSearch} disabled={loading}>
                             {loading ? 'Searching...' : 'Search'}
                         </button>
                 </div>
@@ -212,7 +212,7 @@ const Search = () => {
                             )}
                             {selectedItem.trailer && (
                                 <div className="trailer">
-                                    <a href={`https://www.youtube.com/watch?v=${selectedItem.trailer.site}`} target="_blank" rel="noopener noreferrer" className="trailer-button">Watch Trailer</a>
+                                    <a href={`${selectedItem.trailer.site}`} target="_blank" rel="noopener noreferrer" className="trailer-button">Watch Trailer</a>
                                 </div>
                             )}
                         </div>

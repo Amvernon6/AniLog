@@ -6,10 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.example.AniLog.anilistResult.*;
-import com.example.AniLog.anilistResult.NextAiringEpisode;
-import com.example.AniLog.anilistResult.StreamingEpisode;
-import com.example.AniLog.anilistResult.Title;
-import com.example.AniLog.anilistResult.Trailer;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

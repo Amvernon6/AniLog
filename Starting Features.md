@@ -1,4 +1,4 @@
-* Remove hentai from search results (genreNotIn)
+* Site urls not working
 * Adult content warning not being shown - problem with how we're getting data?
 
 
