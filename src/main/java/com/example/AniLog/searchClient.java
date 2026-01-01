@@ -31,7 +31,7 @@ public class searchClient {
     public static class SearchRequest {
         private String query;
         private String type;
-        private List<String> format;
+        private String format;
         private List<String> status;
         private boolean isAdult;
         private List<Integer> averageScore;
@@ -44,8 +44,8 @@ public class searchClient {
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
 
-        public List<String> getFormat() { return format; }
-        public void setFormat(List<String> format) { this.format = format; }
+        public String getFormat() { return format; }
+        public void setFormat(String format) { this.format = format; }
 
         public List<String> getStatus() { return status; }
         public void setStatus(List<String> status) { this.status = status; }
