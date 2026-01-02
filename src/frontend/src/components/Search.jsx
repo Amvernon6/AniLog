@@ -173,10 +173,11 @@ const Search = () => {
     };
 
     return (
-        <div className="search-page">
+        <div className="search-page" data-testid="search-page">
             {selectedItem == null ? (
                 <div className="search-bar">
                         <input
+                            data-testid="search-input"
                             type="text"
                             value={query}
                             onChange={(e) => { setQuery(e.target.value); setSearchExecuted(false); }}
@@ -188,6 +189,7 @@ const Search = () => {
                                 <label className="filter-label">Type</label>
                                 <div className="multi-dropdown" ref={typeRef}>
                                     <button
+                                        data-testid="type-filter-button"
                                         type="button"
                                         className={`multi-dropdown-button ${type ? 'has-selection' : ''}`}
                                         onClick={() => setTypeOpen((open) => !open)}
@@ -222,6 +224,7 @@ const Search = () => {
                                 <label className="filter-label">Format</label>
                                 <div className="multi-dropdown" ref={formatRef}>
                                     <button
+                                        data-testid="format-filter-button"
                                         type="button"
                                         className={`multi-dropdown-button ${format.length > 0 ? 'has-selection' : ''}`}
                                         onClick={() => setFormatOpen((open) => !open)}
@@ -255,6 +258,7 @@ const Search = () => {
                                 <label className="filter-label">Genre</label>
                                 <div className="multi-dropdown" ref={genreRef}>
                                     <button
+                                        data-testid="genre-filter-button"
                                         type="button"
                                         className={`multi-dropdown-button ${genres.length > 0 ? 'has-selection' : ''}`}
                                         onClick={() => setGenreOpen((open) => !open)}
@@ -288,6 +292,7 @@ const Search = () => {
                                 <label className="filter-label">Status</label>
                                 <div className="multi-dropdown" ref={statusRef}>
                                     <button
+                                        data-testid="status-filter-button"
                                         type="button"
                                         className={`multi-dropdown-button ${status.length > 0 ? 'has-selection' : ''}`}
                                         onClick={() => setStatusOpen((open) => !open)}
@@ -321,6 +326,7 @@ const Search = () => {
                                 <label className="filter-label">Sort</label>
                                 <div className="multi-dropdown" ref={sortRef}>
                                     <button
+                                        data-testid="sort-filter-button"
                                         type="button"
                                         className="multi-dropdown-button has-selection"
                                         onClick={() => setSortOpen((open) => !open)}
@@ -351,15 +357,15 @@ const Search = () => {
                                 </div>
                             </div>
                         </div>
-                        <button id="search-button" onClick={handleSearch} disabled={loading}>
+                        <button id="search-button" data-testid="search-button" onClick={handleSearch} disabled={loading}>
                             {loading ? 'Searching...' : 'Search'}
                         </button>
                 </div>
             ) : null}
             <div className="search-results">
                 {selectedItem ? (
-                    <div className="detail-view">
-                        <button onClick={() => setSelectedItem(null)} className="back-button">← Back</button>
+                    <div className="detail-view" data-testid="detail-view">
+                        <button onClick={() => setSelectedItem(null)} className="back-button" data-testid="back-button">← Back</button>
                         <div className="detail-content">
                             <div className="media-type">{selectedItem.type} • {selectedItem.format}</div>
                             <h2>{selectedItem.title?.english || selectedItem.title?.romaji || 'Unknown'}</h2>
@@ -419,9 +425,9 @@ const Search = () => {
                         </div>
                     </div>
                 ) : results.length > 0 ? (
-                    <ul>
+                    <ul data-testid="search-results-list">
                         {results.map((item, index) => (
-                            <li key={index} onClick={() => { setSelectedItem(item)}} className="result-item">
+                            <li key={index} data-testid={`result-item-${index}`} onClick={() => { setSelectedItem(item)}} className="result-item">
                                 <div className="media-type">{item.type} • {item.format}</div>
                                 <h3>{item.title?.english || item.title?.romaji || 'Unknown'}</h3>
                                 {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji} className="cover-image" />}
@@ -435,7 +441,7 @@ const Search = () => {
                         ))}
                     </ul>
                 ) : query && !loading && searchExecuted ? (
-                    <p className="no-results">No results found.</p>
+                    <p className="no-results" data-testid="no-results-message">No results found.</p>
                 ) : null}
             </div>
         </div>

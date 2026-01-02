@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './css/App.css';
 import Search from './components/Search';
+import Watchlist from './components/Watchlist';
 
 function App() {
   const [activeTab, setActiveTab] = useState('search');
@@ -17,12 +18,7 @@ function App() {
       case 'search':
         return <Search />;
       case 'watchlist':
-        return (
-          <div className="tab-content">
-            <h2>Your Watchlist</h2>
-            <p>Your saved anime and manga will appear here</p>
-          </div>
-        );
+        return <Watchlist />;
       case 'library':
         return (
           <div className="tab-content">
