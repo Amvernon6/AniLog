@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import '../css/search.css';
 
 const formatOptions = [
     'TV',
