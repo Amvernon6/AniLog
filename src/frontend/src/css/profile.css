@@ -1,0 +1,152 @@
+.login-container {
+  width: 300px;
+  margin: 100px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.login-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333333;
+}
+
+.login-container label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555555;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.login-container #login-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.login-container #login-button:hover {
+  background-color: #764ba2;
+}
+
+.login-error {
+  color: red;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.login-success {
+  color: green;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.login-container a {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  color: #667eea;
+  text-decoration: none;
+}
+
+.login-container a:hover {
+  text-decoration: underline;
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.login-container button:active {
+  transform: translateY(1px);
+}
+
+.signup-switch-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  text-align: center;
+  width: 100%;
+  padding-top: 10px;
+}
+
+.signup-container {
+  width: 300px;
+  margin: 100px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.signup-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333333;
+}
+
+.signup-container label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555555;
+}
+
+.signup-container input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.signup-container #signup-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.signup-container #signup-button:hover {
+  background-color: #764ba2;
+}
+
+.signup-container input:focus {
+  outline: none;
+  border-color: #764ba2;
+}
+
+.signup-container button:active {
+  transform: translateY(1px);
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.success-message {
+  color: green;
+  text-align: center;
+  margin-top: 10px;
+}

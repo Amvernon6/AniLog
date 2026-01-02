@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import './css/App.css';
 import Search from './components/Search';
 import Watchlist from './components/Watchlist';
+import Profile from './components/Profile';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('search');
+  const [activeTab, setActiveTab] = useState('home');
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -20,14 +21,9 @@ function App() {
       case 'watchlist':
         return <Watchlist />;
       case 'library':
-        return (
-          <div className="tab-content">
-            <h2>Your Library</h2>
-            <p>Browse your complete collection</p>
-          </div>
-        );
+        return <Profile />;
       default:
-        return <Search />;
+        return <Profile />;
     }
   };
 
@@ -58,7 +54,7 @@ function App() {
           className={`tab-button ${activeTab === 'library' ? 'active' : ''}`}
           onClick={() => setActiveTab('library')}
         >
-          Library
+          Profile
         </button>
       </nav>
       </header>
