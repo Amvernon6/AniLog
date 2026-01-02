@@ -6,6 +6,18 @@ import Profile from './components/Profile';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const handleLogin = (data) => {
+    setLoggedIn(true);
+    setUserData(data);
+  };
+
+  const handleLogout = () => {
+    setLoggedIn(false);
+    setUserData(null);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -17,13 +29,13 @@ function App() {
           </div>
         );
       case 'search':
-        return <Search />;
+        return <Search loggedIn={loggedIn} userData={userData} />;
       case 'watchlist':
-        return <Watchlist />;
+        return <Watchlist loggedIn={loggedIn} userData={userData} />;
       case 'library':
-        return <Profile />;
+        return <Profile onLogin={handleLogin} />;
       default:
-        return <Profile />;
+        return <Profile onLogin={handleLogin} />;
     }
   };
 

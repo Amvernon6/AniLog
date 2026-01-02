@@ -150,3 +150,25 @@
   text-align: center;
   margin-top: 10px;
 }
+
+.age-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.age-input:focus {
+  outline: none;
+  border-color: #764ba2;
+}
+
+.age-note {
+  font-size: 0.85rem;
+  color: #777777;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+

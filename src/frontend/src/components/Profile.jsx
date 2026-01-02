@@ -7,6 +7,7 @@ const Profile = ({ onLogin }) => {
     const [signupUsername, setSignupUsername] = useState('');
     const [signupPassword, setSignupPassword] = useState('');
     const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+    const [signupAge, setSignupAge] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
@@ -25,7 +26,7 @@ const Profile = ({ onLogin }) => {
                 throw new Error('Login failed');
             }
             const data = await response.json();
-            onLogin(data);
+            onLogin(data); // Pass user data to parent component
         } catch (err) {
             setError(err.message);
         } finally {
@@ -86,6 +87,16 @@ const Profile = ({ onLogin }) => {
                     onChange={(e) => setSignupConfirmPassword(e.target.value)}
                     required
                 />
+                <input
+                    type="number"
+                    placeholder="Age"
+                    value={signupAge}
+                    onChange={(e) => setSignupAge(e.target.value)}
+                    min="1"
+                    max="120"
+                    required
+                />
+                {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
                 <button id="signup-button" type="submit" disabled={isLoading}>
                     {isLoading ? 'Signing up...' : 'Sign Up'}
                 </button>
