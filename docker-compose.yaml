@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: anilog-postgres
+    environment:
+      POSTGRES_DB: anilogdb_local
+      POSTGRES_USER: anilog_local_user
+      POSTGRES_PASSWORD: localpw
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
