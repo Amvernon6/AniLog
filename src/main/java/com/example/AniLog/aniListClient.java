@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.example.AniLog.anilistResult.*;
+import com.example.AniLog.AnilistResult.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,19 +18,19 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class aniListClient {
+public class AniListClient {
     private final String apiUrl;
     private final OkHttpClient httpClient;
     private final Gson gson;
 
-    public aniListClient(String apiUrl) {
+    public AniListClient(String apiUrl) {
         this.apiUrl = apiUrl;
         this.httpClient = new OkHttpClient();
         this.gson = new Gson();
     }
 
-    public List<anilistResult> executeQuery(String query, Map<String, Object> variables) {
-        List<anilistResult> results = new ArrayList<>();
+    public List<AnilistResult> executeQuery(String query, Map<String, Object> variables) {
+        List<AnilistResult> results = new ArrayList<>();
 
         // Prepare GraphQL request payload
         JsonObject payload = new JsonObject();
@@ -98,7 +98,7 @@ public class aniListClient {
                 Trailer trailer = parseTrailer(item);
                 boolean isAdult = item.has("isAdult") && !item.get("isAdult").isJsonNull() && item.get("isAdult").getAsBoolean();
 
-                results.add(new anilistResult(
+                results.add(new AnilistResult(
                         type,
                         title,
                         description,

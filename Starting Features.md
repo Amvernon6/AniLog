@@ -1,5 +1,3 @@
-* Error message for when passwords differ
-* Require certain password components? 
 * Check database for similar usernames before even hitting sign up?
 * Setup Login - look into how to encrypt/use data safely throughout the frontend
 * Site urls not working

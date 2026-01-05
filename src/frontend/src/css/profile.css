@@ -110,7 +110,8 @@
 .signup-container input {
   width: 100%;
   padding: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
+  margin-top: 10px;
   border: 1px solid #ccc;
   border-radius: 3px;
 }
@@ -169,6 +170,13 @@
   color: #777777;
   margin-top: 10px;
   margin-bottom: 10px;
+}
+
+.password-requirements {
+  font-size: 0.8rem;
+  color: #777777;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 

@@ -1,8 +1,8 @@
 package com.example.AniLog;
 import java.util.List;
 
-public interface searchInterface {
-    List<anilistResult> searchAniList(
+public interface SearchInterface {
+    List<AnilistResult> searchAniList(
         String query, 
         String type, 
         List<String> format, 

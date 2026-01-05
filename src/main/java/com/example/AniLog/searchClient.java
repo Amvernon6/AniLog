@@ -9,15 +9,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/search")
 
-public class searchClient {
-    private final searchInterface searchService;
+public class SearchClient {
+    private final SearchInterface searchService;
 
-    public searchClient(searchInterface searchService) {
+    public SearchClient(SearchInterface searchService) {
         this.searchService = searchService;
     }
 
     @PostMapping
-    public List<anilistResult> search(@RequestBody SearchRequest request) {
+    public List<AnilistResult> search(@RequestBody SearchRequest request) {
          return searchService.searchAniList(
             request.getQuery(),
             request.getType(),
@@ -25,7 +25,8 @@ public class searchClient {
             request.getStatus(),
             request.isAdult(),
             request.getGenres(),
-            request.getSortBy());
+            request.getSortBy()
+        );
     }
 
     public static class SearchRequest {

@@ -6,15 +6,15 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 @Service
-public class searchService implements searchInterface {
-    private final aniListClient aniListClient;
+public class SearchService implements SearchInterface {
+    private final AniListClient aniListClient;
 
-    public searchService(aniListClient aniListClient) {
+    public SearchService(AniListClient aniListClient) {
         this.aniListClient = aniListClient;
     }
 
     @Override
-        public List<anilistResult> searchAniList(
+        public List<AnilistResult> searchAniList(
             String query,
             String type,
             List<String> format,

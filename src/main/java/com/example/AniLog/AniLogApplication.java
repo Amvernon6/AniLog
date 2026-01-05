@@ -12,8 +12,8 @@ public class AniLogApplication {
 	}
 
 	@Bean
-	public aniListClient aniListClient() {
-		return new aniListClient("https://graphql.anilist.co");
+	public AniListClient aniListClient() {
+		return new AniListClient("https://graphql.anilist.co");
 	}
 
 }

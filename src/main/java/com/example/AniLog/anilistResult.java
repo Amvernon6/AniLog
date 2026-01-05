@@ -3,7 +3,7 @@ package com.example.AniLog;
 import java.util.Collections;
 import java.util.List;
 
-public class anilistResult {
+public class AnilistResult {
     private final String type;
     private final Title title;
     private final String description;
@@ -23,7 +23,7 @@ public class anilistResult {
     private final Trailer trailer;
     private final boolean isAdult;
 
-    public anilistResult(
+    public AnilistResult(
             String type,
             Title title,
             String description,
