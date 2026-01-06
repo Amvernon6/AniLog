@@ -24,6 +24,21 @@ public class User {
     @Column
     private Integer age;
 
+    @Column(length = 500)
+    private String bio;
+
+    @Column
+    private String avatarUrl;
+
+    @Column
+    private String favoriteAnime;
+
+    @Column
+    private String favoriteGenre;
+
+    @Column
+    private String favoriteManga;
+
     public Long getId() {
         return id;
     }
@@ -54,5 +69,45 @@ public class User {
 
     public void setAge(Integer age) {
         this.age = age;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getFavoriteAnime() {
+        return favoriteAnime;
+    }
+
+    public void setFavoriteAnime(String favoriteAnime) {
+        this.favoriteAnime = favoriteAnime;
+    }
+
+    public String getFavoriteGenre() {
+        return favoriteGenre;
+    }
+
+    public void setFavoriteGenre(String favoriteGenre) {
+        this.favoriteGenre = favoriteGenre;
+    }
+
+    public String getFavoriteManga() {
+        return favoriteManga;
+    }
+
+    public void setFavoriteManga(String favoriteManga) {
+        this.favoriteManga = favoriteManga;
     }
 }

@@ -12,6 +12,24 @@ const Profile = ({ onLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
     const [LoggedIn, setLoggedIn] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [profileData, setProfileData] = useState({
+        bio: '',
+        avatarUrl: '',
+        favoriteAnime: '',
+        favoriteManga: '',
+        favoriteGenre: '',
+        age: ''
+    });
+
+    const parseErrorResponse = async (response) => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (err) {
+            return { error: text || response.statusText || 'Request failed' };
+        }
+    };
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
@@ -24,11 +42,19 @@ const Profile = ({ onLogin }) => {
                 body: JSON.stringify({ username, password })
             });
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await parseErrorResponse(response);
                 throw new Error(errorData.error || 'Login failed');
             }
             const data = await response.json();
             setLoggedIn(true);
+            setProfileData({
+                bio: data.bio || '',
+                avatarUrl: data.avatarUrl || '',
+                favoriteAnime: data.favoriteAnime || '',
+                favoriteManga: data.favoriteManga || '',
+                favoriteGenre: data.favoriteGenre || '',
+                age: data.age || ''
+            });
             onLogin(data); // Pass user data to parent component
         } catch (err) {
             setError(err.message);
@@ -114,6 +140,75 @@ const Profile = ({ onLogin }) => {
         setError(null);
     }
 
+    const handleGetProfile = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const safeUsername = encodeURIComponent(username);
+            const response = await fetch(`/api/profile/${safeUsername}`);
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to fetch profile');
+            }
+            const data = await response.json();
+            setProfileData({
+                bio: data.bio || '',
+                avatarUrl: data.avatarUrl || '',
+                favoriteAnime: data.favoriteAnime || '',
+                favoriteManga: data.favoriteManga || '',
+                favoriteGenre: data.favoriteGenre || '',
+                age: data.age || ''
+            });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleProfileUpdate = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const safeUsername = encodeURIComponent(username);
+            const response = await fetch(`/api/profile/${safeUsername}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profileData)
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to update profile');
+            }
+            const data = await response.json();
+
+            setIsEditing(false);
+            handleGetProfile();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        setLoggedIn(false);
+        setUsername('');
+        setPassword('');
+        setProfileData({
+            bio: '',
+            avatarUrl: '',
+            favoriteAnime: '',
+            favoriteManga: '',
+            favoriteGenre: '',
+            age: ''
+        });
+        setIsEditing(false);
+    };
+
     return (
         !LoggedIn ? (
             !signupButtonClicked ? (
@@ -193,8 +288,141 @@ const Profile = ({ onLogin }) => {
             )
         ) : (
             <div className="profile-logged-in">
-                <h2>Welcome, {username}!</h2>
-                <p>You are logged in.</p>
+                {!isEditing ? (
+                    <div className="profile-view">
+                        <div className="profile-header">
+                            <div className="profile-avatar">
+                                {profileData.avatarUrl ? (
+                                    <img src={profileData.avatarUrl} alt={`${username}'s avatar`} className="avatar-image" />
+                                ) : (
+                                    <div className="avatar-placeholder">
+                                        {username.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="profile-info">
+                                <h2>{username}</h2>
+                                {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
+                            </div>
+                        </div>
+                        
+                        <div className="profile-details">
+                            <div className="profile-section">
+                                <h3>Bio</h3>
+                                <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
+                            </div>
+                            
+                            <div className="profile-section">
+                                <h3>Favorite Anime</h3>
+                                <p>{profileData.favoriteAnime || 'Not specified'}</p>
+                            </div>
+
+                            <div className="profile-section">
+                                <h3>Favorite Manga</h3>
+                                <p>{profileData.favoriteManga || 'Not specified'}</p>
+                            </div>
+                            
+                            <div className="profile-section">
+                                <h3>Favorite Genres</h3>
+                                <p>{profileData.favoriteGenre || 'Not specified'}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="profile-actions">
+                            <button onClick={() => setIsEditing(true)} className="edit-profile-button">
+                                Edit Profile
+                            </button>
+                            <button onClick={handleLogout} className="logout-button">
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="profile-edit">
+                        <h2>Edit Profile</h2>
+                        <form onSubmit={handleProfileUpdate} className="profile-edit-form">
+                            <div className="form-group">
+                                <label>Avatar URL</label>
+                                <input
+                                    type="url"
+                                    placeholder="https://example.com/your-avatar.jpg"
+                                    value={profileData.avatarUrl}
+                                    onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
+                                />
+                                {profileData.avatarUrl && (
+                                    <div className="avatar-preview">
+                                        <img src={profileData.avatarUrl} alt="Avatar preview" />
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Bio</label>
+                                <textarea
+                                    placeholder="Tell us about yourself..."
+                                    value={profileData.bio}
+                                    onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                                    maxLength="500"
+                                    rows="4"
+                                />
+                                <span className="char-count">{profileData.bio.length}/500</span>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Favorite Anime</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g., Attack on Titan"
+                                    value={profileData.favoriteAnime}
+                                    onChange={(e) => setProfileData({...profileData, favoriteAnime: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Favorite Manga</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g., One Piece"
+                                    value={profileData.favoriteManga}
+                                    onChange={(e) => setProfileData({...profileData, favoriteManga: e.target.value})}
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Favorite Genre</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g., Action, Romance, Comedy"
+                                    value={profileData.favoriteGenre}
+                                    onChange={(e) => setProfileData({...profileData, favoriteGenre: e.target.value})}
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Age</label>
+                                <input
+                                    type="number"
+                                    placeholder="Your age"
+                                    value={profileData.age}
+                                    onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                                    min="1"
+                                    max="120"
+                                />
+                            </div>
+                            
+                            {error && <p className="error-message">{error}</p>}
+                            
+                            <div className="form-actions">
+                                <button type="submit" disabled={isLoading} className="save-button">
+                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
             </div>
         )
     );
