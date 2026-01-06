@@ -11,6 +11,7 @@ const Profile = ({ onLogin }) => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
+    const [LoggedIn, setLoggedIn] = useState(false);
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
@@ -27,6 +28,7 @@ const Profile = ({ onLogin }) => {
                 throw new Error(errorData.error || 'Login failed');
             }
             const data = await response.json();
+            setLoggedIn(true);
             onLogin(data); // Pass user data to parent component
         } catch (err) {
             setError(err.message);
@@ -113,80 +115,87 @@ const Profile = ({ onLogin }) => {
     }
 
     return (
-        !signupButtonClicked ? (
-            <div className="login-container">
-                <h2>Login</h2>
-                <form onSubmit={handleLoginSubmit} className="login-form">
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => { setUsername(e.target.value)}}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <button id="login-button" type="submit" disabled={isLoading}>
-                        {isLoading ? 'Logging in...' : 'Login'}
+        !LoggedIn ? (
+            !signupButtonClicked ? (
+                <div className="login-container">
+                    <h2>Login</h2>
+                    <form onSubmit={handleLoginSubmit} className="login-form">
+                        <input
+                            type="text"
+                            placeholder="Username"
+                            value={username}
+                            onChange={(e) => { setUsername(e.target.value)}}
+                            required
+                        />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <button id="login-button" type="submit" disabled={isLoading}>
+                            {isLoading ? 'Logging in...' : 'Login'}
+                        </button>
+                        {error && <p className="error-message">{error}</p>}
+                    </form>
+                    <button className="signup-switch-button" onClick={() => { switchToSignup(); setError(null); }}>
+                        Sign Up
                     </button>
-                    {error && <p className="error-message">{error}</p>}
-                </form>
-                <button className="signup-switch-button" onClick={() => { switchToSignup(); setError(null); }}>
-                    Sign Up
-                </button>
-            </div>
+                </div>
+            ) : (
+                <div className="signup-container">
+                    <h2>Sign Up</h2>
+                    <form onSubmit={handleSignupSubmit} className="signup-form">
+                        <input
+                            type="text"
+                            placeholder="Username"
+                            value={signupUsername}
+                            onChange={(e) => { setSignupUsername(e.target.value);  checkUsernameAvailability(e.target.value); }}
+                            required
+                        />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            value={signupPassword}
+                            onChange={(e) => setSignupPassword(e.target.value)}
+                            required
+                        />
+                        <text className="password-requirements">
+                            Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
+                        </text>
+                        <input
+                            type="password"
+                            placeholder="Confirm Password"
+                            value={signupConfirmPassword}
+                            onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                            required
+                        />
+                        <input
+                            type="number"
+                            placeholder="Age"
+                            value={signupAge}
+                            onChange={(e) => setSignupAge(e.target.value)}
+                            min="1"
+                            max="120"
+                            required
+                        />
+                        {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
+                        <button id="signup-button" type="submit" disabled={isLoading}>
+                            {isLoading ? 'Signing up...' : 'Sign Up'}
+                        </button>
+                        {error && <p className="error-message">{error}</p>}
+                        <button className="signup-switch-button" onClick={() => { switchToLogin(); setError(null); }}>
+                            Back to Login
+                        </button>
+                    </form>
+                </div>
+            )
         ) : (
-            <div className="signup-container">
-            <h2>Sign Up</h2>
-            <form onSubmit={handleSignupSubmit} className="signup-form">
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={signupUsername}
-                    onChange={(e) => { setSignupUsername(e.target.value);  checkUsernameAvailability(e.target.value); }}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                />
-                <text className="password-requirements">
-                    Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
-                </text>
-                <input
-                    type="password"
-                    placeholder="Confirm Password"
-                    value={signupConfirmPassword}
-                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                    required
-                />
-                <input
-                    type="number"
-                    placeholder="Age"
-                    value={signupAge}
-                    onChange={(e) => setSignupAge(e.target.value)}
-                    min="1"
-                    max="120"
-                    required
-                />
-                {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
-                <button id="signup-button" type="submit" disabled={isLoading}>
-                    {isLoading ? 'Signing up...' : 'Sign Up'}
-                </button>
-                {error && <p className="error-message">{error}</p>}
-                <button className="signup-switch-button" onClick={() => { switchToLogin(); setError(null); }}>
-                    Back to Login
-                </button>
-            </form>
-        </div>
+            <div className="profile-logged-in">
+                <h2>Welcome, {username}!</h2>
+                <p>You are logged in.</p>
+            </div>
         )
     );
 }
