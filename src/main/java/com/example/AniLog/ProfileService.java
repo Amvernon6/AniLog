@@ -11,13 +11,13 @@ public class ProfileService {
         this.userRepository = userRepository;
     }
 
-    public User getProfile(String username) {
-        return userRepository.findByUsername(username);
+    public User getProfile(long id) {
+        return userRepository.findById(id);
     }
 
     @Transactional
-    public User updateProfile(String username, ProfileClient.ProfileUpdateRequest request) {
-        User user = userRepository.findByUsername(username);
+    public User updateProfile(long id, ProfileClient.ProfileUpdateRequest request) {
+        User user = userRepository.findById(id);
         if (user == null) {
             return null;
         }
@@ -27,6 +27,12 @@ public class ProfileService {
         }
         if (request.getAvatarUrl() != null) {
             user.setAvatarUrl(request.getAvatarUrl());
+        }
+        if (request.getEmailAddress() != null) {
+            user.setEmailAddress(request.getEmailAddress());
+        }
+        if (request.getUsername() != null) {
+            user.setUsername(request.getUsername());
         }
         if (request.getFavoriteAnime() != null) {
             user.setFavoriteAnime(request.getFavoriteAnime());

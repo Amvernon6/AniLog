@@ -17,12 +17,12 @@ public class LoginClient {
 
     @PostMapping
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        if (request.getUsername() == null || request.getPassword() == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Username and password are required"));
+        if (request.getEmailOrUsername() == null || request.getPassword() == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Email/Username and password are required"));
         }
-        User user = loginService.login(request.getUsername(), request.getPassword());
+        User user = loginService.login(request.getEmailOrUsername().toLowerCase(), request.getPassword());
         if (user == null) {
-            return ResponseEntity.status(401).body(new ErrorResponse("Invalid username or password"));
+            return ResponseEntity.status(401).body(new ErrorResponse("Invalid email/username or password"));
         }
         return ResponseEntity.ok(user);
     }
@@ -44,15 +44,15 @@ public class LoginClient {
     }
 
     public static class LoginRequest {
-        private String username;
+        private String emailOrUsername;
         private String password;
 
-        public String getUsername() {
-            return username;
+        public String getEmailOrUsername() {
+            return emailOrUsername;
         }
 
-        public void setUsername(String username) {
-            this.username = username;
+        public void setEmailOrUsername(String emailOrUsername) {
+            this.emailOrUsername = emailOrUsername;
         }
 
         public String getPassword() {

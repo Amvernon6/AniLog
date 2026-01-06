@@ -2,8 +2,10 @@ import React, {useState, useEffect} from "react";
 import '../css/profile.css';
 
 const Profile = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
+    const [id, setId] = useState(null);
+    const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [signupEmailAddress, setSignupEmailAddress] = useState('');
     const [signupUsername, setSignupUsername] = useState('');
     const [signupPassword, setSignupPassword] = useState('');
     const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
@@ -16,6 +18,8 @@ const Profile = ({ onLogin }) => {
     const [profileData, setProfileData] = useState({
         bio: '',
         avatarUrl: '',
+        emailAddress: '',
+        username: '',
         favoriteAnime: '',
         favoriteManga: '',
         favoriteGenre: '',
@@ -39,7 +43,7 @@ const Profile = ({ onLogin }) => {
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ emailOrUsername, password })
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -50,11 +54,14 @@ const Profile = ({ onLogin }) => {
             setProfileData({
                 bio: data.bio || '',
                 avatarUrl: data.avatarUrl || '',
+                emailAddress: data.emailAddress || '',
+                username: data.username || '',
                 favoriteAnime: data.favoriteAnime || '',
                 favoriteManga: data.favoriteManga || '',
                 favoriteGenre: data.favoriteGenre || '',
                 age: data.age || ''
             });
+            setId(data.id);
             onLogin(data); // Pass user data to parent component
         } catch (err) {
             setError(err.message);
@@ -79,6 +86,7 @@ const Profile = ({ onLogin }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    emailAddress: signupEmailAddress,
                     username: signupUsername,
                     password: signupPassword,
                     age: parseInt(signupAge, 10)
@@ -97,6 +105,24 @@ const Profile = ({ onLogin }) => {
             setError(err.message);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const checkEmailAvailability = async (emailAddress) => {
+        if (emailAddress.trim() === '') {
+            setError(null);
+            return;
+        }
+        try {
+            const response = await fetch(`/api/register/check-email?emailAddress=${encodeURIComponent(emailAddress)}`);
+            const data = await response.json();
+            if (!data.available) {
+                setError('Email address is already being used on a different account');
+            } else {
+                setError(null);
+            }
+        } catch (err) {
+            console.error('Error checking email availability:', err);
         }
     };
 
@@ -119,8 +145,9 @@ const Profile = ({ onLogin }) => {
     };
 
     const clearInputs = () => {
-        setUsername('');
+        setEmailOrUsername('');
         setPassword('');
+        setSignupEmailAddress('');
         setSignupUsername('');
         setSignupPassword('');
         setSignupConfirmPassword('');
@@ -145,8 +172,8 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
-            const safeUsername = encodeURIComponent(username);
-            const response = await fetch(`/api/profile/${safeUsername}`);
+            const safeId = encodeURIComponent(id);
+            const response = await fetch(`/api/profile/${safeId}`);
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
                 throw new Error(errorData.error || 'Failed to fetch profile');
@@ -155,6 +182,8 @@ const Profile = ({ onLogin }) => {
             setProfileData({
                 bio: data.bio || '',
                 avatarUrl: data.avatarUrl || '',
+                emailAddress: data.emailAddress || '',
+                username: data.username || '',
                 favoriteAnime: data.favoriteAnime || '',
                 favoriteManga: data.favoriteManga || '',
                 favoriteGenre: data.favoriteGenre || '',
@@ -173,8 +202,8 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
-            const safeUsername = encodeURIComponent(username);
-            const response = await fetch(`/api/profile/${safeUsername}`, {
+            const safeId = encodeURIComponent(id);
+            const response = await fetch(`/api/profile/${safeId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profileData)
@@ -186,7 +215,7 @@ const Profile = ({ onLogin }) => {
             const data = await response.json();
 
             setIsEditing(false);
-            handleGetProfile();
+            handleGetProfile(id);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -196,17 +225,20 @@ const Profile = ({ onLogin }) => {
 
     const handleLogout = () => {
         setLoggedIn(false);
-        setUsername('');
-        setPassword('');
+        clearInputs();
         setProfileData({
             bio: '',
             avatarUrl: '',
+            emailAddress: '',
+            username: '',
             favoriteAnime: '',
             favoriteManga: '',
             favoriteGenre: '',
             age: ''
         });
         setIsEditing(false);
+        setId(null);
+        onLogin(null); // Notify parent component of logout
     };
 
     return (
@@ -217,9 +249,9 @@ const Profile = ({ onLogin }) => {
                     <form onSubmit={handleLoginSubmit} className="login-form">
                         <input
                             type="text"
-                            placeholder="Username"
-                            value={username}
-                            onChange={(e) => { setUsername(e.target.value)}}
+                            placeholder="Email or Username"
+                            value={emailOrUsername}
+                            onChange={(e) => { setEmailOrUsername(e.target.value)}}
                             required
                         />
                         <input
@@ -242,6 +274,13 @@ const Profile = ({ onLogin }) => {
                 <div className="signup-container">
                     <h2>Sign Up</h2>
                     <form onSubmit={handleSignupSubmit} className="signup-form">
+                        <input
+                            type="text"
+                            placeholder="Email Address"
+                            value={signupEmailAddress}
+                            onChange={(e) => { setSignupEmailAddress(e.target.value); checkEmailAvailability(e.target.value); } }
+                            required
+                        />
                         <input
                             type="text"
                             placeholder="Username"
@@ -293,20 +332,25 @@ const Profile = ({ onLogin }) => {
                         <div className="profile-header">
                             <div className="profile-avatar">
                                 {profileData.avatarUrl ? (
-                                    <img src={profileData.avatarUrl} alt={`${username}'s avatar`} className="avatar-image" />
+                                    <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
                                 ) : (
                                     <div className="avatar-placeholder">
-                                        {username.charAt(0).toUpperCase()}
+                                        {profileData.username.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                             </div>
                             <div className="profile-info">
-                                <h2>{username}</h2>
+                                <h2>{profileData.username}</h2>
                                 {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
                             </div>
                         </div>
                         
                         <div className="profile-details">
+                            <div className="profile-section">
+                                <h3>Email Address</h3>
+                                <p>{profileData.emailAddress || 'No email address provided.'}</p>
+                            </div>
+                            
                             <div className="profile-section">
                                 <h3>Bio</h3>
                                 <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
@@ -354,6 +398,15 @@ const Profile = ({ onLogin }) => {
                                         <img src={profileData.avatarUrl} alt="Avatar preview" />
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="form-group">
+                                <label>Email Address</label>
+                                <textarea
+                                    placeholder="Enter your email address"
+                                    value={profileData.emailAddress}
+                                    onChange={(e) => setProfileData({...profileData, emailAddress: e.target.value})}
+                                />
                             </div>
                             
                             <div className="form-group">

@@ -1,5 +1,5 @@
-* Check database for similar usernames before even hitting sign up?
-* Setup Login - look into how to encrypt/use data safely throughout the frontend
+* JWT Token
+* Improve error message handling in frontend (shouldn't be showing 400 bad requests as "email in use")
 * Site urls not working
 * Adult content warning not being shown - problem with how we're getting data?
 

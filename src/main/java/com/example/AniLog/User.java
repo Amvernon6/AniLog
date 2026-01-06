@@ -30,6 +30,9 @@ public class User {
     @Column
     private String avatarUrl;
 
+    @Column(nullable = false, unique = true)
+    private String emailAddress;
+
     @Column
     private String favoriteAnime;
 
@@ -77,6 +80,14 @@ public class User {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 
     public String getAvatarUrl() {

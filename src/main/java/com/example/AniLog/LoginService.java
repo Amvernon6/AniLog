@@ -12,9 +12,15 @@ public class LoginService {
         this.userRepository = userRepository;
     }
 
-    public User login(String username, String password) {
+    public User login(String entry, String password) {
         // Query the user by username
-        User user = userRepository.findByUsername(username);
+        User userByUsername = userRepository.findByUsername(entry);
+
+        // Query the user by email
+        User userByEmail = userRepository.findByEmailAddress(entry);
+
+        // Determine which user to use
+        User user = (userByUsername != null) ? userByUsername : userByEmail;
 
         // Check if user exists and password matches
         if (user != null && passwordEncoder.matches(password, user.getPasswordHash())) {

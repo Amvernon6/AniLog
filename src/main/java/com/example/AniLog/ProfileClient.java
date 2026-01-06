@@ -17,19 +17,19 @@ public class ProfileClient {
         this.profileService = profileService;
     }
 
-    @GetMapping("/{username}")
-    public ResponseEntity<?> getProfile(@PathVariable String username) {
-        User user = profileService.getProfile(username);
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProfile(@PathVariable long id) {
+        User user = profileService.getProfile(id);
         if (user == null) {
             return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
         }
         return ResponseEntity.ok(user);
     }
 
-    @PutMapping("/{username}")
-    public ResponseEntity<?> updateProfile(@PathVariable String username, @RequestBody ProfileUpdateRequest request) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProfile(@PathVariable long id, @RequestBody ProfileUpdateRequest request) {
         try {
-            User updatedUser = profileService.updateProfile(username, request);
+            User updatedUser = profileService.updateProfile(id, request);
             if (updatedUser == null) {
                 return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
             }
@@ -42,6 +42,8 @@ public class ProfileClient {
     public static class ProfileUpdateRequest {
         private String bio;
         private String avatarUrl;
+        private String emailAddress;
+        private String username;
         private String favoriteAnime;
         private String favoriteGenre;
         private String favoriteManga;
@@ -61,6 +63,22 @@ public class ProfileClient {
 
         public void setAvatarUrl(String avatarUrl) {
             this.avatarUrl = avatarUrl;
+        }
+
+        public String getEmailAddress() {
+            return emailAddress;
+        }
+
+        public void setEmailAddress(String emailAddress) {
+            this.emailAddress = emailAddress;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
         }
 
         public String getFavoriteAnime() {

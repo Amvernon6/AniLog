@@ -20,6 +20,12 @@ public class RegistrationClient {
     @PostMapping
     public ResponseEntity<?> register(@RequestBody RegistrationRequest request) {
         // Validation
+        if (request.getEmailAddress() == null || request.getEmailAddress().isBlank()) {
+            return ResponseEntity.badRequest().body(
+                new ErrorResponse("Email address is required")
+            );
+        }
+
         if (request.getUsername() == null || request.getUsername().isBlank()) {
             return ResponseEntity.badRequest().body(
                 new ErrorResponse("Username is required")  // 400
@@ -55,6 +61,7 @@ public class RegistrationClient {
         
         try {
             User user = registrationService.register(
+                request.getEmailAddress().toLowerCase(),
                 request.getUsername(), 
                 request.getPassword(), 
                 request.getAge()
@@ -94,10 +101,40 @@ public class RegistrationClient {
         );
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String emailAddress) {
+        if (emailAddress == null || emailAddress.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                new ErrorResponse("Email address is required")
+            );
+        }
+        
+        boolean existing = registrationService.emailExists(emailAddress);
+        
+        if (existing) {
+            return ResponseEntity.ok(
+                new AvailabilityResponse(false, "Email address already taken")
+            );
+        }
+        
+        return ResponseEntity.ok(
+            new AvailabilityResponse(true, "Email address available")
+        );
+    }
+
     public static class RegistrationRequest {
+        private String emailAddress;
         private String username;
         private String password;
         private int age;
+
+        public String getEmailAddress() {
+            return emailAddress;
+        }
+
+        public void setEmailAddress(String emailAddress) {
+            this.emailAddress = emailAddress;
+        }
 
         public String getUsername() {
             return username;
@@ -125,7 +162,7 @@ public class RegistrationClient {
     }
 
     public class ErrorResponse {
-    private String error;
+    private final String error;
     
     public ErrorResponse(String error) {
         this.error = error;
@@ -150,8 +187,8 @@ public class RegistrationClient {
     }
 
     public class AvailabilityResponse {
-        private boolean available;
-        private String message;
+        private final boolean available;
+        private final String message;
         
         public AvailabilityResponse(boolean available, String message) {
             this.available = available;

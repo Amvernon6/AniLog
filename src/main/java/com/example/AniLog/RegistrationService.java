@@ -13,8 +13,9 @@ public class RegistrationService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User register(String username, String password, int age) {
+    public User register(String emailAddress, String username, String password, int age) {
         User user = new User();
+        user.setEmailAddress(emailAddress.toLowerCase());
         user.setUsername(username);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setAge(age);
@@ -24,5 +25,9 @@ public class RegistrationService {
 
     public boolean userExists(String username) {
         return userRepository.findByUsername(username) != null;
+    }
+
+    public boolean emailExists(String emailAddress) {
+        return userRepository.findByEmailAddress(emailAddress.toLowerCase()) != null;
     }
 }
