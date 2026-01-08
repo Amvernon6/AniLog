@@ -20,11 +20,11 @@ public class LoginClient {
         if (request.getEmailOrUsername() == null || request.getPassword() == null) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email/Username and password are required"));
         }
-        User user = loginService.login(request.getEmailOrUsername().toLowerCase(), request.getPassword());
-        if (user == null) {
+        LoginService.LoginResponse loginResponse = loginService.login(request.getEmailOrUsername().toLowerCase(), request.getPassword());
+        if (loginResponse == null) {
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid email/username or password"));
         }
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(loginResponse);
     }
 
     public static class ErrorResponse {

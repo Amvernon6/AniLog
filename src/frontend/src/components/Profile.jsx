@@ -15,6 +15,8 @@ const Profile = ({ onLogin }) => {
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
     const [LoggedIn, setLoggedIn] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken'));
+    const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken'));
     const [profileData, setProfileData] = useState({
         bio: '',
         avatarUrl: '',
@@ -26,6 +28,17 @@ const Profile = ({ onLogin }) => {
         age: ''
     });
 
+    useEffect(() => {
+        // Check if user is already logged in on mount
+        if (accessToken && localStorage.getItem('userId') != null) {
+            const storedUserId = parseInt(localStorage.getItem('userId'), 10);
+            setLoggedIn(true);
+            setId(storedUserId);
+            console.log("User is logged in with ID:", storedUserId);
+            handleGetProfile(storedUserId);
+        }
+    }, []);
+
     const parseErrorResponse = async (response) => {
         const text = await response.text();
         try {
@@ -33,6 +46,66 @@ const Profile = ({ onLogin }) => {
         } catch (err) {
             return { error: text || response.statusText || 'Request failed' };
         }
+    };
+
+    const refreshAccessToken = async () => {
+        if (!refreshToken) {
+            setError('Session expired. Please log in again.');
+            handleLogout();
+            return null;
+        }
+
+        try {
+            const response = await fetch('/api/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to refresh token');
+            }
+
+            const data = await response.json();
+            const newAccessToken = data.accessToken;
+
+            // Update tokens in state and storage
+            setAccessToken(newAccessToken);
+            localStorage.setItem('accessToken', newAccessToken);
+
+            return newAccessToken;
+        } catch (err) {
+            setError('Session expired. Please log in again.');
+            handleLogout();
+            return null;
+        }
+    };
+
+    const makeAuthenticatedRequest = async (url, options = {}) => {
+        let currentToken = accessToken;
+
+        const requestOptions = {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+                'Authorization': `Bearer ${currentToken}`
+            }
+        };
+
+        let response = await fetch(url, requestOptions);
+
+        // If 401, try to refresh token and retry
+        if (response.status === 401 && refreshToken) {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                currentToken = newToken;
+                requestOptions.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, requestOptions);
+            }
+        }
+
+        return response;
     };
 
     const handleLoginSubmit = async (e) => {
@@ -50,19 +123,34 @@ const Profile = ({ onLogin }) => {
                 throw new Error(errorData.error || 'Login failed');
             }
             const data = await response.json();
+
+            // Store tokens and user info
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            localStorage.setItem('userId', data.userId);
+            
+            setAccessToken(data.accessToken);
+            setRefreshToken(data.refreshToken);
             setLoggedIn(true);
-            setProfileData({
-                bio: data.bio || '',
-                avatarUrl: data.avatarUrl || '',
-                emailAddress: data.emailAddress || '',
-                username: data.username || '',
-                favoriteAnime: data.favoriteAnime || '',
-                favoriteManga: data.favoriteManga || '',
-                favoriteGenre: data.favoriteGenre || '',
-                age: data.age || ''
-            });
-            setId(data.id);
-            onLogin(data); // Pass user data to parent component
+            setId(data.userId);
+
+            // Fetch full profile data
+            const profileResponse = await makeAuthenticatedRequest(`/api/profile/${data.userId}`);
+            if (profileResponse.ok) {
+                const profileData = await profileResponse.json();
+                setProfileData({
+                    bio: profileData.bio || '',
+                    avatarUrl: profileData.avatarUrl || '',
+                    emailAddress: profileData.emailAddress || '',
+                    username: profileData.username || '',
+                    favoriteAnime: profileData.favoriteAnime || '',
+                    favoriteManga: profileData.favoriteManga || '',
+                    favoriteGenre: profileData.favoriteGenre || '',
+                    age: profileData.age || ''
+                });
+            }
+
+            onLogin(data.userId); // Notify parent component of login
         } catch (err) {
             setError(err.message);
         } finally {
@@ -167,13 +255,13 @@ const Profile = ({ onLogin }) => {
         setError(null);
     }
 
-    const handleGetProfile = async () => {
+    const handleGetProfile = async (userId) => {
         setIsLoading(true);
         setError(null);
 
         try {
-            const safeId = encodeURIComponent(id);
-            const response = await fetch(`/api/profile/${safeId}`);
+            const safeId = encodeURIComponent(userId);
+            const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`);
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
                 throw new Error(errorData.error || 'Failed to fetch profile');
@@ -203,9 +291,8 @@ const Profile = ({ onLogin }) => {
 
         try {
             const safeId = encodeURIComponent(id);
-            const response = await fetch(`/api/profile/${safeId}`, {
+            const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profileData)
             });
             if (!response.ok) {
@@ -238,6 +325,14 @@ const Profile = ({ onLogin }) => {
         });
         setIsEditing(false);
         setId(null);
+        setAccessToken(null);
+        setRefreshToken(null);
+        
+        // Clear tokens from storage
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        
         onLogin(null); // Notify parent component of logout
     };
 
