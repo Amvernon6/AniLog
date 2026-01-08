@@ -130,6 +130,10 @@ public class AnilistResult {
         return isAdult;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public static class Title {
         private final String romaji;
         private final String english;
