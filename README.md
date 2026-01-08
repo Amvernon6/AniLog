@@ -1,6 +1,6 @@
 # AniLog 🎬🍿
 
-AniLog is a web app for anime and manga fans to **track, review, and discover** their favorite series. Inspired by platforms like Letterboxd, AniLog focuses exclusively on anime and manga, helping users manage their collections and explore new content.
+AniLog is a web app for anime and manga fans to **track, review, and discover** their favorite series'. Inspired by platforms like Letterboxd, AniLog focuses exclusively on anime and manga, helping users manage their collections and explore new content.
 
 ---
 
