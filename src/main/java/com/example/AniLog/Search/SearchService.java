@@ -1,9 +1,12 @@
-package com.example.AniLog;
+package com.example.AniLog.Search;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+
+import com.example.AniLog.Anilist.AniListClient;
+import com.example.AniLog.Anilist.AnilistResult;
 
 @Service
 public class SearchService implements SearchInterface {

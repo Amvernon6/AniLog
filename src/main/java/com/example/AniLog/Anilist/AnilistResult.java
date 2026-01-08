@@ -1,4 +1,4 @@
-package com.example.AniLog;
+package com.example.AniLog.Anilist;
 
 import java.util.Collections;
 import java.util.List;

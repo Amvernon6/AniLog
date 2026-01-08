@@ -1,11 +1,14 @@
-package com.example.AniLog;
+package com.example.AniLog.Anilist;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.example.AniLog.AnilistResult.*;
+import com.example.AniLog.Anilist.AnilistResult.NextAiringEpisode;
+import com.example.AniLog.Anilist.AnilistResult.StreamingEpisode;
+import com.example.AniLog.Anilist.AnilistResult.Title;
+import com.example.AniLog.Anilist.AnilistResult.Trailer;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

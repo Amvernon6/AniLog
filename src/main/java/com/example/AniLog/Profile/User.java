@@ -1,4 +1,4 @@
-package com.example.AniLog;
+package com.example.AniLog.Profile;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,4 +1,4 @@
-package com.example.AniLog;
+package com.example.AniLog.Profile;
 
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;

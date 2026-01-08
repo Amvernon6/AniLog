@@ -1,5 +1,7 @@
-package com.example.AniLog;
+package com.example.AniLog.Search;
 import java.util.List;
+
+import com.example.AniLog.Anilist.AnilistResult;
 
 public interface SearchInterface {
     List<AnilistResult> searchAniList(

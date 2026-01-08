@@ -1,4 +1,4 @@
-package com.example.AniLog;
+package com.example.AniLog.Profile;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;

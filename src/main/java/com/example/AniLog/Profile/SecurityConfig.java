@@ -1,4 +1,4 @@
-package com.example.AniLog;
+package com.example.AniLog.Profile;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
