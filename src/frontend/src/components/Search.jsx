@@ -367,17 +367,17 @@ const Search = () => {
                     <div className="detail-view" data-testid="detail-view">
                         <button onClick={() => setSelectedItem(null)} className="back-button" data-testid="back-button">← Back</button>
                         <div className="detail-content">
-                            <div className="media-type">{selectedItem.type} • {selectedItem.format}</div>
+                            <div className="media-type">{selectedItem.type} {selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
                             <h2>{selectedItem.title?.english || selectedItem.title?.romaji || 'Unknown'}</h2>
                             {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
                             <div className="detail-info">
                                 {selectedItem.year && <span>Year: {selectedItem.year}</span>}
-                                {selectedItem.averageScore && <span> • Score: {(selectedItem.averageScore / 10).toFixed(1)}/10</span>}
+                                {selectedItem.averageScore && <span> IMDB Score: {(selectedItem.averageScore / 10).toFixed(1)}/10</span>}
                             </div>
                             {selectedItem.description && (
                                 <div className="description">
                                     <h4>Description</h4>
-                                    {selectedItem.description}
+                                    <div dangerouslySetInnerHTML={{ __html: selectedItem.description }} />
                                 </div>
                             )}
                             {selectedItem.episodes && <div className="episodes"><strong>Episodes:</strong> {selectedItem.episodes}</div>}
@@ -400,26 +400,11 @@ const Search = () => {
                                     <strong>Other Names:</strong> {selectedItem.synonyms.join(', ')}
                                 </div>
                             )}
-                            <div className="status"><strong>Status:</strong> {selectedItem.status}</div>
+                            <div className={`status status-${selectedItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedItem.status.replace(/_/g, ' ')}</div>
                             {selectedItem.isAdult && <div className="is-adult">⚠️ Adult Content</div>}
                             {selectedItem.nextAiringEpisode && (
                                 <div className="next-airing">
-                                    <strong>Next Episode:</strong> {selectedItem.nextAiringEpisode.episode} ({Math.floor(selectedItem.nextAiringEpisode.timeUntilAiring / 3600)} hours)
-                                </div>
-                            )}
-                            {selectedItem.streamingEpisodes && selectedItem.streamingEpisodes.length > 0 && (
-                                <div className="streaming-episodes">
-                                    <h4>Streaming on:</h4>
-                                    {selectedItem.streamingEpisodes.map((episode, eIndex) => (
-                                        <div key={eIndex} className="streaming-episode">
-                                            <strong>{episode.site}:</strong> <a href={episode.url} target="_blank" rel="noopener noreferrer">{episode.title}</a>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            {selectedItem.trailer && (
-                                <div className="trailer">
-                                    <a href={`${selectedItem.trailer.site}`} target="_blank" rel="noopener noreferrer" className="trailer-button">Watch Trailer</a>
+                                    <strong>Next Episode:</strong> Episode {selectedItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
                                 </div>
                             )}
                         </div>
@@ -428,14 +413,14 @@ const Search = () => {
                     <ul data-testid="search-results-list">
                         {results.map((item, index) => (
                             <li key={index} data-testid={`result-item-${index}`} onClick={() => { setSelectedItem(item)}} className="result-item">
-                                <div className="media-type">{item.type} • {item.format}</div>
+                                <div className="media-type">{item.type} {item.format !== item.type && `• ${item.format}`}</div>
                                 <h3>{item.title?.english || item.title?.romaji || 'Unknown'}</h3>
                                 {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji} className="cover-image" />}
                                 <div className="media-info">
                                     {item.year && <span>Year: {item.year}</span>}
                                     {item.averageScore && <span> • Score: {(item.averageScore / 10).toFixed(1)}/10</span>}
                                 </div>
-                                <div className="status">{item.status}</div>
+                                <div className={`status status-${item.status.toLowerCase()}`}>{item.status.replace(/_/g, ' ')}</div>
                                 <div className="click-hint">Click for more details</div>
                             </li>
                         ))}
