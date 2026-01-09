@@ -367,8 +367,8 @@ const Search = () => {
                     <div className="detail-view" data-testid="detail-view">
                         <button onClick={() => setSelectedItem(null)} className="back-button" data-testid="back-button">← Back</button>
                         <div className="detail-content">
-                            <div className="media-type">{selectedItem.type} {selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
-                            <h2>{selectedItem.title?.english || selectedItem.title?.romaji || 'Unknown'}</h2>
+                            <div className="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
+                            <h2>{selectedItem.title?.english || selectedItem.title?.romaji || selectedItem.title?.nativeTitle || 'Error Getting Title'}</h2>
                             {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
                             <div className="detail-info">
                                 {selectedItem.year && <span>Year: {selectedItem.year}</span>}
@@ -380,9 +380,9 @@ const Search = () => {
                                     <div dangerouslySetInnerHTML={{ __html: selectedItem.description }} />
                                 </div>
                             )}
-                            {selectedItem.episodes && <div className="episodes"><strong>Episodes:</strong> {selectedItem.episodes}</div>}
-                            {selectedItem.chapters && <div className="chapters"><strong>Chapters:</strong> {selectedItem.chapters}</div>}
-                            {selectedItem.volumes && <div className="volumes"><strong>Volumes:</strong> {selectedItem.volumes}</div>}
+                            {selectedItem.episodes && <div data-testid="episodes"><strong>Episodes:</strong> {selectedItem.episodes}</div>}
+                            {selectedItem.chapters && <div data-testid="chapters"><strong>Chapters:</strong> {selectedItem.chapters}</div>}
+                            {selectedItem.volumes && <div data-testid="volumes"><strong>Volumes:</strong> {selectedItem.volumes}</div>}
                             {selectedItem.genres && selectedItem.genres.length > 0 && (
                                 <div className="genres">
                                     <div className="genre-list">
@@ -401,7 +401,7 @@ const Search = () => {
                                 </div>
                             )}
                             <div className={`status status-${selectedItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedItem.status.replace(/_/g, ' ')}</div>
-                            {selectedItem.isAdult && <div className="is-adult">⚠️ Adult Content</div>}
+                            {selectedItem.isAdult && <div className="is-adult" data-testid="adult-warning">⚠️ Adult Content</div>}
                             {selectedItem.nextAiringEpisode && (
                                 <div className="next-airing">
                                     <strong>Next Episode:</strong> Episode {selectedItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
@@ -413,12 +413,12 @@ const Search = () => {
                     <ul data-testid="search-results-list">
                         {results.map((item, index) => (
                             <li key={index} data-testid={`result-item-${index}`} onClick={() => { setSelectedItem(item)}} className="result-item">
-                                <div className="media-type">{item.type} {item.format !== item.type && `• ${item.format}`}</div>
-                                <h3>{item.title?.english || item.title?.romaji || 'Unknown'}</h3>
-                                {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji} className="cover-image" />}
+                                <div className="media-type">{item.type} {item.format !== null && item.format !== item.type && `• ${item.format}`}</div>
+                                <h3>{item.title?.english || item.title?.romaji || item.title?.nativeTitle || 'Error Getting Title'}</h3>
+                                {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji || item.title?.nativeTitle} className="cover-image" />}
                                 <div className="media-info">
                                     {item.year && <span>Year: {item.year}</span>}
-                                    {item.averageScore && <span> • Score: {(item.averageScore / 10).toFixed(1)}/10</span>}
+                                    {item.averageScore && <span> Score: {(item.averageScore / 10).toFixed(1)}/10</span>}
                                 </div>
                                 <div className={`status status-${item.status.toLowerCase()}`}>{item.status.replace(/_/g, ' ')}</div>
                                 <div className="click-hint">Click for more details</div>

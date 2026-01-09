@@ -339,15 +339,16 @@ const Profile = ({ onLogin }) => {
     return (
         !LoggedIn ? (
             !signupButtonClicked ? (
-                <div className="login-container">
+                <div className="login-container" data-testid="login-container">
                     <h2>Login</h2>
-                    <form onSubmit={handleLoginSubmit} className="login-form">
+                    <form onSubmit={handleLoginSubmit} className="login-form" data-testid="login-form">
                         <input
                             type="text"
                             placeholder="Email or Username"
                             value={emailOrUsername}
                             onChange={(e) => { setEmailOrUsername(e.target.value)}}
                             required
+                            data-testid="login-email-input"
                         />
                         <input
                             type="password"
@@ -355,26 +356,28 @@ const Profile = ({ onLogin }) => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            data-testid="login-password-input"
                         />
-                        <button id="login-button" type="submit" disabled={isLoading}>
+                        <button id="login-button" type="submit" disabled={isLoading} data-testid="login-submit-button">
                             {isLoading ? 'Logging in...' : 'Login'}
                         </button>
-                        {error && <p className="error-message">{error}</p>}
+                        {error && <p className="error-message" data-testid="login-error">{error}</p>}
                     </form>
-                    <button className="signup-switch-button" onClick={() => { switchToSignup(); setError(null); }}>
+                    <button className="signup-switch-button" data-testid="switch-to-signup" onClick={() => { switchToSignup(); setError(null); }}>
                         Sign Up
                     </button>
                 </div>
             ) : (
-                <div className="signup-container">
+                <div className="signup-container" data-testid="signup-container">
                     <h2>Sign Up</h2>
-                    <form onSubmit={handleSignupSubmit} className="signup-form">
+                    <form onSubmit={handleSignupSubmit} className="signup-form" data-testid="signup-form">
                         <input
                             type="text"
                             placeholder="Email Address"
                             value={signupEmailAddress}
                             onChange={(e) => { setSignupEmailAddress(e.target.value); checkEmailAvailability(e.target.value); } }
                             required
+                            data-testid="signup-email-input"
                         />
                         <input
                             type="text"
@@ -382,6 +385,7 @@ const Profile = ({ onLogin }) => {
                             value={signupUsername}
                             onChange={(e) => { setSignupUsername(e.target.value);  checkUsernameAvailability(e.target.value); }}
                             required
+                            data-testid="signup-username-input"
                         />
                         <input
                             type="password"
@@ -389,6 +393,7 @@ const Profile = ({ onLogin }) => {
                             value={signupPassword}
                             onChange={(e) => setSignupPassword(e.target.value)}
                             required
+                            data-testid="signup-password-input"
                         />
                         <text className="password-requirements">
                             Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
@@ -399,6 +404,7 @@ const Profile = ({ onLogin }) => {
                             value={signupConfirmPassword}
                             onChange={(e) => setSignupConfirmPassword(e.target.value)}
                             required
+                            data-testid="signup-confirm-password-input"
                         />
                         <input
                             type="number"
@@ -408,22 +414,23 @@ const Profile = ({ onLogin }) => {
                             min="1"
                             max="120"
                             required
+                            data-testid="signup-age-input"
                         />
                         {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
-                        <button id="signup-button" type="submit" disabled={isLoading}>
+                        <button id="signup-button" type="submit" disabled={isLoading} data-testid="signup-submit-button">
                             {isLoading ? 'Signing up...' : 'Sign Up'}
                         </button>
-                        {error && <p className="error-message">{error}</p>}
-                        <button className="signup-switch-button" onClick={() => { switchToLogin(); setError(null); }}>
+                        {error && <p className="error-message" data-testid="signup-error">{error}</p>}
+                        <button className="signup-switch-button" data-testid="back-to-login" onClick={() => { switchToLogin(); setError(null); }}>
                             Back to Login
                         </button>
                     </form>
                 </div>
             )
         ) : (
-            <div className="profile-logged-in">
+            <div className="profile-logged-in" data-testid="profile-logged-in">
                 {!isEditing ? (
-                    <div className="profile-view">
+                    <div className="profile-view" data-testid="profile-view">
                         <div className="profile-header">
                             <div className="profile-avatar">
                                 {profileData.avatarUrl ? (
@@ -468,18 +475,18 @@ const Profile = ({ onLogin }) => {
                         </div>
                         
                         <div className="profile-actions">
-                            <button onClick={() => setIsEditing(true)} className="edit-profile-button">
+                            <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
                                 Edit Profile
                             </button>
-                            <button onClick={handleLogout} className="logout-button">
+                            <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
                                 Logout
                             </button>
                         </div>
                     </div>
                 ) : (
-                    <div className="profile-edit">
+                    <div className="profile-edit" data-testid="profile-edit">
                         <h2>Edit Profile</h2>
-                        <form onSubmit={handleProfileUpdate} className="profile-edit-form">
+                        <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
                             <div className="form-group">
                                 <label>Avatar URL</label>
                                 <input
@@ -487,6 +494,7 @@ const Profile = ({ onLogin }) => {
                                     placeholder="https://example.com/your-avatar.jpg"
                                     value={profileData.avatarUrl}
                                     onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
+                                    data-testid="avatar-url-input"
                                 />
                                 {profileData.avatarUrl && (
                                     <div className="avatar-preview">
@@ -501,6 +509,7 @@ const Profile = ({ onLogin }) => {
                                     placeholder="Enter your email address"
                                     value={profileData.emailAddress}
                                     onChange={(e) => setProfileData({...profileData, emailAddress: e.target.value})}
+                                    data-testid="email-textarea"
                                 />
                             </div>
                             
@@ -512,6 +521,7 @@ const Profile = ({ onLogin }) => {
                                     onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                                     maxLength="500"
                                     rows="4"
+                                    data-testid="bio-textarea"
                                 />
                                 <span className="char-count">{profileData.bio.length}/500</span>
                             </div>
@@ -523,6 +533,7 @@ const Profile = ({ onLogin }) => {
                                     placeholder="e.g., Attack on Titan"
                                     value={profileData.favoriteAnime}
                                     onChange={(e) => setProfileData({...profileData, favoriteAnime: e.target.value})}
+                                    data-testid="favorite-anime-input"
                                 />
                             </div>
 
@@ -533,6 +544,7 @@ const Profile = ({ onLogin }) => {
                                     placeholder="e.g., One Piece"
                                     value={profileData.favoriteManga}
                                     onChange={(e) => setProfileData({...profileData, favoriteManga: e.target.value})}
+                                    data-testid="favorite-manga-input"
                                 />
                             </div>
                             
@@ -543,6 +555,7 @@ const Profile = ({ onLogin }) => {
                                     placeholder="e.g., Action, Romance, Comedy"
                                     value={profileData.favoriteGenre}
                                     onChange={(e) => setProfileData({...profileData, favoriteGenre: e.target.value})}
+                                    data-testid="favorite-genre-input"
                                 />
                             </div>
                             
@@ -555,16 +568,17 @@ const Profile = ({ onLogin }) => {
                                     onChange={(e) => setProfileData({...profileData, age: e.target.value})}
                                     min="1"
                                     max="120"
+                                    data-testid="age-input"
                                 />
                             </div>
                             
-                            {error && <p className="error-message">{error}</p>}
+                            {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
                             
                             <div className="form-actions">
-                                <button type="submit" disabled={isLoading} className="save-button">
+                                <button type="submit" disabled={isLoading} className="save-button" data-testid="save-profile-button">
                                     {isLoading ? 'Saving...' : 'Save Changes'}
                                 </button>
-                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button">
+                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
                                     Cancel
                                 </button>
                             </div>

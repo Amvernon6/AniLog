@@ -558,4 +558,998 @@ describe('Search Component', () => {
       });
     });
   });
+
+  describe('Title Display Variations', () => {
+    test('displays English title when available', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Attack on Titan', romaji: 'Shingeki no Kyojin', nativeTitle: '進撃の巨人' },
+          year: 2013,
+          averageScore: 860,
+          coverImageUrl: 'https://example.com/aot.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Attack');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+      });
+    });
+
+    test('displays Romaji title when English is not available', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: null, romaji: 'Kimetsu no Yaiba', nativeTitle: '鬼滅の刃' },
+          year: 2019,
+          averageScore: 850,
+          coverImageUrl: 'https://example.com/ds.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Kimetsu');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText('Kimetsu no Yaiba')).toBeInTheDocument();
+      });
+    });
+
+    test('displays Native title when both English and Romaji are not available', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: null, romaji: null, nativeTitle: '東京喰種' },
+          year: 2014,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/tg.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, '東京喰種');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText('東京喰種')).toBeInTheDocument();
+      });
+    });
+
+    test('displays fallback when all title fields are null', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: null, romaji: null, nativeTitle: null },
+          year: 2020,
+          averageScore: 750,
+          coverImageUrl: 'https://example.com/unknown.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Error Getting Title');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+    });
+
+    test('displays multiple results with different title combinations', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Test: One Piece', romaji: 'One Piece', nativeTitle: 'ワンピース' },
+          year: 1999,
+          averageScore: 870,
+          coverImageUrl: 'https://example.com/op.jpg',
+          status: 'RELEASING'
+        },
+        {
+          id: 2,
+          type: 'MANGA',
+          format: 'MANGA',
+          title: { english: null, romaji: 'Test: Berserk', nativeTitle: 'ベルセルク' },
+          year: 1989,
+          averageScore: 920,
+          coverImageUrl: 'https://example.com/berserk.jpg',
+          status: 'RELEASING'
+        },
+        {
+          id: 3,
+          type: 'ANIME',
+          format: 'MOVIE',
+          title: { english: null, romaji: null, nativeTitle: 'Test: 千と千尋の神隠し' },
+          year: 2001,
+          averageScore: 880,
+          coverImageUrl: 'https://example.com/spirited.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText('Test: One Piece')).toBeInTheDocument();
+        expect(screen.getByText('Test: Berserk')).toBeInTheDocument();
+        expect(screen.getByText('Test: 千と千尋の神隠し')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Type and Format Display', () => {
+    test('displays type and format without duplication when different', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Test Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText(/ANIME.*•.*TV/)).toBeInTheDocument();
+      });
+    });
+
+    test('displays only format when type matches format (MANGA)', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'MANGA',
+          format: 'MANGA',
+          title: { english: 'Test Manga', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          chapters: 100
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Manga');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const resultItem = screen.getByTestId('result-item-0');
+        expect(resultItem).toHaveTextContent('MANGA');
+        // Should not have "MANGA • MANGA"
+        expect(resultItem.textContent.match(/MANGA/g) || []).toHaveLength(1);
+      });
+    });
+
+    test('displays only type when format is null', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: null,
+          title: { english: 'Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const resultItem = screen.getByTestId('result-item-0');
+        expect(resultItem).toHaveTextContent('ANIME');
+        expect(resultItem).not.toHaveTextContent('•');
+      });
+    });
+  });
+
+  describe('Status Color Coding', () => {
+    test('applies correct class for RELEASING status', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Releasing Anime', romaji: 'Test' },
+          year: 2024,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'RELEASING'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const statusElement = screen.getByText('RELEASING');
+        expect(statusElement).toHaveClass('status-releasing');
+      });
+    });
+
+    test('applies correct class for FINISHED status', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Finished Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const statusElement = screen.getByText('FINISHED');
+        expect(statusElement).toHaveClass('status-finished');
+      });
+    });
+
+    test('applies correct class for NOT_YET_RELEASED status', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Upcoming Anime', romaji: 'Test' },
+          year: 2025,
+          averageScore: null,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'NOT_YET_RELEASED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const statusElement = screen.getByText('NOT YET RELEASED');
+        expect(statusElement).toHaveClass('status-not_yet_released');
+      });
+    });
+
+    test('applies correct class for CANCELLED status', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Cancelled Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 700,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'CANCELLED'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const statusElement = screen.getByText('CANCELLED');
+        expect(statusElement).toHaveClass('status-cancelled');
+      });
+    });
+
+    test('applies correct class for HIATUS status', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'MANGA',
+          format: 'MANGA',
+          title: { english: 'Hiatus Manga', romaji: 'Test' },
+          year: 2015,
+          averageScore: 850,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'HIATUS'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Test');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        const statusElement = screen.getByText('HIATUS');
+        expect(statusElement).toHaveClass('status-hiatus');
+      });
+    });
+  });
+
+  describe('Description and Detail Rendering', () => {
+    test('renders HTML description correctly', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'HTML Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          description: '<p>This is a <strong>bold</strong> description with <em>italic</em> text.</p>'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'HTML');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        const detailView = screen.getByTestId('detail-view');
+        expect(detailView).toBeInTheDocument();
+        // Check that HTML is rendered (not as plain text)
+        const strongElement = detailView.querySelector('strong');
+        const emElement = detailView.querySelector('em');
+        expect(strongElement).toBeInTheDocument();
+        expect(emElement).toBeInTheDocument();
+      });
+    });
+
+    test('displays next airing episode information when available', async () => {
+      const futureTimestamp = Math.floor(Date.now() / 1000) + 86400; // 24 hours from now
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Airing Anime', romaji: 'Test' },
+          year: 2024,
+          averageScore: 850,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'RELEASING',
+          nextAiringEpisode: {
+            episode: 12,
+            timeUntilAiring: 86400
+          }
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Airing');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByText(/Episode 12/)).toBeInTheDocument();
+      });
+    });
+
+    test('displays episodes count for anime', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Episode Count Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          episodes: 24
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Episode');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByTestId('episodes')).toBeInTheDocument();
+        expect(screen.getByTestId('episodes')).toHaveTextContent('24');
+      });
+    });
+
+    test('displays chapters and volumes for manga', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'MANGA',
+          format: 'MANGA',
+          title: { english: 'Manga Test', romaji: 'Test' },
+          year: 2015,
+          averageScore: 850,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          chapters: 200,
+          volumes: 20
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Manga');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByTestId('chapters')).toBeInTheDocument();
+        expect(screen.getByTestId('chapters')).toHaveTextContent('200');
+        expect(screen.getByTestId('volumes')).toBeInTheDocument();
+        expect(screen.getByTestId('volumes')).toHaveTextContent('20');
+      });
+    });
+
+    test('displays genres list', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Genre Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          genres: ['Action', 'Adventure', 'Fantasy']
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Genre');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByText(/Action, Adventure, Fantasy/)).toBeInTheDocument();
+      });
+    });
+
+    test('displays studios list', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Studio Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          studios: ['Studio Ghibli', 'Madhouse']
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Studio');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByText(/Studio Ghibli, Madhouse/)).toBeInTheDocument();
+      });
+    });
+
+    test('displays synonyms/alternative titles', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Synonym Test', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          synonyms: ['Alternative Title 1', 'Alternative Title 2']
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Synonym');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByText(/Alternative Title 1, Alternative Title 2/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Search with Multiple Filters', () => {
+    test('searches with type and format filters combined', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => []
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      // Set query
+      await user.type(input, 'Test');
+      
+      // Select type
+      const typeButton = screen.getByTestId('type-filter-button');
+      await user.click(typeButton);
+      await user.click(screen.getByText('Anime'));
+      
+      // Select format
+      const formatButton = screen.getByTestId('format-filter-button');
+      await user.click(formatButton);
+      await user.click(screen.getByText('TV'));
+      await user.click(document.body); // Close dropdown
+      
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/search',
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('"type":"ANIME"')
+          })
+        );
+      });
+    });
+
+    test('searches with all filters applied', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => []
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Complete Test');
+      
+      // Select all filters
+      const typeButton = screen.getByTestId('type-filter-button');
+      await user.click(typeButton);
+      await user.click(screen.getByText('Anime'));
+      
+      const formatButton = screen.getByTestId('format-filter-button');
+      await user.click(formatButton);
+      await user.click(screen.getByText('TV'));
+      await user.click(document.body);
+      
+      const genreButton = screen.getByTestId('genre-filter-button');
+      await user.click(genreButton);
+      await user.click(screen.getByText('Action'));
+      await user.click(document.body);
+      
+      const statusButton = screen.getByTestId('status-filter-button');
+      await user.click(statusButton);
+      await user.click(screen.getByText('RELEASING'));
+      await user.click(document.body);
+      
+      const sortButton = screen.getByTestId('sort-filter-button');
+      await user.click(sortButton);
+      await user.click(screen.getByText('Rating Descending'));
+      
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/search',
+          expect.objectContaining({
+            method: 'POST'
+          })
+        );
+      });
+    });
+  });
+
+  describe('Adult Content Warning', () => {
+    test('displays adult content warning in detail view when isAdult is true', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Adult Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 750,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          isAdult: true,
+          description: 'This is an adult anime'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Adult');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        const adultWarning = screen.getByTestId('adult-warning');
+        expect(adultWarning).toBeInTheDocument();
+        expect(adultWarning).toHaveClass('is-adult');
+      });
+    });
+
+    test('does not display adult content warning when isAdult is false', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Safe Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          isAdult: false,
+          description: 'This is a safe anime'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Safe');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.queryByTestId('adult-warning')).not.toBeInTheDocument();
+      });
+    });
+
+    test('does not display adult content warning when isAdult is undefined', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Unknown Rating Anime', romaji: 'Test' },
+          year: 2020,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          description: 'This anime has no isAdult field'
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Unknown');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.queryByTestId('adult-warning')).not.toBeInTheDocument();
+      });
+    });
+
+    test('displays adult content warning for manga', async () => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'MANGA',
+          format: 'MANGA',
+          title: { english: 'Adult Manga', romaji: 'Test' },
+          year: 2015,
+          averageScore: 800,
+          coverImageUrl: 'https://example.com/test.jpg',
+          status: 'FINISHED',
+          isAdult: true,
+          description: 'This is an adult manga',
+          chapters: 150,
+          volumes: 15
+        }
+      ];
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResults
+      });
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      
+      await user.type(input, 'Manga');
+      await user.click(screen.getByTestId('search-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('result-item-0')).toBeInTheDocument();
+      });
+      
+      const resultItem = screen.getByTestId('result-item-0');
+      await user.click(resultItem);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-view')).toBeInTheDocument();
+        expect(screen.getByTestId('adult-warning')).toBeInTheDocument();
+      });
+    });
+  });
 });
