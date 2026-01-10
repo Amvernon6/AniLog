@@ -197,6 +197,7 @@ class AniListClientTest {
     void testAnilistResult_Getters() {
         AnilistResult.Title title = new AnilistResult.Title("Test Anime", "Test Anime", "");
         AnilistResult result = new AnilistResult(
+            1,
             "ANIME",
             title,
             "Test description",
@@ -236,6 +237,7 @@ class AniListClientTest {
         
         AnilistResult.Title title = new AnilistResult.Title("", "", "");
         AnilistResult result = new AnilistResult(
+            1,
             "ANIME",
             title,
             null,

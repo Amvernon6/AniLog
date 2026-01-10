@@ -82,6 +82,7 @@ public class AniListClient {
                 if (!el.isJsonObject()) continue;
                 JsonObject item = el.getAsJsonObject();
 
+                int id = getInteger(item, "id") != null ? getInteger(item, "id") : 0;
                 Title title = parseTitle(item);
                 String type = getString(item, "type");
                 String description = getString(item, "description");
@@ -102,6 +103,7 @@ public class AniListClient {
                 boolean isAdult = item.has("isAdult") && !item.get("isAdult").isJsonNull() && item.get("isAdult").getAsBoolean();
 
                 results.add(new AnilistResult(
+                        id,
                         type,
                         title,
                         description,

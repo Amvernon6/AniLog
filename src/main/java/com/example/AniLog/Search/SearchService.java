@@ -55,6 +55,7 @@ public class SearchService implements SearchInterface {
                                         genre_not_in: $genresNotIn,
                                         sort: $sortBy
                                     ) {
+                                        id
                                         type
                                         title {
                                             romaji

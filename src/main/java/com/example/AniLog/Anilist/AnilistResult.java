@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class AnilistResult {
+    private final int id;
     private final String type;
     private final Title title;
     private final String description;
@@ -24,6 +25,7 @@ public class AnilistResult {
     private final boolean isAdult;
 
     public AnilistResult(
+            int id,
             String type,
             Title title,
             String description,
@@ -42,6 +44,7 @@ public class AnilistResult {
             List<String> synonyms,
             Trailer trailer,
             boolean isAdult) {
+        this.id = id;
         this.type = type;
         this.title = title;
         this.description = description;
@@ -64,6 +67,10 @@ public class AnilistResult {
 
     public String getType() {
         return type;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public Title getTitle() {

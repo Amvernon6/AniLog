@@ -263,6 +263,7 @@ class SearchServiceTest {
         
         AnilistResult.Title title1 = new AnilistResult.Title("", "Test Anime 1", "");
         AnilistResult result1 = new AnilistResult(
+            1,
             "ANIME",
             title1,
             null,
@@ -285,6 +286,7 @@ class SearchServiceTest {
         
         AnilistResult.Title title2 = new AnilistResult.Title("", "Test Anime 2", "");
         AnilistResult result2 = new AnilistResult(
+            1,
             "ANIME",
             title2,
             null,

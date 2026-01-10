@@ -78,6 +78,9 @@ const Search = () => {
     const genreRef = useRef(null);
     const statusRef = useRef(null);
     const sortRef = useRef(null);
+    const toastTimerRef = useRef(null);
+    const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
+    const [addedItems, setAddedItems] = useState(new Set());
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -100,6 +103,21 @@ const Search = () => {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        // Fetch both anime and manga lists
+        Promise.all([
+            fetch(`/api/user/${userId}/list/ANIME`).then(res => res.ok ? res.json() : []),
+            fetch(`/api/user/${userId}/list/MANGA`).then(res => res.ok ? res.json() : [])
+        ]).then(([animeList, mangaList]) => {
+            const allItems = [...animeList, ...mangaList];
+            const itemIds = new Set(allItems.map(item => item.anilistId));
+            setAddedItems(itemIds);
+        }).catch(err => console.error('Error fetching user lists:', err));
     }, []);
 
     const toggleFormat = (value) => {
@@ -137,6 +155,16 @@ const Search = () => {
         setSortBy(value);
     };
 
+    const showToast = (message, type = 'info', duration = 3200) => {
+        if (toastTimerRef.current) {
+            clearTimeout(toastTimerRef.current);
+        }
+        setToast({ message, type, visible: true });
+        toastTimerRef.current = setTimeout(() => {
+            setToast((prev) => ({ ...prev, visible: false }));
+        }, duration);
+    };
+
     const handleSearch = async () => {
         if (!query.trim() 
             && !type.trim() 
@@ -169,6 +197,103 @@ const Search = () => {
         } finally {
             setLoading(false);
             setSearchExecuted(true);
+        }
+    };
+
+    const handleAddToList = (item) => {
+        if (!item) return;
+
+        if (item.type == null || (item.type !== 'ANIME' && item.type !== 'MANGA')) {
+            showToast('Cannot add item: Invalid media type.', 'error');
+            return;
+        }
+
+        if (item.title == null || (item.title.english == null && item.title.romaji == null && item.title.nativeTitle == null)) {
+            showToast('Cannot add item: Title information is missing.', 'error');
+            return;
+        }
+
+        if (item.id == null) {
+            showToast('Cannot add item: Missing media ID.', 'error');
+            return;
+        }
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showToast('You must be logged in to add items to your list.', 'error');
+            return;
+        }
+
+        // Proceed to add item to list
+        setLoading(true);
+
+        try {
+            fetch('/api/user/list/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: parseInt(userId),
+                    type: item.type,
+                    title: item.title?.english || item.title?.romaji || item.title?.nativeTitle,
+                    coverImageUrl: item.coverImageUrl,
+                    anilistId: item.id
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showToast('Item added to list successfully.', 'success');
+                    setAddedItems(prev => new Set([...prev, item.id]));
+                } else {
+                    showToast('Failed to add item to list.', 'error');
+                }
+            });
+        } catch (error) {
+            console.error('Error adding item to list:', error);
+            setLoading(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemoveFromList = (item) => {
+        if (!item) return;
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showToast('You must be logged in to remove items from your list.', 'error');
+            return;
+        }
+
+        // Proceed to remove item from list
+        setLoading(true);
+        try {
+            fetch('/api/user/list/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: parseInt(userId),
+                    anilistId: item.id
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showToast('Item removed from list successfully.', 'success');
+                    setAddedItems(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(item.id);
+                        return newSet;
+                    });
+                } else {
+                    showToast('Failed to remove item from list.', 'error');
+                }
+            });
+        } catch (error) {
+            console.error('Error removing item from list:', error);
+            setLoading(false);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -407,6 +532,17 @@ const Search = () => {
                                     <strong>Next Episode:</strong> Episode {selectedItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
                                 </div>
                             )}
+                            <div className="detail-actions">
+                                {addedItems.has(selectedItem.id) ? (
+                                    <button onClick={() => handleRemoveFromList(selectedItem)} className="add-to-list-button added">
+                                        ✓ Added to List
+                                    </button>
+                                ) : (
+                                    <button onClick={() => handleAddToList(selectedItem)} className="add-to-list-button">
+                                        + Add to List
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ) : results.length > 0 ? (
@@ -422,6 +558,15 @@ const Search = () => {
                                 </div>
                                 <div className={`status status-${item.status.toLowerCase()}`}>{item.status.replace(/_/g, ' ')}</div>
                                 <div className="click-hint">Click for more details</div>
+                                {addedItems.has(item.id) ? (
+                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveFromList(item); }} className="add-to-list-button added">
+                                        ✓ Added
+                                    </button>
+                                ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); handleAddToList(item); }} className="add-to-list-button">
+                                        + Add to List
+                                    </button>
+                                )}
                             </li>
                         ))}
                     </ul>
@@ -429,6 +574,11 @@ const Search = () => {
                     <p className="no-results" data-testid="no-results-message">No results found.</p>
                 ) : null}
             </div>
+            {toast.visible && (
+            <div className={`toast toast-${toast.type}`} role="status" aria-live="polite">
+                {toast.message}
+            </div>
+            )}
         </div>
     );
 };

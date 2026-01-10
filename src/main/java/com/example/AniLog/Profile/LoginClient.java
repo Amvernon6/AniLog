@@ -27,22 +27,6 @@ public class LoginClient {
         return ResponseEntity.ok(loginResponse);
     }
 
-    public static class ErrorResponse {
-        private String error;
-
-        public ErrorResponse(String error) {
-            this.error = error;
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public void setError(String error) {
-            this.error = error;
-        }
-    }
-
     public static class LoginRequest {
         private String emailOrUsername;
         private String password;
