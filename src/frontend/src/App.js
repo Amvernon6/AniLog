@@ -5,7 +5,7 @@ import Watchlist from './components/Watchlist';
 import Profile from './components/Profile';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('discover');
   const [loggedIn, setLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
@@ -21,7 +21,7 @@ function App() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'home':
+      case 'discover':
         return (
           <div className="tab-content">
             <h2>Welcome to AniLog</h2>
@@ -45,10 +45,10 @@ function App() {
         <h1>AniLog</h1>
         <nav className="tab-nav">
         <button 
-          className={`tab-button ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => setActiveTab('home')}
+          className={`tab-button ${activeTab === 'discover' ? 'active' : ''}`}
+          onClick={() => setActiveTab('discover')}
         >
-          Home
+          Discover
         </button>
         <button 
           className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}

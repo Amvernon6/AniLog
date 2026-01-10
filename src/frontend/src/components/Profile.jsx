@@ -15,6 +15,7 @@ const Profile = ({ onLogin }) => {
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
     const [LoggedIn, setLoggedIn] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [activeTab, setActiveTab] = useState('profile');
     const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken'));
     const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken'));
     const [profileData, setProfileData] = useState({
@@ -429,162 +430,213 @@ const Profile = ({ onLogin }) => {
             )
         ) : (
             <div className="profile-logged-in" data-testid="profile-logged-in">
-                {!isEditing ? (
-                    <div className="profile-view" data-testid="profile-view">
-                        <div className="profile-header">
-                            <div className="profile-avatar">
-                                {profileData.avatarUrl ? (
-                                    <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
-                                ) : (
-                                    <div className="avatar-placeholder">
-                                        {profileData.username.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="profile-info">
-                                <h2>{profileData.username}</h2>
-                                {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
-                            </div>
-                        </div>
-                        
-                        <div className="profile-details">
-                            <div className="profile-section">
-                                <h3>Email Address</h3>
-                                <p>{profileData.emailAddress || 'No email address provided.'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Bio</h3>
-                                <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Favorite Anime</h3>
-                                <p>{profileData.favoriteAnime || 'Not specified'}</p>
-                            </div>
-
-                            <div className="profile-section">
-                                <h3>Favorite Manga</h3>
-                                <p>{profileData.favoriteManga || 'Not specified'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Favorite Genres</h3>
-                                <p>{profileData.favoriteGenre || 'Not specified'}</p>
-                            </div>
-                        </div>
-                        
-                        <div className="profile-actions">
-                            <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
-                                Edit Profile
-                            </button>
-                            <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="profile-edit" data-testid="profile-edit">
-                        <h2>Edit Profile</h2>
-                        <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
-                            <div className="form-group">
-                                <label>Avatar URL</label>
-                                <input
-                                    type="url"
-                                    placeholder="https://example.com/your-avatar.jpg"
-                                    value={profileData.avatarUrl}
-                                    onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
-                                    data-testid="avatar-url-input"
-                                />
-                                {profileData.avatarUrl && (
-                                    <div className="avatar-preview">
-                                        <img src={profileData.avatarUrl} alt="Avatar preview" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="form-group">
-                                <label>Email Address</label>
-                                <textarea
-                                    placeholder="Enter your email address"
-                                    value={profileData.emailAddress}
-                                    onChange={(e) => setProfileData({...profileData, emailAddress: e.target.value})}
-                                    data-testid="email-textarea"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Bio</label>
-                                <textarea
-                                    placeholder="Tell us about yourself..."
-                                    value={profileData.bio}
-                                    onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                                    maxLength="500"
-                                    rows="4"
-                                    data-testid="bio-textarea"
-                                />
-                                <span className="char-count">{profileData.bio.length}/500</span>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Favorite Anime</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Attack on Titan"
-                                    value={profileData.favoriteAnime}
-                                    onChange={(e) => setProfileData({...profileData, favoriteAnime: e.target.value})}
-                                    data-testid="favorite-anime-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Favorite Manga</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., One Piece"
-                                    value={profileData.favoriteManga}
-                                    onChange={(e) => setProfileData({...profileData, favoriteManga: e.target.value})}
-                                    data-testid="favorite-manga-input"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Favorite Genre</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Action, Romance, Comedy"
-                                    value={profileData.favoriteGenre}
-                                    onChange={(e) => setProfileData({...profileData, favoriteGenre: e.target.value})}
-                                    data-testid="favorite-genre-input"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Age</label>
-                                <input
-                                    type="number"
-                                    placeholder="Your age"
-                                    value={profileData.age}
-                                    onChange={(e) => setProfileData({...profileData, age: e.target.value})}
-                                    min="1"
-                                    max="120"
-                                    data-testid="age-input"
-                                />
-                            </div>
-                            
-                            {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
-                            
-                            <div className="form-actions">
-                                <button type="submit" disabled={isLoading} className="save-button" data-testid="save-profile-button">
-                                    {isLoading ? 'Saving...' : 'Save Changes'}
-                                </button>
-                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
+                <div className="profile-tabs">
+                    <button 
+                        className={`profile-tab-button ${activeTab === 'watchlist' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('watchlist')}
+                    >
+                        My List
+                    </button>
+                    <button 
+                        className={`profile-tab-button ${activeTab === 'watched' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('watched')}
+                    >
+                        Anime
+                    </button>
+                    <button 
+                        className={`profile-tab-button ${activeTab === 'read' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('read')}
+                    >
+                        Manga
+                    </button>
+                    <button 
+                        className={`profile-tab-button ${activeTab === 'profile' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('profile')}
+                    >
+                        Profile
+                    </button>
+                </div>
+                <div className="profile-tab-content">
+                {activeTab === 'watchlist' && (
+                    <div className="watchlist-tab">
+                        <h2>Want to Watch/Read</h2>
+                        <p className="tab-placeholder">Your watchlist and reading list will appear here.</p>
                     </div>
                 )}
+
+                {activeTab === 'watched' && (
+                    <div className="watched-tab">
+                        <h2>Watched Anime</h2>
+                        <p className="tab-placeholder">Anime you've watched with your ratings will appear here.</p>
+                    </div>
+                )}
+
+                {activeTab === 'read' && (
+                    <div className="read-tab">
+                        <h2>Read Manga</h2>
+                        <p className="tab-placeholder">Manga you've read with your ratings will appear here.</p>
+                    </div>
+                )}
+
+                {activeTab === 'profile' && (
+                    !isEditing ? (
+                        <div className="profile-view" data-testid="profile-view">
+                    <div className="profile-header">
+                        <div className="profile-avatar">
+                            {profileData.avatarUrl ? (
+                                <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                            ) : (
+                                <div className="avatar-placeholder">
+                                    {profileData.username.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+                        <div className="profile-info">
+                            <h2>{profileData.username}</h2>
+                            {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
+                        </div>
+                    </div>
+                    
+                    <div className="profile-details">
+                        <div className="profile-section">
+                            <h3>Email Address</h3>
+                            <p>{profileData.emailAddress || 'No email address provided.'}</p>
+                        </div>
+                        
+                        <div className="profile-section">
+                            <h3>Bio</h3>
+                            <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
+                        </div>
+                        
+                        <div className="profile-section">
+                            <h3>Favorite Anime</h3>
+                            <p>{profileData.favoriteAnime || 'Not specified'}</p>
+                        </div>
+
+                        <div className="profile-section">
+                            <h3>Favorite Manga</h3>
+                            <p>{profileData.favoriteManga || 'Not specified'}</p>
+                        </div>
+                        
+                        <div className="profile-section">
+                            <h3>Favorite Genres</h3>
+                            <p>{profileData.favoriteGenre || 'Not specified'}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="profile-actions">
+                        <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
+                            Edit Profile
+                        </button>
+                        <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="profile-edit" data-testid="profile-edit">
+                    <h2>Edit Profile</h2>
+                    <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
+                        <div className="form-group">
+                            <label>Avatar URL</label>
+                            <input
+                                type="url"
+                                placeholder="https://example.com/your-avatar.jpg"
+                                value={profileData.avatarUrl}
+                                onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
+                                data-testid="avatar-url-input"
+                            />
+                            {profileData.avatarUrl && (
+                                <div className="avatar-preview">
+                                    <img src={profileData.avatarUrl} alt="Avatar preview" />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <label>Email Address</label>
+                            <textarea
+                                placeholder="Enter your email address"
+                                value={profileData.emailAddress}
+                                onChange={(e) => setProfileData({...profileData, emailAddress: e.target.value})}
+                                data-testid="email-textarea"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label>Bio</label>
+                            <textarea
+                                placeholder="Tell us about yourself..."
+                                value={profileData.bio}
+                                onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                                maxLength="500"
+                                rows="4"
+                                data-testid="bio-textarea"
+                            />
+                            <span className="char-count">{profileData.bio.length}/500</span>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label>Favorite Anime</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Attack on Titan"
+                                value={profileData.favoriteAnime}
+                                onChange={(e) => setProfileData({...profileData, favoriteAnime: e.target.value})}
+                                data-testid="favorite-anime-input"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Favorite Manga</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., One Piece"
+                                value={profileData.favoriteManga}
+                                onChange={(e) => setProfileData({...profileData, favoriteManga: e.target.value})}
+                                data-testid="favorite-manga-input"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label>Favorite Genres</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Action, Romance, Comedy"
+                                value={profileData.favoriteGenre}
+                                onChange={(e) => setProfileData({...profileData, favoriteGenre: e.target.value})}
+                                data-testid="favorite-genre-input"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label>Age</label>
+                            <input
+                                type="number"
+                                placeholder="Your age"
+                                value={profileData.age}
+                                onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                                min="1"
+                                max="120"
+                                data-testid="age-input"
+                            />
+                        </div>
+                        
+                        {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
+                        
+                        <div className="form-actions">
+                            <button type="submit" disabled={isLoading} className="save-button" data-testid="save-profile-button">
+                                {isLoading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                )
+            )}
+                </div>
             </div>
         )
     );
