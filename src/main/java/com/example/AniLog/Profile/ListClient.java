@@ -1,12 +1,12 @@
 package com.example.AniLog.Profile;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/user")
@@ -59,12 +59,8 @@ public class ListClient {
             return ResponseEntity.badRequest().body(new ErrorResponse("Item data is required"));
         }
 
-        if (item.getUserId() == null || item.getType() == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("User ID and list type are required"));
-        }
-
-        if (!item.getType().name().equalsIgnoreCase("ANIME") && !item.getType().name().equalsIgnoreCase("MANGA")) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("List type must be either 'ANIME' or 'MANGA'"));
+        if (item.getUserId() == null || item.getAnilistId() == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("User ID and Anilist ID are required"));
         }
 
         try {

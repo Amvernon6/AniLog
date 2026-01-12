@@ -32,8 +32,8 @@ public class ListService {
     }
 
     public void removeItemFromList(UserListItem item) throws Exception {
-        UserListItem existingItem = listsRepository.findByUserIdAndTitleAndType(
-            item.getUserId(), item.getTitle(), item.getType()
+        UserListItem existingItem = listsRepository.findByUserIdAndAnilistId(
+            item.getUserId(), item.getAnilistId()
         );
 
         if (existingItem == null) {

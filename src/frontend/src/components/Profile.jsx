@@ -636,6 +636,14 @@ const Profile = ({ onLogin }) => {
                             <div className="profile-info">
                                 <h2>{profileData.username}</h2>
                                 {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
+                                <div className="profile-actions">
+                                    <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
+                                        Edit Profile
+                                    </button>
+                                    <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
+                                        Logout
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         
@@ -664,15 +672,6 @@ const Profile = ({ onLogin }) => {
                                 <h3>Favorite Genres</h3>
                                 <p>{profileData.favoriteGenre || 'Not specified'}</p>
                             </div>
-                        </div>
-                        
-                        <div className="profile-actions">
-                            <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
-                                Edit Profile
-                            </button>
-                            <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
-                                Logout
-                            </button>
                         </div>
                     </div>
                 ) : (

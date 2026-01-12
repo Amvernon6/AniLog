@@ -19,4 +19,7 @@ public interface ListsRepository extends JpaRepository<UserListItem, Long> {
 
     // Check if user already has this item in their list
     boolean existsByUserIdAndTitleAndType(Long userId, String title, UserListItem.MediaType type);
+
+    // Find a specific item by user and Anilist ID
+    UserListItem findByUserIdAndAnilistId(Long userId, Integer anilistId);
 }

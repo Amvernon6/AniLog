@@ -560,17 +560,24 @@
 .detail-actions .add-to-list-button.added {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  cursor: pointer;
 }
 
 .detail-actions .add-to-list-button.added:hover {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+  cursor: pointer;
 }
 
 /* Result item button styling */
 .result-item .add-to-list-button {
   width: 100%;
   margin-top: 12px;
+  cursor: pointer;
+}
+
+.result-item .add-to-list-button.added {
+  cursor: pointer;
 }
 
 /* Detail view actions */
