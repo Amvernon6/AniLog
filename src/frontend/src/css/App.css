@@ -22,18 +22,18 @@
 
 .App-header {
   text-align: center;
-  margin-bottom: 20px;
-  padding: 20px 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  margin-bottom: 10px;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
   border-radius: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 .App-header h1 {
-  font-size: 2.25rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  text-shadow: none;
   color: var(--text);
 }
 
@@ -49,40 +49,41 @@ main {
 
 .tab-nav {
   display: flex;
-  gap: 8px;
-  margin-bottom: 30px;
-  padding: 6px;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   max-width: 1200px;
-  margin: 0 auto 30px auto;
+  margin: 0 auto 20px auto;
 }
 
 .tab-button {
-  flex: 1;
-  padding: 8px 16px;
-  font-size: 0.875rem;
+  flex: 0;
+  padding: 5px 0;
+  font-size: 0.95rem;
   font-weight: 500;
-  background: var(--panel);
+  background: transparent;
   color: var(--text-muted);
-  border: 1px solid transparent;
-  border-radius: 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tab-button:hover {
-  background: var(--button-hover);
+  background: transparent;
   color: var(--text);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .tab-button.active {
-  background: var(--accent-gradient);
-  color: var(--text);
-  border-color: rgba(122, 162, 247, 0.35);
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+  background: transparent;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: none;
 }
 
 .tab-content {

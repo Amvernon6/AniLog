@@ -486,6 +486,12 @@ const Profile = ({ onLogin }) => {
             <div className="profile-logged-in" data-testid="profile-logged-in">
                 <div className="profile-tabs">
                     <button 
+                        className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
+                        onClick={() => setActiveProfileTab('profile')}
+                    >
+                        Profile
+                    </button>
+                    <button 
                         className={`profile-tab-button ${activeProfileTab === 'list' ? 'active' : ''}`}
                         onClick={() => setActiveProfileTab('list')}
                     >
@@ -502,12 +508,6 @@ const Profile = ({ onLogin }) => {
                         onClick={() => setActiveProfileTab('read')}
                     >
                         Manga
-                    </button>
-                    <button 
-                        className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
-                        onClick={() => setActiveProfileTab('profile')}
-                    >
-                        Profile
                     </button>
                 </div>
 
@@ -539,7 +539,6 @@ const Profile = ({ onLogin }) => {
                                                     )}
                                                     <div className="item-info">
                                                         <span className="item-title">{item.title}</span>
-                                                        <span className="item-type">{item.type}</span>
                                                     </div>
                                                 </li>
                                             ))}
