@@ -116,5 +116,62 @@ public class SearchService implements SearchInterface {
 
         return aniListClient.executeQuery(gql, variables);
     }
-    
+
+    @Override
+    public List<AnilistResult> searchAniListById(int id) {
+        String gql = """
+                    query ($id: Int) {
+                        Page {
+                            media(id: $id) {
+                                id
+                                type
+                                title {
+                                    romaji
+                                    english
+                                    native
+                                }
+                                description
+                                format
+                                episodes
+                                chapters
+                                volumes
+                                averageScore
+                                nextAiringEpisode {
+                                    episode
+                                    timeUntilAiring
+                                }
+                                startDate {
+                                    year
+                                }
+                                coverImage {
+                                    extraLarge
+                                }
+                                status
+                                genres
+                                streamingEpisodes {
+                                    site
+                                    thumbnail
+                                    title
+                                    url
+                                }
+                                studios {
+                                    nodes {
+                                        name
+                                    }
+                                }
+                                synonyms
+                                trailer {
+                                    site
+                                    thumbnail
+                                }
+                                isAdult
+                            }
+                        }
+                    }
+                    """;
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("id", id);
+
+        return aniListClient.executeQuery(gql, variables);
+    }
 }

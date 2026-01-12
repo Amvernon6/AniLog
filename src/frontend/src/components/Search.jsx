@@ -495,6 +495,15 @@ const Search = () => {
                             <div className="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
                             <h2>{selectedItem.title?.english || selectedItem.title?.romaji || selectedItem.title?.nativeTitle || 'Error Getting Title'}</h2>
                             {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
+                            {addedItems.has(selectedItem.id) ? (
+                                <button onClick={() => handleRemoveFromList(selectedItem)} className="add-to-list-button added">
+                                    ✓ Added to List
+                                </button>
+                            ) : (
+                                <button onClick={() => handleAddToList(selectedItem)} className="add-to-list-button">
+                                    + Add to List
+                                </button>
+                            )}
                             <div className="detail-info">
                                 {selectedItem.year && <span>Year: {selectedItem.year}</span>}
                                 {selectedItem.averageScore && <span> IMDB Score: {(selectedItem.averageScore / 10).toFixed(1)}/10</span>}
@@ -532,17 +541,6 @@ const Search = () => {
                                     <strong>Next Episode:</strong> Episode {selectedItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
                                 </div>
                             )}
-                            <div className="detail-actions">
-                                {addedItems.has(selectedItem.id) ? (
-                                    <button onClick={() => handleRemoveFromList(selectedItem)} className="add-to-list-button added">
-                                        ✓ Added to List
-                                    </button>
-                                ) : (
-                                    <button onClick={() => handleAddToList(selectedItem)} className="add-to-list-button">
-                                        + Add to List
-                                    </button>
-                                )}
-                            </div>
                         </div>
                     </div>
                 ) : results.length > 0 ? (

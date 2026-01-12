@@ -12,6 +12,8 @@ const Profile = ({ onLogin }) => {
     const [signupAge, setSignupAge] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingList, setIsLoadingList] = useState(false);
+    const [isLoadingItem, setIsLoadingItem] = useState(false);
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
     const [LoggedIn, setLoggedIn] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -30,6 +32,7 @@ const Profile = ({ onLogin }) => {
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [userList, setUserList] = useState([]);
     const [activeListTab, setActiveListTab] = useState('anime');
+    const [selectedListItem, setSelectedListItem] = useState(null);
 
     useEffect(() => {
         // Check if user is already logged in on mount
@@ -118,7 +121,7 @@ const Profile = ({ onLogin }) => {
     };
 
     const handleGetUserList = async (type) => {
-        setIsLoading(true);
+        setIsLoadingList(true);
         setError(null);
 
         try {
@@ -133,7 +136,30 @@ const Profile = ({ onLogin }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setIsLoading(false);
+            setIsLoadingList(false);
+        }
+    };
+
+    const handleListItemClick = async (item) => {
+        if (!item.anilistId) {
+            setError('Unable to load details for this item');
+            return;
+        }
+
+        setIsLoadingItem(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`/api/search/${item.anilistId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch item details');
+            }
+            const fullItemData = await response.json();
+            setSelectedListItem(fullItemData[0]);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoadingItem(false);
         }
     };
 
@@ -492,24 +518,90 @@ const Profile = ({ onLogin }) => {
                                 <button onClick={() => setActiveListTab('anime')} className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
                                 <button onClick={() => setActiveListTab('manga')} className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
                             </div>
-                            {isLoading ? (
-                                <p>Loading your list...</p>
-                            ) : error ? (
+                            {error && !selectedListItem ? (
                                 <p className="error-message" data-testid="list-error">{error}</p>
+                            ) : ( isLoadingList ? (
+                                <div className="loading-placeholder" style={{ textAlign: 'center', padding: '80px 40px' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading your list...</p>
+                                </div>
                             ) : (
                                 <div className="user-lists" data-testid="user-lists">
                                     {userList.length === 0 ? (
                                         <p className="tab-placeholder">Your list is empty. Start adding {activeListTab.toLowerCase()} to your {activeListTab.toLowerCase() == 'anime' ? 'watch' : 'reading'} list using the <strong>Search</strong> or <strong>Discover</strong> tabs!</p>
                                     ) : (
                                         <ul className="user-list">
-                                            {userList.map((item) => (
-                                                <li key={item.id} className="list-item">
-                                                    <span className="item-title">{item.title}</span>
-                                                    <span className="item-type">{item.type}</span>
+                                            {[...userList]
+                                                .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
+                                                .map((item) => (
+                                                <li key={item.id} className="list-item" onClick={() => handleListItemClick(item)}>
+                                                    {item.coverImageUrl && (
+                                                        <img src={item.coverImageUrl} alt={item.title} className="item-cover-image" />
+                                                    )}
+                                                    <div className="item-info">
+                                                        <span className="item-title">{item.title}</span>
+                                                        <span className="item-type">{item.type}</span>
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
                                     )}
+                                </div>
+                            ))}
+                            {selectedListItem && (
+                                <div className="modal-overlay" onClick={() => setSelectedListItem(null)}>
+                                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => setSelectedListItem(null)} className="modal-close">✕</button>
+                                        {isLoadingItem ? (
+                                            <div className="detail-inner" style={{ textAlign: 'center', padding: '80px 40px' }}>
+                                                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading details...</p>
+                                            </div>
+                                        ) : (
+                                            <div className="detail-view">
+                                                <div className="detail-inner">
+                                                    <div className="media-type">{selectedListItem.type} {selectedListItem.format != null && selectedListItem.format !== selectedListItem.type && `• ${selectedListItem.format}`}</div>
+                                                    <h2>{selectedListItem.title?.english || selectedListItem.title?.romaji || selectedListItem.title?.nativeTitle || 'Error Getting Title'}</h2>
+                                                    {selectedListItem.coverImageUrl && <img src={selectedListItem.coverImageUrl} alt={selectedListItem.title?.english || selectedListItem.title?.romaji} className="detail-cover-image" />}
+                                                    <div className="detail-info">
+                                                        {selectedListItem.year && <span>Year: {selectedListItem.year}</span>}
+                                                        {selectedListItem.averageScore && <span> IMDB Score: {(selectedListItem.averageScore / 10).toFixed(1)}/10</span>}
+                                                    </div>
+                                                {selectedListItem.description && (
+                                                    <div className="description">
+                                                        <h4>Description</h4>
+                                                        <div dangerouslySetInnerHTML={{ __html: selectedListItem.description }} />
+                                                    </div>
+                                                )}
+                                                {selectedListItem.episodes && <div><strong>Episodes:</strong> {selectedListItem.episodes}</div>}
+                                                {selectedListItem.chapters && <div><strong>Chapters:</strong> {selectedListItem.chapters}</div>}
+                                                {selectedListItem.volumes && <div><strong>Volumes:</strong> {selectedListItem.volumes}</div>}
+                                                {selectedListItem.genres && selectedListItem.genres.length > 0 && (
+                                                    <div className="genres">
+                                                        <div className="genre-list">
+                                                            <strong>Genres:</strong> {selectedListItem.genres.join(', ')}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {selectedListItem.studios && selectedListItem.studios.length > 0 && (
+                                                    <div className="studios">
+                                                        <strong>Studios:</strong> {selectedListItem.studios.join(', ')}
+                                                    </div>
+                                                )}
+                                                {selectedListItem.synonyms && selectedListItem.synonyms.length > 0 && (
+                                                    <div className="synonyms">
+                                                        <strong>Other Names:</strong> {selectedListItem.synonyms.join(', ')}
+                                                    </div>
+                                                )}
+                                                {selectedListItem.status && <div className={`status status-${selectedListItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedListItem.status.replace(/_/g, ' ')}</div>}
+                                                {selectedListItem.isAdult && <div className="is-adult">⚠️ Adult Content</div>}
+                                                {selectedListItem.nextAiringEpisode && (
+                                                    <div className="next-airing">
+                                                        <strong>Next Episode:</strong> Episode {selectedListItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedListItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

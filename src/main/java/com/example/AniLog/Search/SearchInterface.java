@@ -12,4 +12,6 @@ public interface SearchInterface {
         boolean isAdult, 
         List<String> genres, 
         String sortBy);
+
+    List<AnilistResult> searchAniListById(int id);
 }
