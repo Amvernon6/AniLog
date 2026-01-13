@@ -114,11 +114,15 @@ const Search = () => {
         // Fetch both anime and manga lists
         Promise.all([
             fetch(`/api/user/${userId}/list/ANIME`).then(res => res.ok ? res.json() : []),
-            fetch(`/api/user/${userId}/list/MANGA`).then(res => res.ok ? res.json() : [])
-        ]).then(([animeList, mangaList]) => {
-            const allItems = [...animeList, ...mangaList];
-            const itemIds = new Set(allItems.map(item => item.anilistId));
+            fetch(`/api/user/${userId}/list/MANGA`).then(res => res.ok ? res.json() : []),
+            fetch(`/api/user/${userId}/watched`).then(res => res.ok ? res.json() : [])
+        ]).then(([animeList, mangaList, watchedItems]) => {
+            const addedItems = [...animeList, ...mangaList];
+            const inProgressItems = watchedItems;
+            const itemIds = new Set(addedItems.map(item => item.anilistId));
+            const watchedIds = new Set(inProgressItems.map(item => item.anilistId));
             setAddedItems(itemIds);
+            setInProgressItems(watchedIds);
         }).catch(err => console.error('Error fetching user lists:', err));
     }, []);
 
@@ -271,7 +275,7 @@ const Search = () => {
         setLoading(true);
         try {
             fetch('/api/user/list/remove', {
-                method: 'POST',
+                method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -427,6 +431,14 @@ const Search = () => {
                     showToast('Failed to add item to in-progress list.', 'error');
                 }
             });
+
+            try {
+                handleRemoveFromList(item);
+            } catch (err) {
+                // Silently fail if item wasn't in list
+                console.log('Item was not in list or already removed');
+            }
+
         } catch (error) {
             console.error('Error adding item to in-progress list:', error);
             showToast('Error adding item to in-progress list.', 'error');
@@ -672,15 +684,17 @@ const Search = () => {
                             <div className="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
                             <h2>{selectedItem.title?.english || selectedItem.title?.romaji || selectedItem.title?.nativeTitle || 'Error Getting Title'}</h2>
                             {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
-                            {addedItems.has(selectedItem.id) ? (
-                                <button onClick={() => handleRemoveFromList(selectedItem)} className="add-to-list-button added">
-                                    ✓ Added to List
-                                </button>
-                            ) : (
-                                <button onClick={() => handleAddToList(selectedItem)} className="add-to-list-button">
-                                    + Add to List
-                                </button>
-                            )}
+                            {!inProgressItems.has(selectedItem.id) ? (
+                                addedItems.has(selectedItem.id) ? (
+                                    <button onClick={() => handleRemoveFromList(selectedItem)} className="add-to-list-button added">
+                                        ✓ Added to List
+                                    </button>
+                                ) : (
+                                    <button onClick={() => handleAddToList(selectedItem)} className="add-to-list-button">
+                                        + Add to List
+                                    </button>
+                                )
+                            ) : null}
                             {inProgressItems.has(selectedItem.id) ? (
                                 <button onClick={() => {}} className="in-progress-button added">
                                     ✓ In Progress
@@ -743,15 +757,17 @@ const Search = () => {
                                 <div className={`status status-${item.status.toLowerCase()}`}>{item.status.replace(/_/g, ' ')}</div>
                                 <div className="click-hint">Click for more details</div>
                                 <div className="result-item-buttons">
-                                    {addedItems.has(item.id) ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveFromList(item); }} className="add-to-list-button added">
-                                            ✓ Added
-                                        </button>
-                                    ) : (
-                                        <button onClick={(e) => { e.stopPropagation(); handleAddToList(item); }} className="add-to-list-button">
-                                            + Add to List
-                                        </button>
-                                    )}
+                                    {!inProgressItems.has(item.id) ? (
+                                        addedItems.has(item.id) ? (
+                                            <button onClick={(e) => { e.stopPropagation(); handleRemoveFromList(item); }} className="add-to-list-button added">
+                                                ✓ Added
+                                            </button>
+                                        ) : (
+                                            <button onClick={(e) => { e.stopPropagation(); handleAddToList(item); }} className="add-to-list-button">
+                                                + Add to List
+                                            </button>
+                                        )
+                                    ) : null}
                                     {inProgressItems.has(item.id) ? (
                                         <button onClick={(e) => e.stopPropagation()} className="in-progress-button added">
                                             ✓ In Progress

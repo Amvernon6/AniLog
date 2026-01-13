@@ -1,6 +1,7 @@
 package com.example.AniLog.Profile;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,7 +54,7 @@ public class ListClient {
         }
     }   
 
-    @PostMapping("/list/remove")
+    @DeleteMapping("/list/remove")
     public ResponseEntity<?> removeItemFromList(@RequestBody UserListItem item) {
         if (item == null) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Item data is required"));

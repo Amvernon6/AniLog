@@ -42,6 +42,65 @@ const Profile = ({ onLogin }) => {
     const [listItemsAsWatched, setListItemsAsWatched] = useState(new Set());
     const [listItemsAsInProgress, setListItemsAsInProgress] = useState(new Set());
 
+    // Drag-and-drop ranking state for all watched titles
+    const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
+    const [mangaRankingOrder, setMangaRankingOrder] = useState([]);
+    const [draggingAnimeIndex, setDraggingAnimeIndex] = useState(null);
+    const [draggingMangaIndex, setDraggingMangaIndex] = useState(null);
+    
+    // View switching state
+    const [animeWatchedView, setAnimeWatchedView] = useState('watched'); // 'watched' or 'rankings'
+    const [mangaReadView, setMangaReadView] = useState('read'); // 'watched' or 'rankings'
+
+    // Initialize ranking orders when watched items change
+    useEffect(() => {
+        // For anime: get all anime items (any status)
+        const animeIds = (watchedItems || [])
+            .map(it => it.id);
+        const savedAnimeOrder = JSON.parse(localStorage.getItem('animeRankingOrder') || '[]');
+        const reconciledAnimeOrder = [
+            ...savedAnimeOrder.filter(id => animeIds.includes(id)),
+            ...animeIds.filter(id => !savedAnimeOrder.includes(id))
+        ];
+        setAnimeRankingOrder(reconciledAnimeOrder);
+
+        // For manga: get all manga items (any status)
+        const mangaIds = (watchedItems || [])
+            .map(it => it.id);
+        const savedMangaOrder = JSON.parse(localStorage.getItem('mangaRankingOrder') || '[]');
+        const reconciledMangaOrder = [
+            ...savedMangaOrder.filter(id => mangaIds.includes(id)),
+            ...mangaIds.filter(id => !savedMangaOrder.includes(id))
+        ];
+        setMangaRankingOrder(reconciledMangaOrder);
+    }, [watchedItems]);
+
+    const reorderArray = (arr, fromIndex, toIndex) => {
+        if (fromIndex === null || toIndex === null || fromIndex === toIndex) return arr;
+        const next = arr.slice();
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+        return next;
+    };
+
+    const handleAnimeDrop = (toIndex) => {
+        setAnimeRankingOrder(prev => {
+            const next = reorderArray(prev, draggingAnimeIndex, toIndex);
+            localStorage.setItem('animeRankingOrder', JSON.stringify(next));
+            return next;
+        });
+        setDraggingAnimeIndex(null);
+    };
+
+    const handleMangaDrop = (toIndex) => {
+        setMangaRankingOrder(prev => {
+            const next = reorderArray(prev, draggingMangaIndex, toIndex);
+            localStorage.setItem('mangaRankingOrder', JSON.stringify(next));
+            return next;
+        });
+        setDraggingMangaIndex(null);
+    };
+
     useEffect(() => {
         // Check if user is already logged in on mount
         if (accessToken && localStorage.getItem('userId') != null) {
@@ -283,46 +342,6 @@ const Profile = ({ onLogin }) => {
         }
     };
 
-    const handleAddListItemToWatched = async (item) => {
-        if (!item || !item.anilistId) {
-            setError('Cannot add item: Invalid data');
-            return;
-        }
-
-        try {
-            const safeId = encodeURIComponent(id);
-            const mediaType = activeListTab === 'anime' ? 'ANIME' : 'MANGA';
-            const statusType = activeListTab === 'anime' ? 'WATCHING' : 'READING';
-
-            const response = await makeAuthenticatedRequest(
-                `/api/user/watched/add`,
-                {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: id,
-                        type: mediaType,
-                        title: item.title,
-                        coverImageUrl: item.coverImageUrl,
-                        anilistId: item.anilistId,
-                        totalEpisodes: item.episodes || null,
-                        totalChapters: item.chapters || null,
-                        status: statusType
-                    })
-                }
-            );
-
-            if (!response.ok) {
-                const errorData = await parseErrorResponse(response);
-                throw new Error(errorData.error || 'Failed to add to watched list');
-            }
-
-            setError(null);
-            setListItemsAsWatched(prev => new Set([...prev, item.anilistId]));
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
     const handleAddListItemToInProgress = async (item) => {
         if (!item || !item.anilistId) {
             setError('Cannot add item: Invalid data');
@@ -330,7 +349,6 @@ const Profile = ({ onLogin }) => {
         }
 
         try {
-            const safeId = encodeURIComponent(id);
             const mediaType = activeListTab === 'anime' ? 'ANIME' : 'MANGA';
             const statusType = activeListTab === 'anime' ? 'WATCHING' : 'READING';
 
@@ -358,6 +376,28 @@ const Profile = ({ onLogin }) => {
 
             setError(null);
             setListItemsAsInProgress(prev => new Set([...prev, item.anilistId]));
+            // Remove from the "to watch/read" list using the list/remove endpoint
+            setListItemsAsWatched(prev => {
+                const updated = new Set(prev);
+                updated.delete(item.anilistId);
+                return updated;
+            });
+            
+            try {
+                await makeAuthenticatedRequest(
+                    `/api/user/list/remove`,
+                    {
+                        method: 'DELETE',
+                        body: JSON.stringify({
+                            userId: id,
+                            anilistId: item.anilistId
+                        })
+                    }
+                );
+            } catch (err) {
+                // Silently fail if item wasn't in list
+                console.log('Item was not in list or already removed');
+            }
         } catch (err) {
             setError(err.message);
         }
@@ -822,24 +862,71 @@ const Profile = ({ onLogin }) => {
                         <div className="watched-tab">
                             <div className="watched-header">
                                 <h2>Watched Anime</h2>
-                                <div className="status-filter">
-                                    <label>Filter by Status:</label>
-                                    <select 
-                                        value={watchedStatusFilter} 
-                                        onChange={(e) => setWatchedStatusFilter(e.target.value)}
-                                        className="status-filter-select"
-                                    >
-                                        <option value="ALL">All</option>
-                                        <option value="WATCHING">Watching</option>
-                                        <option value="COMPLETED">Completed</option>
-                                        <option value="ON_HOLD">On Hold</option>
-                                        <option value="DROPPED">Dropped</option>
-                                        <option value="PLAN_TO_WATCH">Plan to Watch</option>
-                                    </select>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <div className="view-tabs">
+                                        <button
+                                            onClick={() => setAnimeWatchedView('watched')}
+                                            className={`view-tab-button ${animeWatchedView === 'watched' ? 'active' : ''}`}
+                                        >
+                                            Watched
+                                        </button>
+                                        <button
+                                            onClick={() => setAnimeWatchedView('rankings')}
+                                            className={`view-tab-button ${animeWatchedView === 'rankings' ? 'active' : ''}`}
+                                        >
+                                            Rankings
+                                        </button>
+                                    </div>
+                                    {animeWatchedView === 'watched' && <div className="status-filter">
+                                        <label>Filter by Status:</label>
+                                        <select 
+                                            value={watchedStatusFilter} 
+                                            onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                            className="status-filter-select"
+                                        >
+                                            <option value="ALL">All</option>
+                                            <option value="WATCHING">Watching</option>
+                                            <option value="COMPLETED">Completed</option>
+                                            <option value="ON_HOLD">On Hold</option>
+                                            <option value="DROPPED">Dropped</option>
+                                            <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                        </select>
+                                    </div>}
                                 </div>
                             </div>
-                            
-                            {error && !selectedWatchedItem ? (
+                            {/* Ranking (All Anime) - Show only in rankings view */}
+                            {animeWatchedView === 'rankings' && animeRankingOrder && animeRankingOrder.length > 0 && (
+                                <div className="ranking" style={{ marginTop: '16px' }}>
+                                    <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
+                                    <ul className="ranking-list">
+                                        {animeRankingOrder.map((id, index) => {
+                                            const item = (watchedItems || []).find(i => i.id === id);
+                                            if (!item) return null;
+                                            return (
+                                                <li
+                                                    key={id}
+                                                    className="ranking-item"
+                                                    draggable
+                                                    onDragStart={() => setDraggingAnimeIndex(index)}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={() => handleAnimeDrop(index)}
+                                                >
+                                                    <span className="rank-num">{index + 1}</span>
+                                                    {item.coverImageUrl && (
+                                                        <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
+                                                    )}
+                                                    <span className="rank-title">{item.title}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Watched grid - Show only in watched view */}
+                            {animeWatchedView === 'watched' && (
+                                <>
+                                {error && !selectedWatchedItem ? (
                                 <p className="error-message">{error}</p>
                             ) : isLoadingWatched ? (
                                 <div className="loading-placeholder">
@@ -849,7 +936,7 @@ const Profile = ({ onLogin }) => {
                                 <div className="watched-items-grid">
                                     {watchedItems.length === 0 ? (
                                         <p className="tab-placeholder">
-                                            No anime found. Add anime to your watched list from the <strong>My List</strong> tab!
+                                            No anime found. Add anime to your watched list from the <strong>My List</strong> or <strong>Search</strong> tabs!
                                         </p>
                                     ) : (
                                         watchedItems.map((item) => (
@@ -1003,6 +1090,8 @@ const Profile = ({ onLogin }) => {
                                     </div>
                                 </div>
                             )}
+                            </>
+                            )}
                         </div>
                     )}
 
@@ -1010,23 +1099,68 @@ const Profile = ({ onLogin }) => {
                         <div className="watched-tab read-tab">
                             <div className="watched-header">
                                 <h2>Read Manga</h2>
-                                <div className="status-filter">
-                                    <label>Filter by Status:</label>
-                                    <select 
-                                        value={watchedStatusFilter} 
-                                        onChange={(e) => setWatchedStatusFilter(e.target.value)}
-                                        className="status-filter-select"
-                                    >
-                                        <option value="ALL">All</option>
-                                        <option value="READING">Reading</option>
-                                        <option value="COMPLETED">Completed</option>
-                                        <option value="ON_HOLD">On Hold</option>
-                                        <option value="DROPPED">Dropped</option>
-                                        <option value="PLAN_TO_READ">Plan to Read</option>
-                                    </select>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <div className="view-tabs">
+                                        <button 
+                                            className={`view-tab-button ${mangaReadView === 'read' ? 'active' : ''}`}
+                                            onClick={() => setMangaReadView('read')}
+                                        >
+                                            Read
+                                        </button>
+                                        <button 
+                                            className={`view-tab-button ${mangaReadView === 'rankings' ? 'active' : ''}`}
+                                            onClick={() => setMangaReadView('rankings')}
+                                        >
+                                            Rankings
+                                        </button>
+                                    </div>
+                                    {mangaReadView === 'read' && <div className="status-filter">
+                                        <label>Filter by Status:</label>
+                                        <select 
+                                            value={watchedStatusFilter} 
+                                            onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                            className="status-filter-select"
+                                        >
+                                            <option value="ALL">All</option>
+                                            <option value="READING">Reading</option>
+                                            <option value="COMPLETED">Completed</option>
+                                            <option value="ON_HOLD">On Hold</option>
+                                            <option value="DROPPED">Dropped</option>
+                                            <option value="PLAN_TO_READ">Plan to Read</option>
+                                        </select>
+                                    </div>}
                                 </div>
                             </div>
-                            
+                            {/* Ranking (All Manga) - Show only in rankings view */}
+                            {mangaReadView === 'rankings' && mangaRankingOrder && mangaRankingOrder.length > 0 && (
+                                <div className="ranking" style={{ marginTop: '16px' }}>
+                                    <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
+                                    <ul className="ranking-list">
+                                        {mangaRankingOrder.map((id, index) => {
+                                            const item = (watchedItems || []).find(i => i.id === id);
+                                            if (!item) return null;
+                                            return (
+                                                <li
+                                                    key={id}
+                                                    className="ranking-item"
+                                                    draggable
+                                                    onDragStart={() => setDraggingMangaIndex(index)}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={() => handleMangaDrop(index)}
+                                                >
+                                                    <span className="rank-num">{index + 1}</span>
+                                                    {item.coverImageUrl && (
+                                                        <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
+                                                    )}
+                                                    <span className="rank-title">{item.title}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
+                            {mangaReadView === 'read' && (
+                            <>
                             {error && !selectedWatchedItem ? (
                                 <p className="error-message">{error}</p>
                             ) : isLoadingWatched ? (
@@ -1037,7 +1171,7 @@ const Profile = ({ onLogin }) => {
                                 <div className="watched-items-grid">
                                     {watchedItems.length === 0 ? (
                                         <p className="tab-placeholder">
-                                            No manga found. Add manga to your read list from the <strong>My List</strong> tab!
+                                            No manga found. Add manga to your read list from the <strong>My List</strong> or <strong>Search</strong> tabs!
                                         </p>
                                     ) : (
                                         watchedItems.map((item) => (
@@ -1190,6 +1324,8 @@ const Profile = ({ onLogin }) => {
                                         </div>
                                     </div>
                                 </div>
+                            )}
+                            </>
                             )}
                         </div>
                     )}
@@ -1349,9 +1485,9 @@ const Profile = ({ onLogin }) => {
                             </div>
                         </form>
                     </div>
-                    )
+                )
                 )}
-                </div>
+            </div>
             </div>
         )
     );
