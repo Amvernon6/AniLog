@@ -33,6 +33,14 @@ const Profile = ({ onLogin }) => {
     const [userList, setUserList] = useState([]);
     const [activeListTab, setActiveListTab] = useState('anime');
     const [selectedListItem, setSelectedListItem] = useState(null);
+    const [watchedItems, setWatchedItems] = useState([]);
+    const [isLoadingWatched, setIsLoadingWatched] = useState(false);
+    const [watchedStatusFilter, setWatchedStatusFilter] = useState('ALL');
+    const [selectedWatchedItem, setSelectedWatchedItem] = useState(null);
+    const [isEditingWatched, setIsEditingWatched] = useState(false);
+    const [editWatchedData, setEditWatchedData] = useState({});
+    const [listItemsAsWatched, setListItemsAsWatched] = useState(new Set());
+    const [listItemsAsInProgress, setListItemsAsInProgress] = useState(new Set());
 
     useEffect(() => {
         // Check if user is already logged in on mount
@@ -50,6 +58,14 @@ const Profile = ({ onLogin }) => {
             handleGetUserList(activeListTab);
         }
     }, [activeProfileTab, activeListTab]);
+
+    useEffect(() => {
+        // Auto-load watched items when watched/read tabs are active
+        if (LoggedIn && id && (activeProfileTab === 'watched' || activeProfileTab === 'read')) {
+            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
+            handleGetWatchedItems(type);
+        }
+    }, [activeProfileTab, watchedStatusFilter]);
 
     const parseErrorResponse = async (response) => {
         const text = await response.text();
@@ -160,6 +176,190 @@ const Profile = ({ onLogin }) => {
             setError(err.message);
         } finally {
             setIsLoadingItem(false);
+        }
+    };
+
+    const handleGetWatchedItems = async (type) => {
+        setIsLoadingWatched(true);
+        setError(null);
+
+        try {
+            const safeId = encodeURIComponent(id);
+            let url = `/api/user/${safeId}/watched/type/${type}`;
+            
+            // Add status filter if not ALL
+            if (watchedStatusFilter !== 'ALL') {
+                url = `/api/user/${safeId}/watched/type/${type}/status/${watchedStatusFilter}`;
+            }
+
+            const response = await makeAuthenticatedRequest(url);
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to fetch watched items');
+            }
+            const data = await response.json();
+            setWatchedItems(data);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoadingWatched(false);
+        }
+    };
+
+    const handleUpdateWatchedProgress = async (itemId, progress) => {
+        try {
+            const safeId = encodeURIComponent(id);
+            const safeAnilistId = encodeURIComponent(itemId);
+            const response = await makeAuthenticatedRequest(
+                `/api/user/${safeId}/watched/${safeAnilistId}/progress`,
+                {
+                    method: 'PATCH',
+                    body: JSON.stringify({ progress })
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to update progress');
+            }
+
+            // Refresh the watched items list
+            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
+            handleGetWatchedItems(type);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleUpdateWatchedItem = async (itemId, updatedData) => {
+        try {
+            const response = await makeAuthenticatedRequest(
+                `/api/user/watched/${itemId}`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({ ...updatedData, userId: id })
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to update item');
+            }
+
+            // Refresh the watched items list
+            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
+            handleGetWatchedItems(type);
+            setIsEditingWatched(false);
+            setSelectedWatchedItem(null);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleRemoveWatchedItem = async (anilistId) => {
+        if (!window.confirm('Are you sure you want to remove this item?')) {
+            return;
+        }
+
+        try {
+            const safeId = encodeURIComponent(id);
+            const safeAnilistId = encodeURIComponent(anilistId);
+            const response = await makeAuthenticatedRequest(
+                `/api/user/${safeId}/watched/${safeAnilistId}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to remove item');
+            }
+
+            // Refresh the watched items list
+            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
+            handleGetWatchedItems(type);
+            setSelectedWatchedItem(null);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleAddListItemToWatched = async (item) => {
+        if (!item || !item.anilistId) {
+            setError('Cannot add item: Invalid data');
+            return;
+        }
+
+        try {
+            const safeId = encodeURIComponent(id);
+            const mediaType = activeListTab === 'anime' ? 'ANIME' : 'MANGA';
+            const statusType = activeListTab === 'anime' ? 'WATCHING' : 'READING';
+
+            const response = await makeAuthenticatedRequest(
+                `/api/user/watched/add`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: id,
+                        type: mediaType,
+                        title: item.title,
+                        coverImageUrl: item.coverImageUrl,
+                        anilistId: item.anilistId,
+                        totalEpisodes: item.episodes || null,
+                        totalChapters: item.chapters || null,
+                        status: statusType
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to add to watched list');
+            }
+
+            setError(null);
+            setListItemsAsWatched(prev => new Set([...prev, item.anilistId]));
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleAddListItemToInProgress = async (item) => {
+        if (!item || !item.anilistId) {
+            setError('Cannot add item: Invalid data');
+            return;
+        }
+
+        try {
+            const safeId = encodeURIComponent(id);
+            const mediaType = activeListTab === 'anime' ? 'ANIME' : 'MANGA';
+            const statusType = activeListTab === 'anime' ? 'WATCHING' : 'READING';
+
+            const response = await makeAuthenticatedRequest(
+                `/api/user/watched/add`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: id,
+                        type: mediaType,
+                        title: item.title,
+                        coverImageUrl: item.coverImageUrl,
+                        anilistId: item.anilistId,
+                        totalEpisodes: item.episodes || null,
+                        totalChapters: item.chapters || null,
+                        status: statusType
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to add to in-progress list');
+            }
+
+            setError(null);
+            setListItemsAsInProgress(prev => new Set([...prev, item.anilistId]));
+        } catch (err) {
+            setError(err.message);
         }
     };
 
@@ -540,6 +740,18 @@ const Profile = ({ onLogin }) => {
                                                     <div className="item-info">
                                                         <span className="item-title">{item.title}</span>
                                                     </div>
+                                                    <div className="list-item-buttons" onClick={(e) => e.stopPropagation()}>
+                                                        {listItemsAsInProgress.has(item.anilistId) ? (
+                                                            <button className="in-progress-button added">✓ In Progress</button>
+                                                        ) : (
+                                                            <button 
+                                                                className="in-progress-button"
+                                                                onClick={() => handleAddListItemToInProgress(item)}
+                                                            >
+                                                                + Mark as In Progress
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
@@ -608,15 +820,377 @@ const Profile = ({ onLogin }) => {
 
                     {activeProfileTab === 'watched' && (
                         <div className="watched-tab">
-                            <h2>Watched Anime</h2>
-                            <p className="tab-placeholder">Anime you've watched with your ratings will appear here.</p>
+                            <div className="watched-header">
+                                <h2>Watched Anime</h2>
+                                <div className="status-filter">
+                                    <label>Filter by Status:</label>
+                                    <select 
+                                        value={watchedStatusFilter} 
+                                        onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                        className="status-filter-select"
+                                    >
+                                        <option value="ALL">All</option>
+                                        <option value="WATCHING">Watching</option>
+                                        <option value="COMPLETED">Completed</option>
+                                        <option value="ON_HOLD">On Hold</option>
+                                        <option value="DROPPED">Dropped</option>
+                                        <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {error && !selectedWatchedItem ? (
+                                <p className="error-message">{error}</p>
+                            ) : isLoadingWatched ? (
+                                <div className="loading-placeholder">
+                                    <p>Loading watched anime...</p>
+                                </div>
+                            ) : (
+                                <div className="watched-items-grid">
+                                    {watchedItems.length === 0 ? (
+                                        <p className="tab-placeholder">
+                                            No anime found. Add anime to your watched list from the <strong>My List</strong> tab!
+                                        </p>
+                                    ) : (
+                                        watchedItems.map((item) => (
+                                            <div key={item.id} className="watched-item-card" onClick={() => {
+                                                setSelectedWatchedItem(item);
+                                                setEditWatchedData({
+                                                    status: item.status,
+                                                    episodesWatched: item.episodesWatched || 0,
+                                                    totalEpisodes: item.totalEpisodes || 0,
+                                                    rating: item.rating || '',
+                                                    notes: item.notes || ''
+                                                });
+                                            }}>
+                                                {item.coverImageUrl && (
+                                                    <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
+                                                )}
+                                                <div className="watched-item-info">
+                                                    <h4 className="watched-item-title">{item.title}</h4>
+                                                    <span className={`watched-status status-${item.status?.toLowerCase()}`}>
+                                                        {item.status?.replace(/_/g, ' ')}
+                                                    </span>
+                                                    {item.episodesWatched != null && (
+                                                        <div className="progress-info">
+                                                            <div className="progress-bar">
+                                                                <div 
+                                                                    className="progress-fill" 
+                                                                    style={{ 
+                                                                        width: `${item.totalEpisodes ? (item.episodesWatched / item.totalEpisodes) * 100 : 0}%` 
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <span className="progress-text">
+                                                                {item.episodesWatched}{item.totalEpisodes ? `/${item.totalEpisodes}` : ''} episodes
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {item.rating && (
+                                                        <div className="rating-display">
+                                                            ⭐ {item.rating}/10
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
+                            {selectedWatchedItem && (
+                                <div className="modal-overlay" onClick={() => {
+                                    setSelectedWatchedItem(null);
+                                    setIsEditingWatched(false);
+                                }}>
+                                    <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => {
+                                            setSelectedWatchedItem(null);
+                                            setIsEditingWatched(false);
+                                        }} className="modal-close">✕</button>
+                                        
+                                        <div className="watched-detail">
+                                            <div className="watched-detail-header">
+                                                {selectedWatchedItem.coverImageUrl && (
+                                                    <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
+                                                )}
+                                                <div className="watched-detail-info">
+                                                    <h2>{selectedWatchedItem.title}</h2>
+                                                    <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
+                                                        {selectedWatchedItem.status?.replace(/_/g, ' ')}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="watched-detail-body">
+                                                <div className="form-group">
+                                                    <label>Status</label>
+                                                    <select 
+                                                        value={editWatchedData.status} 
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
+                                                        className="status-select"
+                                                    >
+                                                        <option value="WATCHING">Watching</option>
+                                                        <option value="COMPLETED">Completed</option>
+                                                        <option value="ON_HOLD">On Hold</option>
+                                                        <option value="DROPPED">Dropped</option>
+                                                        <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Episodes Watched</label>
+                                                    <div className="progress-input-group">
+                                                        <input 
+                                                            type="number" 
+                                                            min="0"
+                                                            max={editWatchedData.totalEpisodes || 9999}
+                                                            value={editWatchedData.episodesWatched}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, episodesWatched: parseInt(e.target.value) || 0})}
+                                                        />
+                                                        <span className="progress-separator">/</span>
+                                                        <input 
+                                                            type="number" 
+                                                            min="0"
+                                                            value={editWatchedData.totalEpisodes}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalEpisodes: parseInt(e.target.value) || 0})}
+                                                            placeholder="Total"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Rating (0-10)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0" 
+                                                        max="10"
+                                                        step="0.1"
+                                                        value={editWatchedData.rating}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: parseFloat(e.target.value) || ''})}
+                                                        placeholder="Rate this anime"
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Notes</label>
+                                                    <textarea 
+                                                        value={editWatchedData.notes}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
+                                                        placeholder="Your thoughts about this anime..."
+                                                        rows="4"
+                                                        maxLength="1000"
+                                                    />
+                                                    <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
+                                                </div>
+
+                                                <div className="watched-detail-actions">
+                                                    <button 
+                                                        onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
+                                                        className="save-button"
+                                                    >
+                                                        Save Changes
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
+                                                        className="remove-button"
+                                                    >
+                                                        Remove from List
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {activeProfileTab === 'read' && (
-                        <div className="read-tab">
-                            <h2>Read Manga</h2>
-                            <p className="tab-placeholder">Manga you've read with your ratings will appear here.</p>
+                        <div className="watched-tab read-tab">
+                            <div className="watched-header">
+                                <h2>Read Manga</h2>
+                                <div className="status-filter">
+                                    <label>Filter by Status:</label>
+                                    <select 
+                                        value={watchedStatusFilter} 
+                                        onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                        className="status-filter-select"
+                                    >
+                                        <option value="ALL">All</option>
+                                        <option value="READING">Reading</option>
+                                        <option value="COMPLETED">Completed</option>
+                                        <option value="ON_HOLD">On Hold</option>
+                                        <option value="DROPPED">Dropped</option>
+                                        <option value="PLAN_TO_READ">Plan to Read</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {error && !selectedWatchedItem ? (
+                                <p className="error-message">{error}</p>
+                            ) : isLoadingWatched ? (
+                                <div className="loading-placeholder">
+                                    <p>Loading read manga...</p>
+                                </div>
+                            ) : (
+                                <div className="watched-items-grid">
+                                    {watchedItems.length === 0 ? (
+                                        <p className="tab-placeholder">
+                                            No manga found. Add manga to your read list from the <strong>My List</strong> tab!
+                                        </p>
+                                    ) : (
+                                        watchedItems.map((item) => (
+                                            <div key={item.id} className="watched-item-card" onClick={() => {
+                                                setSelectedWatchedItem(item);
+                                                setEditWatchedData({
+                                                    status: item.status,
+                                                    chaptersRead: item.chaptersRead || 0,
+                                                    totalChapters: item.totalChapters || 0,
+                                                    rating: item.rating || '',
+                                                    notes: item.notes || ''
+                                                });
+                                            }}>
+                                                {item.coverImageUrl && (
+                                                    <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
+                                                )}
+                                                <div className="watched-item-info">
+                                                    <h4 className="watched-item-title">{item.title}</h4>
+                                                    <span className={`watched-status status-${item.status?.toLowerCase()}`}>
+                                                        {item.status?.replace(/_/g, ' ')}
+                                                    </span>
+                                                    {item.chaptersRead != null && (
+                                                        <div className="progress-info">
+                                                            <div className="progress-bar">
+                                                                <div 
+                                                                    className="progress-fill" 
+                                                                    style={{ 
+                                                                        width: `${item.totalChapters ? (item.chaptersRead / item.totalChapters) * 100 : 0}%` 
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <span className="progress-text">
+                                                                {item.chaptersRead}{item.totalChapters ? `/${item.totalChapters}` : ''} chapters
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {item.rating && (
+                                                        <div className="rating-display">
+                                                            ⭐ {item.rating}/10
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
+                            {selectedWatchedItem && (
+                                <div className="modal-overlay" onClick={() => {
+                                    setSelectedWatchedItem(null);
+                                    setIsEditingWatched(false);
+                                }}>
+                                    <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => {
+                                            setSelectedWatchedItem(null);
+                                            setIsEditingWatched(false);
+                                        }} className="modal-close">✕</button>
+                                        
+                                        <div className="watched-detail">
+                                            <div className="watched-detail-header">
+                                                {selectedWatchedItem.coverImageUrl && (
+                                                    <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
+                                                )}
+                                                <div className="watched-detail-info">
+                                                    <h2>{selectedWatchedItem.title}</h2>
+                                                    <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
+                                                        {selectedWatchedItem.status?.replace(/_/g, ' ')}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="watched-detail-body">
+                                                <div className="form-group">
+                                                    <label>Status</label>
+                                                    <select 
+                                                        value={editWatchedData.status} 
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
+                                                        className="status-select"
+                                                    >
+                                                        <option value="READING">Reading</option>
+                                                        <option value="COMPLETED">Completed</option>
+                                                        <option value="ON_HOLD">On Hold</option>
+                                                        <option value="DROPPED">Dropped</option>
+                                                        <option value="PLAN_TO_READ">Plan to Read</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Chapters Read</label>
+                                                    <div className="progress-input-group">
+                                                        <input 
+                                                            type="number" 
+                                                            min="0"
+                                                            max={editWatchedData.totalChapters || 9999}
+                                                            value={editWatchedData.chaptersRead}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, chaptersRead: parseInt(e.target.value) || 0})}
+                                                        />
+                                                        <span className="progress-separator">/</span>
+                                                        <input 
+                                                            type="number" 
+                                                            min="0"
+                                                            value={editWatchedData.totalChapters}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalChapters: parseInt(e.target.value) || 0})}
+                                                            placeholder="Total"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Rating (0-10)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0" 
+                                                        max="10"
+                                                        step="0.1"
+                                                        value={editWatchedData.rating}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: parseFloat(e.target.value) || ''})}
+                                                        placeholder="Rate this manga"
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Notes</label>
+                                                    <textarea 
+                                                        value={editWatchedData.notes}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
+                                                        placeholder="Your thoughts about this manga..."
+                                                        rows="4"
+                                                        maxLength="1000"
+                                                    />
+                                                    <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
+                                                </div>
+
+                                                <div className="watched-detail-actions">
+                                                    <button 
+                                                        onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
+                                                        className="save-button"
+                                                    >
+                                                        Save Changes
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
+                                                        className="remove-button"
+                                                    >
+                                                        Remove from List
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

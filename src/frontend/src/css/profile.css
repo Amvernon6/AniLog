@@ -1413,3 +1413,393 @@
     }
 }
 
+/* Watched Items Styles */
+.watched-tab {
+    padding: 0;
+}
+
+.watched-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.watched-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--text);
+}
+
+.status-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-filter label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.status-filter-select {
+    padding: 8px 16px;
+    background: var(--panel-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-filter-select:hover {
+    border-color: var(--accent);
+}
+
+.status-filter-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
+}
+
+.watched-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.watched-item-card {
+    background: var(--panel-alt);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+.watched-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent);
+}
+
+.watched-item-cover {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    display: block;
+}
+
+.watched-item-info {
+    padding: 15px;
+}
+
+.watched-item-title {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 2.6em;
+}
+
+.watched-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.watched-status.status-watching,
+.watched-status.status-reading {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.watched-status.status-completed {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.watched-status.status-on_hold {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.watched-status.status-dropped {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.watched-status.status-plan_to_watch,
+.watched-status.status-plan_to_read {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+.progress-info {
+    margin-top: 10px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--panel);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.rating-display {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Watched Detail Modal */
+.watched-detail-modal {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.watched-detail {
+    padding: 0;
+}
+
+.watched-detail-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.watched-detail-cover {
+    width: 120px;
+    height: 170px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.watched-detail-info {
+    flex: 1;
+}
+
+.watched-detail-info h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: var(--text);
+}
+
+.watched-detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.watched-detail-body .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.watched-detail-body .form-group label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.watched-detail-body input[type="number"],
+.watched-detail-body select,
+.watched-detail-body textarea {
+    padding: 10px 14px;
+    background: var(--panel-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.watched-detail-body input[type="number"]:focus,
+.watched-detail-body select:focus,
+.watched-detail-body textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
+}
+
+.progress-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-input-group input {
+    flex: 1;
+}
+
+.progress-separator {
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.watched-detail-body textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.watched-detail-body .char-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+    display: block;
+}
+
+.watched-detail-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.watched-detail-actions button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.watched-detail-actions .save-button {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.watched-detail-actions .save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(122, 162, 247, 0.4);
+}
+
+.watched-detail-actions .remove-button {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+.watched-detail-actions .remove-button:hover {
+    background: var(--error);
+    color: white;
+}
+
+/* Loading placeholder for watched items */
+.watched-tab .loading-placeholder {
+    text-align: center;
+    padding: 80px 40px;
+}
+
+.watched-tab .loading-placeholder p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+/* Responsive design for watched items */
+@media (max-width: 1024px) {
+    .watched-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .watched-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .status-filter {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .status-filter-select {
+        flex: 1;
+    }
+
+    .watched-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .watched-item-cover {
+        height: 220px;
+    }
+
+    .watched-detail-header {
+        flex-direction: column;
+    }
+
+    .watched-detail-cover {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+    }
+
+    .watched-detail-actions {
+        flex-direction: column;
+    }
+
+    .progress-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .progress-separator {
+        text-align: center;
+        padding: 5px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .watched-items-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .watched-header h2 {
+        font-size: 1.5rem;
+    }
+}
