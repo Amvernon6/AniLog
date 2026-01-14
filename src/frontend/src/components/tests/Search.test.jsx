@@ -10,7 +10,18 @@ global.fetch = jest.fn();
 describe('Search Component', () => {
   beforeEach(() => {
     fetch.mockClear();
+    fetch.mockImplementation(() => Promise.resolve({
+      ok: true,
+      json: async () => []
+    }));
+    localStorage.clear();
   });
+
+  const primeUserListFetches = () => {
+    fetch.mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => [] }));
+    fetch.mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => [] }));
+    fetch.mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => [] }));
+  };
 
   describe('Initial Render', () => {
     test('renders search input with placeholder', () => {
@@ -323,6 +334,96 @@ describe('Search Component', () => {
       });
     });
 
+    test('shows add and in-progress buttons and adds to list', async () => {
+      localStorage.setItem('userId', '123');
+      primeUserListFetches();
+
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Attack on Titan', romaji: 'Shingeki no Kyojin' },
+          year: 2013,
+          averageScore: 860,
+          coverImageUrl: 'https://example.com/aot.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch
+        .mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => mockResults }))
+        .mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      const searchButton = screen.getByTestId('search-button');
+      await user.type(input, 'Attack');
+      await user.click(searchButton);
+
+      const resultItem = await screen.findByTestId('result-item-0');
+      const addButton = within(resultItem).getByText('+ Add to List');
+      const inProgressButton = within(resultItem).getByText('+ Mark as In Progress');
+
+      expect(addButton).toBeInTheDocument();
+      expect(inProgressButton).toBeInTheDocument();
+
+      await user.click(addButton);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith('/api/user/list/add', expect.objectContaining({ method: 'POST' }));
+        expect(within(resultItem).getByText('✓ Added')).toBeInTheDocument();
+      });
+
+    });
+
+    test('marks item as in progress and hides add button', async () => {
+      localStorage.setItem('userId', '123');
+      localStorage.setItem('accessToken', 'token-abc');
+      primeUserListFetches();
+
+      const mockResults = [
+        {
+          id: 1,
+          type: 'ANIME',
+          format: 'TV',
+          title: { english: 'Attack on Titan', romaji: 'Shingeki no Kyojin' },
+          year: 2013,
+          averageScore: 860,
+          coverImageUrl: 'https://example.com/aot.jpg',
+          status: 'FINISHED'
+        }
+      ];
+
+      fetch
+        .mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => mockResults }))
+        .mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => ({}) }))
+        .mockImplementationOnce(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+
+      const user = userEvent.setup();
+      render(<Search />);
+      const input = screen.getByTestId('search-input');
+      const searchButton = screen.getByTestId('search-button');
+      await user.type(input, 'Attack');
+      await user.click(searchButton);
+
+      const resultItem = await screen.findByTestId('result-item-0');
+      const inProgressButton = within(resultItem).getByText('+ Mark as In Progress');
+
+      await user.click(inProgressButton);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith('/api/user/watched/add', expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({ Authorization: 'Bearer token-abc' })
+        }));
+        expect(within(resultItem).queryByText('+ Add to List')).not.toBeInTheDocument();
+        expect(within(resultItem).getByText('✓ In Progress')).toBeInTheDocument();
+      });
+
+    });
+
     test('displays no results message when search returns empty', async () => {
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -344,21 +445,21 @@ describe('Search Component', () => {
 
     test('handles fetch errors gracefully', async () => {
       fetch.mockRejectedValueOnce(new Error('Network error'));
-      
+
       const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       render(<Search />);
       const input = screen.getByTestId('search-input');
       const searchButton = screen.getByTestId('search-button');
-      
+
       await user.type(input, 'Test');
       await user.click(searchButton);
-      
+
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
       });
-      
+
       consoleSpy.mockRestore();
     });
   });

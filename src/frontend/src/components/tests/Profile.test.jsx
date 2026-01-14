@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Profile from '../Profile';
 
@@ -28,6 +28,14 @@ describe('Profile Component', () => {
         jest.clearAllMocks();
         localStorage.clear();
         fetch.mockClear();
+        // Default fetch mock that returns a proper response object
+        fetch.mockImplementation(() => 
+            Promise.resolve({
+                ok: false,
+                status: 500,
+                json: async () => ({})
+            })
+        );
     });
 
     describe('Login View', () => {
@@ -1760,6 +1768,673 @@ describe('Profile Component', () => {
             await waitFor(() => {
                 expect(localStorage.getItem('accessToken')).toBeNull();
                 expect(mockOnLogin).toHaveBeenCalledWith(null);
+            });
+        });
+    });
+
+    describe('My List Tab', () => {
+        beforeEach(() => {
+            localStorage.setItem('accessToken', 'mock-token');
+            localStorage.setItem('refreshToken', 'mock-refresh');
+            localStorage.setItem('userId', '123');
+        });
+
+        test('navigates to My List tab and displays anime list', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockUserList = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    addedDate: '2025-01-14T00:00:00Z'
+                },
+                {
+                    id: 2,
+                    anilistId: 102,
+                    title: 'Death Note',
+                    coverImageUrl: 'https://example.com/deathnote.jpg',
+                    addedDate: '2025-01-13T00:00:00Z'
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockUserList
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('My List'));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('user-lists')).toBeInTheDocument();
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+                expect(screen.getByText('Death Note')).toBeInTheDocument();
+            });
+        });
+
+        test('displays empty state when list is empty', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('My List'));
+
+            await waitFor(() => {
+                expect(screen.getByText(/Your list is empty/i)).toBeInTheDocument();
+            });
+        });
+
+        test('switches between anime and manga tabs in My List', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('My List'));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('user-lists')).toBeInTheDocument();
+            });
+
+            const animeButton = screen.getByTestId('list-anime-tab');
+            const mangaButton = screen.getByTestId('list-manga-tab');
+
+            expect(animeButton.className).toContain('active');
+
+            fireEvent.click(mangaButton);
+
+            expect(animeButton.className).not.toContain('active');
+            expect(mangaButton.className).toContain('active');
+        });
+
+        test('marks item as in progress', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockUserList = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    addedDate: '2025-01-14T00:00:00Z'
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockUserList
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({})
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('My List'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+            });
+
+            const markInProgressButton = screen.getByText('+ Mark as In Progress');
+            fireEvent.click(markInProgressButton);
+
+            await waitFor(() => {
+                expect(screen.getByText(/✓ In Progress/i)).toBeInTheDocument();
+            });
+        });
+
+        test('opens item detail modal when clicking on list item', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockUserList = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    addedDate: '2025-01-14T00:00:00Z'
+                }
+            ];
+
+            const mockItemDetail = {
+                id: 1,
+                anilistId: 101,
+                title: { english: 'Attack on Titan' },
+                type: 'ANIME',
+                year: 2013,
+                averageScore: 86,
+                description: 'Epic anime about titans'
+            };
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockUserList
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [mockItemDetail]
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('My List'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByTestId('list-item-1'));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('item-description')).toBeInTheDocument();
+                expect(screen.getByTestId('item-description')).toHaveTextContent(/Epic anime about titans/i);
+            });
+        });
+    });
+
+    describe('Anime Tab', () => {
+        beforeEach(() => {
+            localStorage.setItem('accessToken', 'mock-token');
+            localStorage.setItem('refreshToken', 'mock-refresh');
+            localStorage.setItem('userId', '123');
+        });
+
+        test('navigates to Anime tab and displays watched anime', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockWatchedItems = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    status: 'WATCHING',
+                    rating: 9,
+                    episodesWatched: 25,
+                    totalEpisodes: 75
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockWatchedItems
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Anime'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Watched Anime')).toBeInTheDocument();
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+            });
+        });
+
+        test('filters anime by status', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockWatchedItems = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    status: 'WATCHING',
+                    rating: 9
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockWatchedItems
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Anime'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+            });
+
+            const statusFilter = screen.getByTestId('anime-status-filter');
+            fireEvent.change(statusFilter, { target: { value: 'COMPLETED' } });
+
+            await waitFor(() => {
+                expect(fetch).toHaveBeenCalledTimes(3);
+            });
+        });
+
+        test('switches between watched and rankings view', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockWatchedItems = [
+                {
+                    id: 1,
+                    anilistId: 101,
+                    title: 'Attack on Titan',
+                    coverImageUrl: 'https://example.com/aot.jpg',
+                    status: 'WATCHING'
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockWatchedItems
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Anime'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Attack on Titan')).toBeInTheDocument();
+            });
+
+            const watchedButtons = screen.getAllByText('Watched');
+            const rankingsButtons = screen.getAllByText('Rankings');
+
+            fireEvent.click(rankingsButtons[0]);
+
+            expect(watchedButtons[0].className).not.toContain('active');
+            expect(rankingsButtons[0].className).toContain('active');
+        });
+
+        test('displays no anime message when list is empty', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Anime'));
+
+            await waitFor(() => {
+                expect(screen.getByText(/No anime found/i)).toBeInTheDocument();
+            });
+        });
+    });
+
+    describe('Manga Tab', () => {
+        beforeEach(() => {
+            localStorage.setItem('accessToken', 'mock-token');
+            localStorage.setItem('refreshToken', 'mock-refresh');
+            localStorage.setItem('userId', '123');
+        });
+
+        test('navigates to Manga tab and displays read manga', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockMangaItems = [
+                {
+                    id: 1,
+                    anilistId: 201,
+                    title: 'One Piece',
+                    coverImageUrl: 'https://example.com/onepiece.jpg',
+                    status: 'READING',
+                    rating: 9,
+                    chaptersRead: 1000,
+                    totalChapters: 1100
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockMangaItems
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Manga'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Read Manga')).toBeInTheDocument();
+                expect(screen.getByText('One Piece')).toBeInTheDocument();
+            });
+        });
+
+        test('filters manga by status', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockMangaItems = [
+                {
+                    id: 1,
+                    anilistId: 201,
+                    title: 'One Piece',
+                    coverImageUrl: 'https://example.com/onepiece.jpg',
+                    status: 'READING'
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockMangaItems
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Manga'));
+
+            await waitFor(() => {
+                expect(screen.getByText('One Piece')).toBeInTheDocument();
+            });
+
+            const statusFilter = screen.getByTestId('manga-status-filter');
+            fireEvent.change(statusFilter, { target: { value: 'COMPLETED' } });
+
+            await waitFor(() => {
+                expect(fetch).toHaveBeenCalledTimes(3);
+            });
+        });
+
+        test('switches between read and rankings view for manga', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            const mockMangaItems = [
+                {
+                    id: 1,
+                    anilistId: 201,
+                    title: 'One Piece',
+                    coverImageUrl: 'https://example.com/onepiece.jpg',
+                    status: 'READING'
+                }
+            ];
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockMangaItems
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Manga'));
+
+            await waitFor(() => {
+                expect(screen.getByText('One Piece')).toBeInTheDocument();
+            });
+
+            const readButtons = screen.getAllByText('Read');
+            const rankingsButtons = screen.getAllByText('Rankings');
+
+            fireEvent.click(rankingsButtons[rankingsButtons.length - 1]);
+
+            expect(readButtons[readButtons.length - 1].className).not.toContain('active');
+            expect(rankingsButtons[rankingsButtons.length - 1].className).toContain('active');
+        });
+
+        test('displays no manga message when list is empty', async () => {
+            const mockProfileData = {
+                username: 'testuser',
+                emailAddress: 'test@example.com',
+                bio: '',
+                avatarUrl: '',
+                favoriteAnime: '',
+                favoriteManga: '',
+                favoriteGenre: '',
+                age: 25
+            };
+
+            fetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockProfileData
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            render(<Profile onLogin={mockOnLogin} />);
+
+            await waitFor(() => {
+                expect(screen.getByText('testuser')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByText('Manga'));
+
+            await waitFor(() => {
+                expect(screen.getByText(/No manga found/i)).toBeInTheDocument();
             });
         });
     });

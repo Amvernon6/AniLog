@@ -523,6 +523,10 @@ const Profile = ({ onLogin }) => {
         
         try {
             const response = await fetch(`/api/register/check-email?emailAddress=${encodeURIComponent(emailAddress)}`);
+            if (!response || typeof response.json !== 'function') {
+                setIsEmailAvailable(false);
+                return;
+            }
             const data = await response.json();
             if (!data.available) {
                 setError('Email address is already being used on a different account');
@@ -553,6 +557,10 @@ const Profile = ({ onLogin }) => {
         
         try {
             const response = await fetch(`/api/register/check-username?username=${encodeURIComponent(username)}`);
+            if (!response || typeof response.json !== 'function') {
+                setIsUsernameAvailable(false);
+                return;
+            }
             const data = await response.json();
             if (!data.available) {
                 setError('Username is already taken');
@@ -746,9 +754,9 @@ const Profile = ({ onLogin }) => {
                             required
                             data-testid="signup-password-input"
                         />
-                        <text className="password-requirements">
+                        <div className="password-requirements">
                             Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
-                        </text>
+                        </div>
                         <input
                             type="password"
                             placeholder="Confirm Password"
@@ -767,7 +775,7 @@ const Profile = ({ onLogin }) => {
                             required
                             data-testid="signup-age-input"
                         />
-                        {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
+                        {/* <div className="age-note">Used to provide age-appropriate content.</div> */}
                         <button id="signup-button" type="submit" disabled={isLoading || !isEmailAvailable || !isUsernameAvailable} data-testid="signup-submit-button">
                             {isLoading ? 'Signing up...' : 'Sign Up'}
                         </button>
@@ -811,8 +819,8 @@ const Profile = ({ onLogin }) => {
                     {activeProfileTab === 'list' && (
                         <div className="list-tab">
                             <div className="list-tab-buttons">
-                                <button onClick={() => setActiveListTab('anime')} className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
-                                <button onClick={() => setActiveListTab('manga')} className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
+                                <button onClick={() => setActiveListTab('anime')} data-testid="list-anime-tab" className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
+                                <button onClick={() => setActiveListTab('manga')} data-testid="list-manga-tab" className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
                             </div>
                             {error && !selectedListItem ? (
                                 <p className="error-message" data-testid="list-error">{error}</p>
@@ -829,7 +837,7 @@ const Profile = ({ onLogin }) => {
                                             {[...userList]
                                                 .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
                                                 .map((item) => (
-                                                <li key={item.id} className="list-item" onClick={() => handleListItemClick(item)}>
+                                                <li key={item.id} data-testid={`list-item-${item.id}`} className="list-item" onClick={() => handleListItemClick(item)}>
                                                     {item.coverImageUrl && (
                                                         <img src={item.coverImageUrl} alt={item.title} className="item-cover-image" />
                                                     )}
@@ -873,7 +881,7 @@ const Profile = ({ onLogin }) => {
                                                         {selectedListItem.averageScore && <span> IMDB Score: {(selectedListItem.averageScore / 10).toFixed(1)}/10</span>}
                                                     </div>
                                                 {selectedListItem.description && (
-                                                    <div className="description">
+                                                    <div className="description" data-testid="item-description">
                                                         <h4>Description</h4>
                                                         <div dangerouslySetInnerHTML={{ __html: selectedListItem.description }} />
                                                     </div>
@@ -938,6 +946,7 @@ const Profile = ({ onLogin }) => {
                                         <select 
                                             value={watchedStatusFilter} 
                                             onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                            data-testid="anime-status-filter"
                                             className="status-filter-select"
                                         >
                                             <option value="ALL">All</option>
@@ -1175,6 +1184,7 @@ const Profile = ({ onLogin }) => {
                                         <select 
                                             value={watchedStatusFilter} 
                                             onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                            data-testid="manga-status-filter"
                                             className="status-filter-select"
                                         >
                                             <option value="ALL">All</option>
