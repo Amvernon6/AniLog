@@ -523,6 +523,12 @@
   filter: brightness(1.05);
 }
 
+.signup-container #signup-button:disabled {
+  background: #374151;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .signup-container input:focus {
   outline: none;
   border-color: var(--accent);

@@ -41,6 +41,20 @@ const Profile = ({ onLogin }) => {
     const [editWatchedData, setEditWatchedData] = useState({});
     const [listItemsAsWatched, setListItemsAsWatched] = useState(new Set());
     const [listItemsAsInProgress, setListItemsAsInProgress] = useState(new Set());
+    const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
+    const [originalUsername, setOriginalUsername] = useState('');
+    const [isEmailAvailable, setIsEmailAvailable] = useState(true);
+    const [originalEmail, setOriginalEmail] = useState('');
+    const [editedProfileData, setEditedProfileData] = useState({
+        bio: '',
+        avatarUrl: '',
+        emailAddress: '',
+        username: '',
+        favoriteAnime: '',
+        favoriteManga: '',
+        favoriteGenre: '',
+        age: ''
+    });
 
     // Drag-and-drop ranking state for all watched titles
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
@@ -443,6 +457,8 @@ const Profile = ({ onLogin }) => {
                     favoriteGenre: profileData.favoriteGenre || '',
                     age: profileData.age || ''
                 });
+                setOriginalUsername(profileData.username || '');
+                setOriginalEmail(profileData.emailAddress || '');
             }
 
             onLogin(data.userId); // Notify parent component of login
@@ -494,36 +510,60 @@ const Profile = ({ onLogin }) => {
     const checkEmailAvailability = async (emailAddress) => {
         if (emailAddress.trim() === '') {
             setError(null);
+            setIsEmailAvailable(true);
             return;
         }
+        
+        // If email hasn't changed from original, it's available
+        if (emailAddress === originalEmail) {
+            setError(null);
+            setIsEmailAvailable(true);
+            return;
+        }
+        
         try {
             const response = await fetch(`/api/register/check-email?emailAddress=${encodeURIComponent(emailAddress)}`);
             const data = await response.json();
             if (!data.available) {
                 setError('Email address is already being used on a different account');
+                setIsEmailAvailable(false);
             } else {
                 setError(null);
+                setIsEmailAvailable(true);
             }
         } catch (err) {
             console.error('Error checking email availability:', err);
+            setIsEmailAvailable(false);
         }
     };
 
     const checkUsernameAvailability = async (username) => {
         if (username.trim() === '') {
             setError(null);
+            setIsUsernameAvailable(true);
             return;
         }
+        
+        // If username hasn't changed from original, it's available
+        if (username === originalUsername) {
+            setError(null);
+            setIsUsernameAvailable(true);
+            return;
+        }
+        
         try {
             const response = await fetch(`/api/register/check-username?username=${encodeURIComponent(username)}`);
             const data = await response.json();
             if (!data.available) {
                 setError('Username is already taken');
+                setIsUsernameAvailable(false);
             } else {
                 setError(null);
+                setIsUsernameAvailable(true);
             }
         } catch (err) {
             console.error('Error checking username availability:', err);
+            setIsUsernameAvailable(false);
         }
     };
 
@@ -572,6 +612,10 @@ const Profile = ({ onLogin }) => {
                 favoriteGenre: data.favoriteGenre || '',
                 age: data.age || ''
             });
+            setOriginalUsername(data.username || '');
+            setOriginalEmail(data.emailAddress || '');
+            setIsUsernameAvailable(true);
+            setIsEmailAvailable(true);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -588,7 +632,7 @@ const Profile = ({ onLogin }) => {
             const safeId = encodeURIComponent(id);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
                 method: 'PUT',
-                body: JSON.stringify(profileData)
+                body: JSON.stringify(editedProfileData)
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -618,10 +662,22 @@ const Profile = ({ onLogin }) => {
             favoriteGenre: '',
             age: ''
         });
+        setEditedProfileData({
+            bio: '',
+            avatarUrl: '',
+            emailAddress: '',
+            username: '',
+            favoriteAnime: '',
+            favoriteManga: '',
+            favoriteGenre: '',
+            age: ''
+        });
         setIsEditing(false);
         setId(null);
         setAccessToken(null);
         setRefreshToken(null);
+        setOriginalEmail('');
+        setOriginalUsername('');
         
         // Clear tokens from storage
         localStorage.removeItem('accessToken');
@@ -712,7 +768,7 @@ const Profile = ({ onLogin }) => {
                             data-testid="signup-age-input"
                         />
                         {/* <text className="age-note">Used to provide age-appropriate content.</text> */}
-                        <button id="signup-button" type="submit" disabled={isLoading} data-testid="signup-submit-button">
+                        <button id="signup-button" type="submit" disabled={isLoading || !isEmailAvailable || !isUsernameAvailable} data-testid="signup-submit-button">
                             {isLoading ? 'Signing up...' : 'Sign Up'}
                         </button>
                         {error && <p className="error-message" data-testid="signup-error">{error}</p>}
@@ -1333,161 +1389,179 @@ const Profile = ({ onLogin }) => {
                     {activeProfileTab === 'profile' && (
                         !isEditing ? (
                             <div className="profile-view" data-testid="profile-view">
-                        <div className="profile-header">
-                            <div className="profile-avatar">
-                                {profileData.avatarUrl ? (
-                                    <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
-                                ) : (
-                                    <div className="avatar-placeholder">
-                                        {profileData.username.charAt(0).toUpperCase()}
+                                <div className="profile-header">
+                                    <div className="profile-avatar">
+                                        {profileData.avatarUrl ? (
+                                            <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                                        ) : (
+                                            <div className="avatar-placeholder">
+                                                {profileData.username.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                            <div className="profile-info">
-                                <h2>{profileData.username}</h2>
-                                {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
-                                <div className="profile-actions">
-                                    <button onClick={() => setIsEditing(true)} className="edit-profile-button" data-testid="edit-profile-button">
-                                        Edit Profile
-                                    </button>
-                                    <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
-                                        Logout
-                                    </button>
+                                    <div className="profile-info">
+                                        <h2>{profileData.username}</h2>
+                                        {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
+                                        <div className="profile-actions">
+                                            <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
+                                                Edit Profile
+                                            </button>
+                                            <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                        
+                                <div className="profile-details">
+                                    <div className="profile-section">
+                                        <h3>Email Address</h3>
+                                        <p>{profileData.emailAddress || 'No email address provided.'}</p>
+                                    </div>
+                                    
+                                    <div className="profile-section">
+                                        <h3>Bio</h3>
+                                        <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
+                                    </div>
+                                    
+                                    <div className="profile-section">
+                                        <h3>Favorite Anime</h3>
+                                        <p>{profileData.favoriteAnime || 'Not specified'}</p>
+                                    </div>
+
+                                    <div className="profile-section">
+                                        <h3>Favorite Manga</h3>
+                                        <p>{profileData.favoriteManga || 'Not specified'}</p>
+                                    </div>
+                                    
+                                    <div className="profile-section">
+                                        <h3>Favorite Genres</h3>
+                                        <p>{profileData.favoriteGenre || 'Not specified'}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div className="profile-details">
-                            <div className="profile-section">
-                                <h3>Email Address</h3>
-                                <p>{profileData.emailAddress || 'No email address provided.'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Bio</h3>
-                                <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Favorite Anime</h3>
-                                <p>{profileData.favoriteAnime || 'Not specified'}</p>
-                            </div>
-
-                            <div className="profile-section">
-                                <h3>Favorite Manga</h3>
-                                <p>{profileData.favoriteManga || 'Not specified'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Favorite Genres</h3>
-                                <p>{profileData.favoriteGenre || 'Not specified'}</p>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="profile-edit" data-testid="profile-edit">
-                        <h2>Edit Profile</h2>
-                        <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
-                            <div className="form-group">
-                                <label>Avatar URL</label>
-                                <input
-                                    type="url"
-                                    placeholder="https://example.com/your-avatar.jpg"
-                                    value={profileData.avatarUrl}
-                                    onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
-                                    data-testid="avatar-url-input"
-                                />
-                                {profileData.avatarUrl && (
-                                    <div className="avatar-preview">
-                                        <img src={profileData.avatarUrl} alt="Avatar preview" />
+                        ) : (
+                            <div className="profile-edit" data-testid="profile-edit">
+                                <h2>Edit Profile</h2>
+                                <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
+                                    <div className="form-group">
+                                        <label>Username</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter your username"
+                                            value={editedProfileData.username}
+                                            onChange={(e) => {
+                                                setEditedProfileData({...editedProfileData, username: e.target.value});
+                                                checkUsernameAvailability(e.target.value);
+                                            }}
+                                            required
+                                            data-testid="username-input"
+                                        />
                                     </div>
-                                )}
-                            </div>
+                                    <div className="form-group">
+                                        <label>Avatar URL</label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://example.com/your-avatar.jpg"
+                                            value={editedProfileData.avatarUrl}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, avatarUrl: e.target.value})}
+                                            data-testid="avatar-url-input"
+                                        />
+                                        {editedProfileData.avatarUrl && (
+                                            <div className="avatar-preview">
+                                                <img src={editedProfileData.avatarUrl} alt="Avatar preview" />
+                                            </div>
+                                        )}
+                                    </div>
 
-                            <div className="form-group">
-                                <label>Email Address</label>
-                                <textarea
-                                    placeholder="Enter your email address"
-                                    value={profileData.emailAddress}
-                                    onChange={(e) => setProfileData({...profileData, emailAddress: e.target.value})}
-                                    data-testid="email-textarea"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Bio</label>
-                                <textarea
-                                    placeholder="Tell us about yourself..."
-                                    value={profileData.bio}
-                                    onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                                    maxLength="500"
-                                    rows="4"
-                                    data-testid="bio-textarea"
-                                />
-                                <span className="char-count">{profileData.bio.length}/500</span>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Favorite Anime</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Attack on Titan"
-                                    value={profileData.favoriteAnime}
-                                    onChange={(e) => setProfileData({...profileData, favoriteAnime: e.target.value})}
-                                    data-testid="favorite-anime-input"
-                                />
-                            </div>
+                                    <div className="form-group">
+                                        <label>Email Address</label>
+                                        <textarea
+                                            placeholder="Enter your email address"
+                                            value={editedProfileData.emailAddress}
+                                            onChange={(e) => {
+                                                setEditedProfileData({...editedProfileData, emailAddress: e.target.value});
+                                                checkEmailAvailability(e.target.value);
+                                            }}
+                                            required
+                                            data-testid="email-textarea"
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Bio</label>
+                                        <textarea
+                                            placeholder="Tell us about yourself..."
+                                            value={editedProfileData.bio}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, bio: e.target.value})}
+                                            maxLength="500"
+                                            rows="4"
+                                            data-testid="bio-textarea"
+                                        />
+                                        <span className="char-count">{editedProfileData.bio.length}/500</span>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Favorite Anime</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., Attack on Titan"
+                                            value={editedProfileData.favoriteAnime}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteAnime: e.target.value})}
+                                            data-testid="favorite-anime-input"
+                                        />
+                                    </div>
 
-                            <div className="form-group">
-                                <label>Favorite Manga</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., One Piece"
-                                    value={profileData.favoriteManga}
-                                    onChange={(e) => setProfileData({...profileData, favoriteManga: e.target.value})}
-                                    data-testid="favorite-manga-input"
-                                />
+                                    <div className="form-group">
+                                        <label>Favorite Manga</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., One Piece"
+                                            value={editedProfileData.favoriteManga}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteManga: e.target.value})}
+                                            data-testid="favorite-manga-input"
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Favorite Genres</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., Action, Romance, Comedy"
+                                            value={editedProfileData.favoriteGenre}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteGenre: e.target.value})}
+                                            data-testid="favorite-genre-input"
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Age</label>
+                                        <input
+                                            type="number"
+                                            placeholder="Your age"
+                                            value={editedProfileData.age}
+                                            onChange={(e) => setEditedProfileData({...editedProfileData, age: e.target.value})}
+                                            min="1"
+                                            max="120"
+                                            data-testid="age-input"
+                                        />
+                                    </div>
+                                    
+                                    {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
+                                    
+                                    <div className="form-actions">
+                                        <button type="submit" disabled={isLoading || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
+                                            {isLoading ? 'Saving...' : 'Save Changes'}
+                                        </button>
+                                        <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                            
-                            <div className="form-group">
-                                <label>Favorite Genres</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Action, Romance, Comedy"
-                                    value={profileData.favoriteGenre}
-                                    onChange={(e) => setProfileData({...profileData, favoriteGenre: e.target.value})}
-                                    data-testid="favorite-genre-input"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label>Age</label>
-                                <input
-                                    type="number"
-                                    placeholder="Your age"
-                                    value={profileData.age}
-                                    onChange={(e) => setProfileData({...profileData, age: e.target.value})}
-                                    min="1"
-                                    max="120"
-                                    data-testid="age-input"
-                                />
-                            </div>
-                            
-                            {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
-                            
-                            <div className="form-actions">
-                                <button type="submit" disabled={isLoading} className="save-button" data-testid="save-profile-button">
-                                    {isLoading ? 'Saving...' : 'Save Changes'}
-                                </button>
-                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                )
-                )}
-            </div>
+                        )
+                    )}
+                </div>
             </div>
         )
     );

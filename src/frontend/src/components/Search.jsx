@@ -303,74 +303,6 @@ const Search = () => {
         }
     };
 
-    const handleAddToWatched = (item) => {
-        if (!item) return;
-
-        if (item.type == null || (item.type !== 'ANIME' && item.type !== 'MANGA')) {
-            showToast('Cannot add item: Invalid media type.', 'error');
-            return;
-        }
-
-        if (item.title == null || (item.title.english == null && item.title.romaji == null && item.title.nativeTitle == null)) {
-            showToast('Cannot add item: Title information is missing.', 'error');
-            return;
-        }
-
-        if (item.id == null) {
-            showToast('Cannot add item: Missing media ID.', 'error');
-            return;
-        }
-
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            showToast('You must be logged in to add items to watched list.', 'error');
-            return;
-        }
-
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) {
-            showToast('You must be logged in to add items to watched list.', 'error');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const mediaType = item.type === 'ANIME' ? 'ANIME' : 'MANGA';
-            const statusType = item.type === 'ANIME' ? 'WATCHING' : 'READING';
-
-            fetch('/api/user/watched/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: JSON.stringify({
-                    userId: parseInt(userId),
-                    type: mediaType,
-                    title: item.title?.english || item.title?.romaji || item.title?.nativeTitle,
-                    coverImageUrl: item.coverImageUrl,
-                    anilistId: item.id,
-                    totalEpisodes: item.episodes || null,
-                    totalChapters: item.chapters || null,
-                    status: statusType
-                })
-            }).then(response => {
-                if (response.ok) {
-                    showToast(`Added to ${item.type === 'ANIME' ? 'watched' : 'read'} list!`, 'success');
-                    setWatchedItems(prev => new Set([...prev, item.id]));
-                } else {
-                    showToast('Failed to add item to watched list.', 'error');
-                }
-            });
-        } catch (error) {
-            console.error('Error adding item to watched list:', error);
-            showToast('Error adding item to watched list.', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleAddToInProgress = (item) => {
         if (!item) return;
 
@@ -442,45 +374,6 @@ const Search = () => {
         } catch (error) {
             console.error('Error adding item to in-progress list:', error);
             showToast('Error adding item to in-progress list.', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRemoveFromWatched = (item) => {
-        if (!item) return;
-
-        const userId = localStorage.getItem('userId');
-        const accessToken = localStorage.getItem('accessToken');
-        
-        if (!userId || !accessToken) {
-            showToast('You must be logged in.', 'error');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            fetch(`/api/user/${userId}/watched/${item.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            }).then(response => {
-                if (response.ok) {
-                    showToast('Item removed from watched list.', 'success');
-                    setWatchedItems(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(item.id);
-                        return newSet;
-                    });
-                } else {
-                    showToast('Failed to remove item from watched list.', 'error');
-                }
-            });
-        } catch (error) {
-            console.error('Error removing item from watched list:', error);
-            showToast('Error removing item from watched list.', 'error');
         } finally {
             setLoading(false);
         }
