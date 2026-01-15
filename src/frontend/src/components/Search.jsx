@@ -80,6 +80,7 @@ const Search = () => {
     const statusRef = useRef(null);
     const sortRef = useRef(null);
     const toastTimerRef = useRef(null);
+    const savedScrollPosition = useRef(0);
     const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
     const [addedItems, setAddedItems] = useState(new Set());
     const [watchedItems, setWatchedItems] = useState(new Set());
@@ -380,6 +381,19 @@ const Search = () => {
         }
     };
 
+    const handleSelectItem = (item) => {
+        savedScrollPosition.current = window.scrollY;
+        setSelectedItem(item);
+        window.scrollTo(0, 0);
+    };
+
+    const handleBackFromDetail = () => {
+        setSelectedItem(null);
+        setTimeout(() => {
+            window.scrollTo(0, savedScrollPosition.current);
+        }, 0);
+    };
+
     return (
         <div className="search-page" data-testid="search-page">
             {selectedItem == null ? (
@@ -571,19 +585,20 @@ const Search = () => {
                 </div>
             ) : null}
             <div className="search-results">
-                <TitleDetail
-                    selectedItem={selectedItem}
-                    onBack={() => setSelectedItem(null)}
-                    inProgressItems={inProgressItems}
-                    addedItems={addedItems}
-                    onAddToList={handleAddToList}
-                    onRemoveFromList={handleRemoveFromList}
-                    onAddToInProgress={handleAddToInProgress}
-                />
+                {selectedItem && <TitleDetail
+                        selectedItem={selectedItem}
+                        onBack={handleBackFromDetail}
+                        inProgressItems={inProgressItems}
+                        addedItems={addedItems}
+                        onAddToList={handleAddToList}
+                        onRemoveFromList={handleRemoveFromList}
+                        onAddToInProgress={handleAddToInProgress}
+                    />
+                }
                 {!selectedItem && results.length > 0 ? (
                     <ul data-testid="search-results-list">
                         {results.map((item, index) => (
-                            <li key={index} data-testid={`result-item-${index}`} onClick={() => { setSelectedItem(item)}} className="result-item">
+                            <li key={index} data-testid={`result-item-${index}`} onClick={() => handleSelectItem(item)} className="result-item">
                                 <div className="media-type">{item.type} {item.format !== null && item.format !== item.type && `• ${item.format}`}</div>
                                 <h3>{item.title?.english || item.title?.romaji || item.title?.nativeTitle || 'Error Getting Title'}</h3>
                                 {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji || item.title?.nativeTitle} className="cover-image" />}
@@ -618,7 +633,7 @@ const Search = () => {
                             </li>
                         ))}
                     </ul>
-                ) : query && !loading && searchExecuted ? (
+                ) : query && !loading && searchExecuted && !selectedItem ? (
                     <p className="no-results" data-testid="no-results-message">No results found.</p>
                 ) : null}
             </div>

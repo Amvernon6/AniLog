@@ -67,6 +67,7 @@ const Discover = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const hasInitialized = useRef(false);
+    const savedScrollPosition = useRef(0);
     
     // Try to load from cache first
     const cachedData = getCachedData();
@@ -271,6 +272,31 @@ const Discover = () => {
         }).catch(err => console.error('Error adding to in-progress:', err));
     };
 
+    const handleSelectItem = (item) => {
+        savedScrollPosition.current = window.scrollY;
+        setSelectedItem(item);
+        window.scrollTo(0, 0);
+    };
+
+    const handleBackFromDetail = () => {
+        setSelectedItem(null);
+        setTimeout(() => {
+            window.scrollTo(0, savedScrollPosition.current);
+        }, 0);
+    };
+
+    const handleTabChange = (newTab) => {
+        if (newTab !== activeTab) {
+            setActiveTab(newTab);
+            setTimeout(() => {
+                const itemsRows = document.querySelectorAll('.items-row');
+                itemsRows.forEach((row) => {
+                    row.scrollLeft = 0;
+                });
+            }, 0);
+        }
+    };
+
     const renderSection = (title, items) => {
         if (!items || items.length === 0) return null;
         
@@ -283,7 +309,7 @@ const Discover = () => {
                             key={item.id || index} 
                             className="item-card"
                             data-testid="discover-card"
-                            onClick={() => setSelectedItem(item)}
+                            onClick={() => handleSelectItem(item)}
                             style={{ cursor: 'pointer' }}
                         >
                             {item.coverImageUrl && (
@@ -335,13 +361,13 @@ const Discover = () => {
                     <div className="discover-tabs">
                         <button
                             className={`tab-button ${activeTab === 'anime' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('anime')}
+                            onClick={() => handleTabChange('anime')}
                         >
                             Anime
                         </button>
                         <button
                             className={`tab-button ${activeTab === 'manga' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('manga')}
+                            onClick={() => handleTabChange('manga')}
                         >
                             Manga
                         </button>
@@ -352,7 +378,7 @@ const Discover = () => {
             {selectedItem ? (
                 <TitleDetail
                     selectedItem={selectedItem}
-                    onBack={() => setSelectedItem(null)}
+                    onBack={handleBackFromDetail}
                     inProgressItems={inProgressItems}
                     addedItems={addedItems}
                     onAddToList={handleAddToList}

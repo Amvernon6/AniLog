@@ -1,9 +1,9 @@
 package com.example.AniLog.Search;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 import org.springframework.stereotype.Service;
 
@@ -108,7 +108,7 @@ public class SearchService implements SearchInterface {
         if (type != null && !type.isEmpty() && !type.equals("Any")) variables.put("type", type);
         if (format != null && !format.isEmpty()) variables.put("format", format);
         if (status != null && !status.isEmpty()) variables.put("statusIn", status);
-        if (!isAdult) variables.put("isAdult", isAdult);
+        // if (!isAdult) variables.put("isAdult", isAdult);
         if (genres != null && !genres.isEmpty()) variables.put("genres", genres);
         if (sortBy != null && !sortBy.isEmpty()) variables.put("sortBy", List.of(sortBy));
 
