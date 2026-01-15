@@ -282,6 +282,7 @@ const Discover = () => {
                         <div 
                             key={item.id || index} 
                             className="item-card"
+                            data-testid="discover-card"
                             onClick={() => setSelectedItem(item)}
                             style={{ cursor: 'pointer' }}
                         >

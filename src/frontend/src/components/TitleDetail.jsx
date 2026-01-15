@@ -16,7 +16,7 @@ const TitleDetail = ({
         <div className="detail-view" data-testid="detail-view">
             <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
             <div className="detail-content">
-                <div className="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
+                <div className="media-type" data-testid="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
                 <h2>{selectedItem.title?.english || selectedItem.title?.romaji || selectedItem.title?.nativeTitle || 'Error Getting Title'}</h2>
                 {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
                 {!inProgressItems.has(selectedItem.id) ? (
@@ -39,7 +39,7 @@ const TitleDetail = ({
                         + Mark as In Progress
                     </button>
                 )}
-                <div className="detail-info">
+                <div className="detail-info" data-testid="detail-info">
                     {selectedItem.year && <span> {selectedItem.status == "NOT_YET_RELEASED" ? "Release Date: " + (selectedItem.month ? selectedItem.day ? `${selectedItem.month}/${selectedItem.day}/${selectedItem.year}` : `${selectedItem.month}/${selectedItem.year}` : selectedItem.year) : "Year: " + selectedItem.year}</span>}
                     {selectedItem.averageScore && <span> IMDB Score: {(selectedItem.averageScore / 10).toFixed(1)}/10</span>}
                 </div>
@@ -65,11 +65,11 @@ const TitleDetail = ({
                     </div>
                 )}
                 {selectedItem.synonyms && selectedItem.synonyms.length > 0 && (
-                    <div className="synonyms">
+                    <div className="synonyms" data-testid="synonyms">
                         <strong>Other Names:</strong> {selectedItem.synonyms.join(', ')}
                     </div>
                 )}
-                <div className={`status status-${selectedItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedItem.status.replace(/_/g, ' ')}</div>
+                <div className={`status status-${selectedItem.status.toLowerCase()}`} data-testid="status"><strong>Status:</strong> {selectedItem.status.replace(/_/g, ' ')}</div>
                 {selectedItem.isAdult && <div className="is-adult" data-testid="adult-warning">⚠️ Adult Content</div>}
                 {selectedItem.nextAiringEpisode && (
                     <div className="next-airing">

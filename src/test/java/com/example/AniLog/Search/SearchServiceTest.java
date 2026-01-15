@@ -257,6 +257,55 @@ class SearchServiceTest {
         assertTrue(results.isEmpty());
     }
 
+    @Test
+    void testGetPopularAniList() {
+        List<AnilistResult> mockResults = createMockResults();
+        when(mockAniListClient.executeQuery(anyString(), anyMap()))
+            .thenReturn(mockResults);
+
+        List<AnilistResult> results = searchService.getPopularAniList("ANIME");
+
+        assertNotNull(results);
+        verify(mockAniListClient, times(1)).executeQuery(anyString(), argThat(vars -> {
+            Map<String, Object> map = (Map<String, Object>) vars;
+            return "ANIME".equals(map.get("type"));
+        }));
+    }
+
+    @Test
+    void testGetNewAniList() {
+        List<AnilistResult> mockResults = createMockResults();
+        when(mockAniListClient.executeQuery(anyString(), anyMap()))
+            .thenReturn(mockResults);
+
+        List<AnilistResult> results = searchService.getNewAniList("ANIME");
+
+        assertNotNull(results);
+        verify(mockAniListClient, times(1)).executeQuery(anyString(), argThat(vars -> {
+            Map<String, Object> map = (Map<String, Object>) vars;
+            return "ANIME".equals(map.get("type"))
+                && map.containsKey("startDate")
+                && map.containsKey("endDate");
+        }));
+    }
+
+    @Test
+    void testGetComingSoonAniList() {
+        List<AnilistResult> mockResults = createMockResults();
+        when(mockAniListClient.executeQuery(anyString(), anyMap()))
+            .thenReturn(mockResults);
+
+        List<AnilistResult> results = searchService.getComingSoonAniList("ANIME");
+
+        assertNotNull(results);
+        verify(mockAniListClient, times(1)).executeQuery(anyString(), argThat(vars -> {
+            Map<String, Object> map = (Map<String, Object>) vars;
+            return "ANIME".equals(map.get("type"))
+                && map.containsKey("startDate")
+                && map.containsKey("endDate");
+        }));
+    }
+
     // Helper method to create mock results
     private List<AnilistResult> createMockResults() {
         List<AnilistResult> results = new ArrayList<>();
