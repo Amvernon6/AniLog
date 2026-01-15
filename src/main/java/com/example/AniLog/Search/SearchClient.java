@@ -38,6 +38,31 @@ public class SearchClient {
         return searchService.searchAniListById(id);
     }
 
+    @GetMapping("/trending/{type}")
+    public List<AnilistResult> getTrending(@PathVariable String type) {
+        return searchService.getTrendingAniList(type);
+    }
+
+    @GetMapping("/popular/{type}")
+    public List<AnilistResult> getPopular(@PathVariable String type) {
+        return searchService.getPopularAniList(type);
+    }
+
+    @GetMapping("/new/{type}")
+    public List<AnilistResult> getNew(@PathVariable String type) {
+        return searchService.getNewAniList(type);
+    }
+
+    @GetMapping("/comingsoon/{type}")
+    public List<AnilistResult> getComingSoon(@PathVariable String type) {
+        return searchService.getComingSoonAniList(type);
+    }
+
+    // @GetMapping("/genre/{genre}/{type}")
+    // public List<AnilistResult> getGenre(@PathVariable String genre, @PathVariable String type) {
+    //     return searchService.getGenreAniList(type, genre);
+    // }
+
     public static class SearchRequest {
         private String query;
         private String type;

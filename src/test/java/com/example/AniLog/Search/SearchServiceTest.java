@@ -276,11 +276,11 @@ class SearchServiceTest {
             null,
             null,
             null,
-            List.of(),
-            List.of(),
-            List.of(),
-            List.of(),
             null,
+            null,
+            List.of(),
+            List.of(),
+            List.of(),
             false
         );
         
@@ -299,12 +299,12 @@ class SearchServiceTest {
             null,
             null,
             null,
-            List.of(),
-            List.of(),
-            List.of(),
-            List.of(),
             null,
-            true
+            null,
+            List.of(),
+            List.of(),
+            List.of(),
+            false
         );
         
         results.add(result1);

@@ -14,4 +14,14 @@ public interface SearchInterface {
         String sortBy);
 
     List<AnilistResult> searchAniListById(int id);
+
+    List<AnilistResult> getTrendingAniList(String type);
+
+    List<AnilistResult> getPopularAniList(String type);
+
+    List<AnilistResult> getNewAniList(String type);
+
+    // List<AnilistResult> getGenreAniList(String type, String genre);
+
+    List<AnilistResult> getComingSoonAniList(String type);
 }

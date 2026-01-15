@@ -1,0 +1,314 @@
+/* Detail View Container */
+.detail-view {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.back-button {
+  background: transparent;
+  border: 1px solid #667eea;
+  color: #667eea;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 30px;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: #667eea;
+  color: white;
+  transform: translateX(-5px);
+}
+
+.media-type {
+  font-size: 0.95rem;
+  color: #b8c5d6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
+.detail-cover-image {
+  max-width: 300px;
+  height: auto;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 2px solid #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+/* Add to List and In Progress Buttons */
+.detail-view .add-to-list-button,
+.detail-view .in-progress-button {
+  display: block;
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.add-to-list-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+.add-to-list-button:hover:not(.added) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.add-to-list-button.added {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  cursor: default;
+}
+
+.add-to-list-button.added:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.in-progress-button {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.in-progress-button:hover:not(.added) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+.in-progress-button.added {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+  cursor: default;
+}
+
+/* Detail Info */
+.detail-info {
+  font-size: 0.9rem;
+  color: #b8c5d6;
+  margin: 20px 0;
+}
+
+.detail-info span {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+/* Description */
+.detail-content .description {
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 8px;
+  border-left: 4px solid #764ba2;
+}
+
+.detail-content .description h4 {
+  color: #764ba2;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+/* Episodes, Chapters, Volumes */
+.detail-content .episodes,
+.detail-content .chapters,
+.detail-content .volumes {
+  padding: 12px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 6px;
+  color: #b8c5d6;
+  margin: 12px 0;
+  border-left: 4px solid #667eea;
+  font-size: 1rem;
+}
+
+.detail-content .episodes strong,
+.detail-content .chapters strong,
+.detail-content .volumes strong {
+  color: #667eea;
+}
+
+/* Genres */
+.detail-content .genres {
+  margin: 30px 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.detail-content .genre-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  color: #b8c5d6;
+  font-size: 1rem;
+}
+
+.detail-content .genre-list strong {
+  color: #667eea;
+  margin-right: 10px;
+}
+
+/* Studios */
+.detail-content .studios {
+  padding: 15px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #667eea;
+  color: #b8c5d6;
+  font-size: 1rem;
+}
+
+.detail-content .studios strong {
+  color: #667eea;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Synonyms */
+.detail-content .synonyms {
+  padding: 15px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #667eea;
+  color: #b8c5d6;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.detail-content .synonyms strong {
+  color: #667eea;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Status */
+.detail-content .status {
+  padding: 15px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #667eea;
+  color: #b8c5d6;
+  font-size: 1rem;
+}
+
+.detail-content .status strong {
+  color: #667eea;
+}
+
+/* Status color variations */
+.detail-content .status-releasing {
+  background: rgba(34, 197, 94, 0.1);
+  border-left-color: #22c55e;
+}
+
+.detail-content .status-releasing strong {
+  color: #22c55e;
+}
+
+.detail-content .status-finished {
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: #3b82f6;
+}
+
+.detail-content .status-finished strong {
+  color: #3b82f6;
+}
+
+.detail-content .status-not_yet_released {
+  background: rgba(168, 85, 247, 0.1);
+  border-left-color: #a855f7;
+}
+
+.detail-content .status-not_yet_released strong {
+  color: #a855f7;
+}
+
+.detail-content .status-cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.detail-content .status-cancelled strong {
+  color: #ef4444;
+}
+
+.detail-content .status-hiatus {
+  background: rgba(251, 146, 60, 0.1);
+  border-left-color: #fb923c;
+}
+
+.detail-content .status-hiatus strong {
+  color: #fb923c;
+}
+
+/* Adult Content Warning */
+.detail-content .is-adult {
+  padding: 15px;
+  background: rgba(255, 99, 71, 0.15);
+  border: 2px solid #ff6347;
+  border-radius: 8px;
+  color: #ff7f5c;
+  font-weight: bold;
+  margin: 20px 0;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* Next Airing Episode */
+.detail-content .next-airing {
+  padding: 15px 20px;
+  background: rgba(102, 230, 230, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #66e6e6;
+  margin: 20px 0;
+  color: #b8c5d6;
+  font-size: 1rem;
+}
+
+.detail-content .next-airing strong {
+  color: #66e6e6;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .detail-view .add-to-list-button,
+  .detail-view .in-progress-button {
+    max-width: 100%;
+  }
+
+  .detail-content .description {
+    padding: 15px;
+  }
+}

@@ -207,14 +207,14 @@ class AniListClientTest {
             null,
             85,
             null,
+            null,
+            null,
             2024,
             "https://example.com/cover.jpg",
             "RELEASING",
             List.of(),
             List.of(),
             List.of(),
-            List.of(),
-            null,
             false
         );
         
@@ -250,11 +250,11 @@ class AniListClientTest {
             null,
             null,
             null,
+            null,
+            "AIRING",
             genres,
-            List.of(),
             studios,
             synonyms,
-            null,
             false
         );
         

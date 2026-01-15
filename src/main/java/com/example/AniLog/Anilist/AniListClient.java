@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.example.AniLog.Anilist.AnilistResult.NextAiringEpisode;
-import com.example.AniLog.Anilist.AnilistResult.StreamingEpisode;
 import com.example.AniLog.Anilist.AnilistResult.Title;
-import com.example.AniLog.Anilist.AnilistResult.Trailer;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -92,14 +90,14 @@ public class AniListClient {
                 Integer volumes = getInteger(item, "volumes");
                 Integer averageScore = getInteger(item, "averageScore");
                 NextAiringEpisode nextAiring = parseNextAiring(item);
+                Integer day = parseDay(item);
+                Integer month = parseMonth(item);
                 Integer year = parseYear(item);
                 String coverImageUrl = parseCoverImage(item);
                 String status = getString(item, "status");
                 List<String> genres = parseStringArray(item, "genres");
-                List<StreamingEpisode> streamingEpisodes = parseStreamingEpisodes(item);
                 List<String> studios = parseStudios(item);
                 List<String> synonyms = parseStringArray(item, "synonyms");
-                Trailer trailer = parseTrailer(item);
                 boolean isAdult = item.has("isAdult") && !item.get("isAdult").isJsonNull() && item.get("isAdult").getAsBoolean();
 
                 results.add(new AnilistResult(
@@ -113,14 +111,14 @@ public class AniListClient {
                         volumes,
                         averageScore,
                         nextAiring,
+                        day,
+                        month,
                         year,
                         coverImageUrl,
                         status,
                         genres,
-                        streamingEpisodes,
                         studios,
                         synonyms,
-                        trailer,
                         isAdult));
             }
         } catch (IOException e) {
@@ -151,6 +149,18 @@ public class AniListClient {
         return new NextAiringEpisode(episode, timeUntilAiring);
     }
 
+    private Integer parseDay(JsonObject item) {
+        if (!item.has("startDate") || !item.get("startDate").isJsonObject()) return null;
+        JsonObject sd = item.getAsJsonObject("startDate");
+        return getInteger(sd, "day");
+    }
+
+    private Integer parseMonth(JsonObject item) {
+        if (!item.has("startDate") || !item.get("startDate").isJsonObject()) return null;
+        JsonObject sd = item.getAsJsonObject("startDate");
+        return getInteger(sd, "month");
+    }
+
     private Integer parseYear(JsonObject item) {
         if (!item.has("startDate") || !item.get("startDate").isJsonObject()) return null;
         JsonObject sd = item.getAsJsonObject("startDate");
@@ -172,21 +182,6 @@ public class AniListClient {
         return list;
     }
 
-    private List<StreamingEpisode> parseStreamingEpisodes(JsonObject item) {
-        if (!item.has("streamingEpisodes") || !item.get("streamingEpisodes").isJsonArray()) return Collections.emptyList();
-        List<StreamingEpisode> list = new ArrayList<>();
-        for (JsonElement el : item.getAsJsonArray("streamingEpisodes")) {
-            if (!el.isJsonObject()) continue;
-            JsonObject se = el.getAsJsonObject();
-            list.add(new StreamingEpisode(
-                    getString(se, "site"),
-                    getString(se, "thumbnail"),
-                    getString(se, "title"),
-                    getString(se, "url")));
-        }
-        return list;
-    }
-
     private List<String> parseStudios(JsonObject item) {
         if (!item.has("studios") || !item.get("studios").isJsonObject()) return Collections.emptyList();
         JsonObject studios = item.getAsJsonObject("studios");
@@ -198,15 +193,6 @@ public class AniListClient {
             if (name != null && !name.isBlank()) list.add(name);
         }
         return list;
-    }
-
-    private Trailer parseTrailer(JsonObject item) {
-        if (!item.has("trailer") || !item.get("trailer").isJsonObject()) return null;
-        JsonObject t = item.getAsJsonObject("trailer");
-        String site = getString(t, "site");
-        String thumbnail = getString(t, "thumbnail");
-        if (site == null && thumbnail == null) return null;
-        return new Trailer(site, thumbnail);
     }
 
     private String getString(JsonObject obj, String key) {

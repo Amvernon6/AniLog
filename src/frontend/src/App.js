@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import './css/App.css';
 import Search from './components/Search';
-import Watchlist from './components/Watchlist';
 import Profile from './components/Profile';
+import Discover from './components/Discover';
 
 function App() {
   const [activeTab, setActiveTab] = useState('discover');
@@ -22,16 +22,9 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'discover':
-        return (
-          <div className="tab-content">
-            <h2>Welcome to AniLog</h2>
-            <p>Your personal anime and manga tracker</p>
-          </div>
-        );
+        return <Discover loggedIn={loggedIn} userData={userData} />;
       case 'search':
         return <Search loggedIn={loggedIn} userData={userData} />;
-      case 'watchlist':
-        return <Watchlist loggedIn={loggedIn} userData={userData} />;
       case 'library':
         return <Profile onLogin={handleLogin} />;
       default:
@@ -55,12 +48,6 @@ function App() {
           onClick={() => setActiveTab('search')}
         >
           Search
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'watchlist' ? 'active' : ''}`}
-          onClick={() => setActiveTab('watchlist')}
-        >
-          Watchlist
         </button>
         <button 
           className={`tab-button ${activeTab === 'library' ? 'active' : ''}`}
