@@ -323,11 +323,14 @@ const Discover = () => {
                                 <h3 className="item-title">
                                     {item.title?.english || item.title?.romaji || item.title?.native || 'Untitled'}
                                 </h3>
-                                {item.averageScore && (
-                                    <span className="item-score">
-                                        ★ {(item.averageScore / 10).toFixed(1)}
-                                    </span>
-                                )}
+                                <div className="item-metadata">
+                                    {item.averageScore && (
+                                        <span className="item-score">
+                                            ★ {(item.averageScore / 10).toFixed(1)}
+                                        </span>
+                                    )}
+                                    {item.adult && <span className="adult-badge">18+</span>}
+                                </div>
                             </div>
                         </div>
                     ))}

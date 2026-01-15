@@ -16,7 +16,10 @@ const TitleDetail = ({
         <div className="detail-view" data-testid="detail-view">
             <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
             <div className="detail-content">
-                <div className="media-type" data-testid="media-type">{selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}</div>
+                <div className="media-type" data-testid="media-type">
+                    {selectedItem.type} {selectedItem.format != null && selectedItem.format !== selectedItem.type && `• ${selectedItem.format}`}
+                    {selectedItem.adult && <span className="adult-badge">18+</span>}
+                </div>
                 <h2>{selectedItem.title?.english || selectedItem.title?.romaji || selectedItem.title?.nativeTitle || 'Error Getting Title'}</h2>
                 {selectedItem.coverImageUrl && <img src={selectedItem.coverImageUrl} alt={selectedItem.title?.english || selectedItem.title?.romaji} className="detail-cover-image" />}
                 {!inProgressItems.has(selectedItem.id) ? (

@@ -599,7 +599,10 @@ const Search = () => {
                     <ul data-testid="search-results-list">
                         {results.map((item, index) => (
                             <li key={index} data-testid={`result-item-${index}`} onClick={() => handleSelectItem(item)} className="result-item">
-                                <div className="media-type">{item.type} {item.format !== null && item.format !== item.type && `• ${item.format}`}</div>
+                                <div className="media-type">
+                                    {item.type} {item.format !== null && item.format !== item.type && `• ${item.format}`}
+                                    {item.adult && <span className="adult-badge">18+</span>}
+                                </div>
                                 <h3>{item.title?.english || item.title?.romaji || item.title?.nativeTitle || 'Error Getting Title'}</h3>
                                 {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title?.english || item.title?.romaji || item.title?.nativeTitle} className="cover-image" />}
                                 <div className="media-info">

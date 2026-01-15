@@ -96,6 +96,19 @@
   font-size: 0.85rem;
   color: #8892a0;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-item .adult-badge {
+  background-color: #dc2626;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .result-item .media-info {

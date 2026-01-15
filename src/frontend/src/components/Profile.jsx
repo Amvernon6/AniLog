@@ -27,7 +27,7 @@ const Profile = ({ onLogin }) => {
         favoriteAnime: '',
         favoriteManga: '',
         favoriteGenre: '',
-        age: ''
+        // age: ''
     });
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [userList, setUserList] = useState([]);
@@ -53,7 +53,7 @@ const Profile = ({ onLogin }) => {
         favoriteAnime: '',
         favoriteManga: '',
         favoriteGenre: '',
-        age: ''
+        // age: ''
     });
 
     // Drag-and-drop ranking state for all watched titles
@@ -455,7 +455,7 @@ const Profile = ({ onLogin }) => {
                     favoriteAnime: profileData.favoriteAnime || '',
                     favoriteManga: profileData.favoriteManga || '',
                     favoriteGenre: profileData.favoriteGenre || '',
-                    age: profileData.age || ''
+                    // age: profileData.age || ''
                 });
                 setOriginalUsername(profileData.username || '');
                 setOriginalEmail(profileData.emailAddress || '');
@@ -488,7 +488,7 @@ const Profile = ({ onLogin }) => {
                     emailAddress: signupEmailAddress,
                     username: signupUsername,
                     password: signupPassword,
-                    age: parseInt(signupAge, 10)
+                    // age: parseInt(signupAge, 10)
                 })
             });
 
@@ -618,7 +618,7 @@ const Profile = ({ onLogin }) => {
                 favoriteAnime: data.favoriteAnime || '',
                 favoriteManga: data.favoriteManga || '',
                 favoriteGenre: data.favoriteGenre || '',
-                age: data.age || ''
+                // age: data.age || ''
             });
             setOriginalUsername(data.username || '');
             setOriginalEmail(data.emailAddress || '');
@@ -668,7 +668,7 @@ const Profile = ({ onLogin }) => {
             favoriteAnime: '',
             favoriteManga: '',
             favoriteGenre: '',
-            age: ''
+            // age: ''
         });
         setEditedProfileData({
             bio: '',
@@ -678,7 +678,7 @@ const Profile = ({ onLogin }) => {
             favoriteAnime: '',
             favoriteManga: '',
             favoriteGenre: '',
-            age: ''
+            // age: ''
         });
         setIsEditing(false);
         setId(null);
@@ -754,9 +754,6 @@ const Profile = ({ onLogin }) => {
                             required
                             data-testid="signup-password-input"
                         />
-                        <div className="password-requirements">
-                            Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
-                        </div>
                         <input
                             type="password"
                             placeholder="Confirm Password"
@@ -765,7 +762,10 @@ const Profile = ({ onLogin }) => {
                             required
                             data-testid="signup-confirm-password-input"
                         />
-                        <input
+                        <div className="password-requirements">
+                            Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
+                        </div>
+                        {/* <input
                             type="number"
                             placeholder="Age"
                             value={signupAge}
@@ -774,7 +774,7 @@ const Profile = ({ onLogin }) => {
                             max="120"
                             required
                             data-testid="signup-age-input"
-                        />
+                        /> */}
                         {/* <div className="age-note">Used to provide age-appropriate content.</div> */}
                         <button id="signup-button" type="submit" disabled={isLoading || !isEmailAvailable || !isUsernameAvailable} data-testid="signup-submit-button">
                             {isLoading ? 'Signing up...' : 'Sign Up'}
@@ -1411,7 +1411,7 @@ const Profile = ({ onLogin }) => {
                                     </div>
                                     <div className="profile-info">
                                         <h2>{profileData.username}</h2>
-                                        {profileData.age && <p className="profile-age">Age: {profileData.age}</p>}
+                                        {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
                                         <div className="profile-actions">
                                             <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
                                                 Edit Profile
@@ -1544,7 +1544,7 @@ const Profile = ({ onLogin }) => {
                                         />
                                     </div>
                                     
-                                    <div className="form-group">
+                                    {/* <div className="form-group">
                                         <label>Age</label>
                                         <input
                                             type="number"
@@ -1555,7 +1555,7 @@ const Profile = ({ onLogin }) => {
                                             max="120"
                                             data-testid="age-input"
                                         />
-                                    </div>
+                                    </div> */}
                                     
                                     {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
                                     
