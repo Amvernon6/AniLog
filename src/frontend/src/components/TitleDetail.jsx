@@ -34,8 +34,8 @@ const TitleDetail = ({
                     )
                 ) : null}
                 {inProgressItems.has(selectedItem.id) ? (
-                    <button onClick={() => {}} className="in-progress-button added">
-                        ✓ In Progress
+                    <button onClick={() => {}} className={`in-progress-button added status-${inProgressItems.get(selectedItem.id).toLowerCase()}`}>
+                        {inProgressItems.get(selectedItem.id).replace(/_/g, ' ')}
                     </button>
                 ) : (
                     <button onClick={() => onAddToInProgress(selectedItem)} className="in-progress-button">

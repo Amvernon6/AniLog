@@ -84,7 +84,7 @@ const Search = () => {
     const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
     const [addedItems, setAddedItems] = useState(new Set());
     const [watchedItems, setWatchedItems] = useState(new Set());
-    const [inProgressItems, setInProgressItems] = useState(new Set());
+    const [inProgressItems, setInProgressItems] = useState(new Map());
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -122,9 +122,9 @@ const Search = () => {
             const addedItems = [...animeList, ...mangaList];
             const inProgressItems = watchedItems;
             const itemIds = new Set(addedItems.map(item => item.anilistId));
-            const watchedIds = new Set(inProgressItems.map(item => item.anilistId));
+            const watchedMap = new Map(inProgressItems.map(item => [item.anilistId, item.status]));
             setAddedItems(itemIds);
-            setInProgressItems(watchedIds);
+            setInProgressItems(watchedMap);
         }).catch(err => console.error('Error fetching user lists:', err));
     }, []);
 
@@ -360,7 +360,7 @@ const Search = () => {
             }).then(response => {
                 if (response.ok) {
                     showToast(`Added to in-progress ${item.type === 'ANIME' ? 'anime' : 'manga'} list!`, 'success');
-                    setInProgressItems(prev => new Set([...prev, item.id]));
+                    setInProgressItems(prev => new Map(prev).set(item.id, statusType));
                 } else {
                     showToast('Failed to add item to in-progress list.', 'error');
                 }
@@ -624,8 +624,8 @@ const Search = () => {
                                         )
                                     ) : null}
                                     {inProgressItems.has(item.id) ? (
-                                        <button onClick={(e) => e.stopPropagation()} className="in-progress-button added">
-                                            ✓ In Progress
+                                        <button onClick={(e) => e.stopPropagation()} className={`in-progress-button added status-${inProgressItems.get(item.id).toLowerCase()}`}>
+                                            {inProgressItems.get(item.id).replace(/_/g, ' ')}
                                         </button>
                                     ) : (
                                         <button onClick={(e) => { e.stopPropagation(); handleAddToInProgress(item); }} className="in-progress-button">

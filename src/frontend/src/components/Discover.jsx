@@ -63,7 +63,7 @@ const Discover = () => {
 
     const [activeTab, setActiveTab] = useState('anime');
     const [addedItems, setAddedItems] = useState(new Set());
-    const [inProgressItems, setInProgressItems] = useState(new Set());
+    const [inProgressItems, setInProgressItems] = useState(new Map());
     const [refreshing, setRefreshing] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const hasInitialized = useRef(false);
@@ -185,7 +185,8 @@ const Discover = () => {
             ]);
             const addedItemsCombined = [...animeList, ...mangaList];
             setAddedItems(new Set(addedItemsCombined.map(item => item.anilistId)));
-            setInProgressItems(new Set(watchedItems.map(item => item.anilistId)));
+            const inProgressMap = new Map(watchedItems.map(item => [item.anilistId, item.status]));
+            setInProgressItems(inProgressMap);
         }
     };
 
@@ -266,7 +267,7 @@ const Discover = () => {
             })
         }).then(response => {
             if (response.ok) {
-                setInProgressItems(prev => new Set([...prev, item.id]));
+                setInProgressItems(prev => new Map(prev).set(item.id, statusType));
                 handleRemoveFromList(item);
             }
         }).catch(err => console.error('Error adding to in-progress:', err));
