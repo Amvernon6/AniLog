@@ -1,6 +1,23 @@
 import React, {useState, useEffect} from "react";
 import '../css/profile.css';
 
+const genres = [
+    'Action',
+    'Adventure',
+    'Comedy',
+    'Drama',
+    'Fantasy',
+    'Horror',
+    'Mystery',
+    'Psychological',
+    'Romance',
+    'Sports',
+    'Sci-Fi',
+    'Slice of Life',
+    'Supernatural',
+    'Thriller'
+];
+
 const Profile = ({ onLogin }) => {
     const [id, setId] = useState(null);
     const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -9,7 +26,7 @@ const Profile = ({ onLogin }) => {
     const [signupUsername, setSignupUsername] = useState('');
     const [signupPassword, setSignupPassword] = useState('');
     const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
-    const [signupAge, setSignupAge] = useState('');
+    // const [signupAge, setSignupAge] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingList, setIsLoadingList] = useState(false);
@@ -37,9 +54,7 @@ const Profile = ({ onLogin }) => {
     const [isLoadingWatched, setIsLoadingWatched] = useState(false);
     const [watchedStatusFilter, setWatchedStatusFilter] = useState('ALL');
     const [selectedWatchedItem, setSelectedWatchedItem] = useState(null);
-    const [isEditingWatched, setIsEditingWatched] = useState(false);
     const [editWatchedData, setEditWatchedData] = useState({});
-    const [listItemsAsWatched, setListItemsAsWatched] = useState(new Set());
     const [listItemsAsInProgress, setListItemsAsInProgress] = useState(new Set());
     const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
     const [originalUsername, setOriginalUsername] = useState('');
@@ -50,8 +65,8 @@ const Profile = ({ onLogin }) => {
         avatarUrl: '',
         emailAddress: '',
         username: '',
-        favoriteAnime: '',
-        favoriteManga: '',
+        // favoriteAnime: '',
+        // favoriteManga: '',
         favoriteGenre: '',
         // age: ''
     });
@@ -129,6 +144,10 @@ const Profile = ({ onLogin }) => {
         // Auto-refresh list when list tab is active or list type changes
         if (LoggedIn && id && activeProfileTab === 'list') {
             handleGetUserList(activeListTab);
+        }
+
+        if (LoggedIn && id && activeProfileTab === 'profile'){
+            handleGetProfile(id);
         }
     }, [activeProfileTab, activeListTab]);
 
@@ -214,7 +233,7 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
-            const safeId = encodeURIComponent(id);
+            const safeId = localStorage.getItem('userId');
             const response = await makeAuthenticatedRequest(`/api/user/${safeId}/list/${type}`);
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -252,12 +271,9 @@ const Profile = ({ onLogin }) => {
         }
     };
 
-    const handleGetWatchedItems = async (type) => {
-        setIsLoadingWatched(true);
-        setError(null);
-
+    const fetchWatchedItemsData = async (type) => {
         try {
-            const safeId = encodeURIComponent(id);
+            const safeId = localStorage.getItem('userId');
             let url = `/api/user/${safeId}/watched/type/${type}`;
             
             // Add status filter if not ALL
@@ -270,37 +286,24 @@ const Profile = ({ onLogin }) => {
                 const errorData = await parseErrorResponse(response);
                 throw new Error(errorData.error || 'Failed to fetch watched items');
             }
-            const data = await response.json();
+            return await response.json();
+        } catch (err) {
+            setError(err.message);
+            return [];
+        }
+    };
+
+    const handleGetWatchedItems = async (type) => {
+        setIsLoadingWatched(true);
+        setError(null);
+
+        try {
+            const data = await fetchWatchedItemsData(type);
             setWatchedItems(data);
         } catch (err) {
             setError(err.message);
         } finally {
             setIsLoadingWatched(false);
-        }
-    };
-
-    const handleUpdateWatchedProgress = async (itemId, progress) => {
-        try {
-            const safeId = encodeURIComponent(id);
-            const safeAnilistId = encodeURIComponent(itemId);
-            const response = await makeAuthenticatedRequest(
-                `/api/user/${safeId}/watched/${safeAnilistId}/progress`,
-                {
-                    method: 'PATCH',
-                    body: JSON.stringify({ progress })
-                }
-            );
-
-            if (!response.ok) {
-                const errorData = await parseErrorResponse(response);
-                throw new Error(errorData.error || 'Failed to update progress');
-            }
-
-            // Refresh the watched items list
-            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
-            handleGetWatchedItems(type);
-        } catch (err) {
-            setError(err.message);
         }
     };
 
@@ -322,7 +325,6 @@ const Profile = ({ onLogin }) => {
             // Refresh the watched items list
             const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
             handleGetWatchedItems(type);
-            setIsEditingWatched(false);
             setSelectedWatchedItem(null);
         } catch (err) {
             setError(err.message);
@@ -335,7 +337,7 @@ const Profile = ({ onLogin }) => {
         }
 
         try {
-            const safeId = encodeURIComponent(id);
+            const safeId = localStorage.getItem('userId');
             const safeAnilistId = encodeURIComponent(anilistId);
             const response = await makeAuthenticatedRequest(
                 `/api/user/${safeId}/watched/${safeAnilistId}`,
@@ -390,12 +392,6 @@ const Profile = ({ onLogin }) => {
 
             setError(null);
             setListItemsAsInProgress(prev => new Set([...prev, item.anilistId]));
-            // Remove from the "to watch/read" list using the list/remove endpoint
-            setListItemsAsWatched(prev => {
-                const updated = new Set(prev);
-                updated.delete(item.anilistId);
-                return updated;
-            });
             
             try {
                 await makeAuthenticatedRequest(
@@ -452,8 +448,8 @@ const Profile = ({ onLogin }) => {
                     avatarUrl: profileData.avatarUrl || '',
                     emailAddress: profileData.emailAddress || '',
                     username: profileData.username || '',
-                    favoriteAnime: profileData.favoriteAnime || '',
-                    favoriteManga: profileData.favoriteManga || '',
+                    // favoriteAnime: profileData.favoriteAnime || '',
+                    // favoriteManga: profileData.favoriteManga || '',
                     favoriteGenre: profileData.favoriteGenre || '',
                     // age: profileData.age || ''
                 });
@@ -582,7 +578,6 @@ const Profile = ({ onLogin }) => {
         setSignupUsername('');
         setSignupPassword('');
         setSignupConfirmPassword('');
-        setSignupAge('');
         setError(null);
     };
 
@@ -603,6 +598,22 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
+            // Load watched items directly (without state updates) so we can get top rated anime/manga
+            const animeData = await fetchWatchedItemsData('ANIME');
+            const mangaData = await fetchWatchedItemsData('MANGA');
+            
+            // Get top anime from the fetched data
+            const animeRankingOrder = JSON.parse(localStorage.getItem('animeRankingOrder') || '[]');
+            const topAnime = animeRankingOrder.length > 0 
+                ? animeData.find(i => i.id === animeRankingOrder[0])
+                : null;
+            
+            // Get top manga from the fetched data
+            const mangaRankingOrder = JSON.parse(localStorage.getItem('mangaRankingOrder') || '[]');
+            const topManga = mangaRankingOrder.length > 0 
+                ? mangaData.find(i => i.id === mangaRankingOrder[0])
+                : mangaData[0];
+            
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`);
             if (!response.ok) {
@@ -615,8 +626,8 @@ const Profile = ({ onLogin }) => {
                 avatarUrl: data.avatarUrl || '',
                 emailAddress: data.emailAddress || '',
                 username: data.username || '',
-                favoriteAnime: data.favoriteAnime || '',
-                favoriteManga: data.favoriteManga || '',
+                favoriteAnime: topAnime?.title || '',
+                favoriteManga: topManga?.title || '',
                 favoriteGenre: data.favoriteGenre || '',
                 // age: data.age || ''
             });
@@ -637,7 +648,7 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
-            const safeId = encodeURIComponent(id);
+            const safeId = localStorage.getItem('userId');
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
                 method: 'PUT',
                 body: JSON.stringify(editedProfileData)
@@ -655,6 +666,23 @@ const Profile = ({ onLogin }) => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const getTopRatedAnime = () => {
+        const animeRankingOrder = localStorage.getItem('animeRankingOrder');
+        if (animeRankingOrder === null || JSON.parse(animeRankingOrder).length === 0) return null;
+        const topId = JSON.parse(animeRankingOrder)[0];
+        console.log('Top Anime ID:', topId);
+        console.log('Watched Items:', watchedItems);
+        console.log('Found Top Anime:', (watchedItems || []).find(i => i.id === topId));
+        return (watchedItems || []).find(i => i.id === topId);
+    };
+
+    const getTopRatedManga = () => {
+        const mangaRankingOrder = localStorage.getItem('mangaRankingOrder');
+        if (mangaRankingOrder === null || JSON.parse(mangaRankingOrder).length === 0) return null;
+        const topId = JSON.parse(mangaRankingOrder)[0];
+        return (watchedItems || []).find(i => i.id === topId);
     };
 
     const handleLogout = () => {
@@ -1053,12 +1081,10 @@ const Profile = ({ onLogin }) => {
                             {selectedWatchedItem && (
                                 <div className="modal-overlay" onClick={() => {
                                     setSelectedWatchedItem(null);
-                                    setIsEditingWatched(false);
                                 }}>
                                     <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
                                         <button onClick={() => {
                                             setSelectedWatchedItem(null);
-                                            setIsEditingWatched(false);
                                         }} className="modal-close">✕</button>
                                         
                                         <div className="watched-detail">
@@ -1289,12 +1315,10 @@ const Profile = ({ onLogin }) => {
                             {selectedWatchedItem && (
                                 <div className="modal-overlay" onClick={() => {
                                     setSelectedWatchedItem(null);
-                                    setIsEditingWatched(false);
                                 }}>
                                     <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
                                         <button onClick={() => {
                                             setSelectedWatchedItem(null);
-                                            setIsEditingWatched(false);
                                         }} className="modal-close">✕</button>
                                         
                                         <div className="watched-detail">
@@ -1429,19 +1453,19 @@ const Profile = ({ onLogin }) => {
                                         <p>{profileData.emailAddress || 'No email address provided.'}</p>
                                     </div>
                                     
-                                    <div className="profile-section">
+                                    {/* <div className="profile-section">
                                         <h3>Bio</h3>
                                         <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
-                                    </div>
+                                    </div> */}
                                     
                                     <div className="profile-section">
                                         <h3>Favorite Anime</h3>
-                                        <p>{profileData.favoriteAnime || 'Not specified'}</p>
+                                        <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
                                     </div>
 
                                     <div className="profile-section">
                                         <h3>Favorite Manga</h3>
-                                        <p>{profileData.favoriteManga || 'Not specified'}</p>
+                                        <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
                                     </div>
                                     
                                     <div className="profile-section">
@@ -1498,7 +1522,7 @@ const Profile = ({ onLogin }) => {
                                         />
                                     </div>
                                     
-                                    <div className="form-group">
+                                    {/* <div className="form-group">
                                         <label>Bio</label>
                                         <textarea
                                             placeholder="Tell us about yourself..."
@@ -1509,9 +1533,9 @@ const Profile = ({ onLogin }) => {
                                             data-testid="bio-textarea"
                                         />
                                         <span className="char-count">{editedProfileData.bio.length}/500</span>
-                                    </div>
+                                    </div> */}
                                     
-                                    <div className="form-group">
+                                    {/* <div className="form-group">
                                         <label>Favorite Anime</label>
                                         <input
                                             type="text"
@@ -1531,7 +1555,7 @@ const Profile = ({ onLogin }) => {
                                             onChange={(e) => setEditedProfileData({...editedProfileData, favoriteManga: e.target.value})}
                                             data-testid="favorite-manga-input"
                                         />
-                                    </div>
+                                    </div> */}
                                     
                                     <div className="form-group">
                                         <label>Favorite Genres</label>
