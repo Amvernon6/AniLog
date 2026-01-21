@@ -45,7 +45,7 @@ public class ProfileClient {
         private String emailAddress;
         private String username;
         private String favoriteAnime;
-        private String favoriteGenre;
+        private String[] favoriteGenres;
         private String favoriteManga;
         private Integer age;
 
@@ -89,12 +89,12 @@ public class ProfileClient {
             this.favoriteAnime = favoriteAnime;
         }
 
-        public String getFavoriteGenre() {
-            return favoriteGenre;
+        public String[] getFavoriteGenres() {
+            return favoriteGenres;
         }
 
-        public void setFavoriteGenre(String favoriteGenre) {
-            this.favoriteGenre = favoriteGenre;
+        public void setFavoriteGenres(String[] favoriteGenres) {
+            this.favoriteGenres = favoriteGenres;
         }
 
         public String getFavoriteManga() {

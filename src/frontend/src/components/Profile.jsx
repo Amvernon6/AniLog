@@ -43,7 +43,7 @@ const Profile = ({ onLogin }) => {
         username: '',
         favoriteAnime: '',
         favoriteManga: '',
-        favoriteGenre: '',
+        favoriteGenres: [],
         // age: ''
     });
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
@@ -67,7 +67,7 @@ const Profile = ({ onLogin }) => {
         username: '',
         // favoriteAnime: '',
         // favoriteManga: '',
-        favoriteGenre: '',
+        favoriteGenres: [],
         // age: ''
     });
 
@@ -450,7 +450,7 @@ const Profile = ({ onLogin }) => {
                     username: profileData.username || '',
                     // favoriteAnime: profileData.favoriteAnime || '',
                     // favoriteManga: profileData.favoriteManga || '',
-                    favoriteGenre: profileData.favoriteGenre || '',
+                    favoriteGenres: profileData.favoriteGenres || [],
                     // age: profileData.age || ''
                 });
                 setOriginalUsername(profileData.username || '');
@@ -628,7 +628,7 @@ const Profile = ({ onLogin }) => {
                 username: data.username || '',
                 favoriteAnime: topAnime?.title || '',
                 favoriteManga: topManga?.title || '',
-                favoriteGenre: data.favoriteGenre || '',
+                favoriteGenres: data.favoriteGenres || [],
                 // age: data.age || ''
             });
             setOriginalUsername(data.username || '');
@@ -668,21 +668,13 @@ const Profile = ({ onLogin }) => {
         }
     };
 
-    const getTopRatedAnime = () => {
-        const animeRankingOrder = localStorage.getItem('animeRankingOrder');
-        if (animeRankingOrder === null || JSON.parse(animeRankingOrder).length === 0) return null;
-        const topId = JSON.parse(animeRankingOrder)[0];
-        console.log('Top Anime ID:', topId);
-        console.log('Watched Items:', watchedItems);
-        console.log('Found Top Anime:', (watchedItems || []).find(i => i.id === topId));
-        return (watchedItems || []).find(i => i.id === topId);
-    };
-
-    const getTopRatedManga = () => {
-        const mangaRankingOrder = localStorage.getItem('mangaRankingOrder');
-        if (mangaRankingOrder === null || JSON.parse(mangaRankingOrder).length === 0) return null;
-        const topId = JSON.parse(mangaRankingOrder)[0];
-        return (watchedItems || []).find(i => i.id === topId);
+    const toggleFavoriteGenre = (genre) => {
+        setEditedProfileData(prev => {
+            const current = prev.favoriteGenres || [];
+            const exists = current.includes(genre);
+            const nextGenres = exists ? current.filter(g => g !== genre) : [...current, genre];
+            return { ...prev, favoriteGenres: nextGenres };
+        });
     };
 
     const handleLogout = () => {
@@ -695,7 +687,7 @@ const Profile = ({ onLogin }) => {
             username: '',
             favoriteAnime: '',
             favoriteManga: '',
-            favoriteGenre: '',
+            favoriteGenres: [],
             // age: ''
         });
         setEditedProfileData({
@@ -705,7 +697,7 @@ const Profile = ({ onLogin }) => {
             username: '',
             favoriteAnime: '',
             favoriteManga: '',
-            favoriteGenre: '',
+            favoriteGenres: [],
             // age: ''
         });
         setIsEditing(false);
@@ -1470,7 +1462,10 @@ const Profile = ({ onLogin }) => {
                                     
                                     <div className="profile-section">
                                         <h3>Favorite Genres</h3>
-                                        <p>{profileData.favoriteGenre || 'Not specified'}</p>
+                                        <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
+                                            ? profileData.favoriteGenres.join(', ')
+                                            : (profileData.favoriteGenres || 'Not specified')}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -1559,13 +1554,31 @@ const Profile = ({ onLogin }) => {
                                     
                                     <div className="form-group">
                                         <label>Favorite Genres</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g., Action, Romance, Comedy"
-                                            value={editedProfileData.favoriteGenre}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteGenre: e.target.value})}
-                                            data-testid="favorite-genre-input"
-                                        />
+                                        <div className="genre-button-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {genres.map((genre) => {
+                                                const isSelected = (editedProfileData.favoriteGenres || []).includes(genre);
+                                                return (
+                                                    <button
+                                                        key={genre}
+                                                        type="button"
+                                                        onClick={() => toggleFavoriteGenre(genre)}
+                                                        className={`genre-button ${isSelected ? 'selected' : ''}`}
+                                                        data-testid={`favorite-genre-${genre}`}
+                                                        style={{
+                                                            padding: '6px 10px',
+                                                            borderRadius: '16px',
+                                                            border: '1px solid #ccc',
+                                                            backgroundColor: isSelected ? '#667eea' : '#f5f5f5',
+                                                            color: isSelected ? '#fff' : '#333',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 120ms ease',
+                                                        }}
+                                                    >
+                                                        {genre}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                     
                                     {/* <div className="form-group">

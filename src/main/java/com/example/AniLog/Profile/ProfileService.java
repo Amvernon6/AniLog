@@ -37,8 +37,8 @@ public class ProfileService {
         if (request.getFavoriteAnime() != null) {
             user.setFavoriteAnime(request.getFavoriteAnime());
         }
-        if (request.getFavoriteGenre() != null) {
-            user.setFavoriteGenre(request.getFavoriteGenre());
+        if (request.getFavoriteGenres() != null) {
+            user.setFavoriteGenres(request.getFavoriteGenres());
         }
         if (request.getFavoriteManga() != null) {
             user.setFavoriteManga(request.getFavoriteManga());

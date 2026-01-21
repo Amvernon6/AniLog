@@ -37,7 +37,7 @@ public class User {
     private String favoriteAnime;
 
     @Column
-    private String favoriteGenre;
+    private String[] favoriteGenres;
 
     @Column
     private String favoriteManga;
@@ -106,12 +106,12 @@ public class User {
         this.favoriteAnime = favoriteAnime;
     }
 
-    public String getFavoriteGenre() {
-        return favoriteGenre;
+    public String[] getFavoriteGenres() {
+        return favoriteGenres;
     }
 
-    public void setFavoriteGenre(String favoriteGenre) {
-        this.favoriteGenre = favoriteGenre;
+    public void setFavoriteGenres(String[] favoriteGenres) {
+        this.favoriteGenres = favoriteGenres;
     }
 
     public String getFavoriteManga() {
