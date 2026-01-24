@@ -2,6 +2,8 @@
 
 AniLog is a web app for anime and manga fans to **track, review, and discover** their favorite series'. Inspired by platforms like Letterboxd, AniLog focuses exclusively on anime and manga, helping users manage their collections and explore new content.
 
+Link to website: https://anilog-lb1p.onrender.com/
+
 ---
 
 ## 🛠 Tech Stack
@@ -20,12 +22,6 @@ AniLog is a web app for anime and manga fans to **track, review, and discover** 
 - **Reading/Watch lists & Watched/Read Lists:** Track series users want to watch or have completed, with ranking functionality coming soon. ⭐
 - **Anime & Manga Rankings:** Rank titles you’ve watched or read to build your personal leaderboard. 📚
 - **Watchlist & Readlist:** Keep track of what you’re currently watching, planning to watch, or have completed. ✅
-
-<img width="1874" height="899" alt="image" src="https://github.com/user-attachments/assets/84682ed6-094d-4750-9be2-f85214ea4768" />
-
-<img width="1889" height="912" alt="image" src="https://github.com/user-attachments/assets/e0d82fbf-42aa-49a0-a443-1d9990065834" />
-
-<img width="1786" height="793" alt="Screenshot 2026-01-16 123330" src="https://github.com/user-attachments/assets/3d53875f-fec0-4384-8a39-7bd61652732f" />
 
 ---
 
