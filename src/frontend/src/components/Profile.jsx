@@ -606,7 +606,7 @@ const Profile = ({ onLogin }) => {
             const animeRankingOrder = JSON.parse(localStorage.getItem('animeRankingOrder') || '[]');
             const topAnime = animeRankingOrder.length > 0 
                 ? animeData.find(i => i.id === animeRankingOrder[0])
-                : null;
+                : animeData[0];
             
             // Get top manga from the fetched data
             const mangaRankingOrder = JSON.parse(localStorage.getItem('mangaRankingOrder') || '[]');
