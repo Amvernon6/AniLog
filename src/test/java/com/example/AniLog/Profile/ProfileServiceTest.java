@@ -1,5 +1,6 @@
 package com.example.AniLog.Profile;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -128,7 +129,7 @@ class ProfileServiceTest {
         assertEquals("newemail@example.com", result.getEmailAddress());
         assertEquals("newusername", result.getUsername());
         String[] expectedGenres = {"Action", "Drama"};
-        assertEquals(expectedGenres, result.getFavoriteGenres());
+        assertArrayEquals(expectedGenres, result.getFavoriteGenres());
         assertEquals("One Piece", result.getFavoriteManga());
         assertEquals(30, result.getAge());
     }

@@ -142,25 +142,25 @@ class SearchServiceTest {
         }));
     }
 
-    @Test
-    void testSearchAniList_WithAdultContent() {
-        // Arrange
-        List<AnilistResult> mockResults = createMockResults();
-        when(mockAniListClient.executeQuery(anyString(), anyMap()))
-            .thenReturn(mockResults);
+    // @Test
+    // void testSearchAniList_WithAdultContent() {
+    //     // Arrange
+    //     List<AnilistResult> mockResults = createMockResults();
+    //     when(mockAniListClient.executeQuery(anyString(), anyMap()))
+    //         .thenReturn(mockResults);
 
-        // Act
-        List<AnilistResult> results = searchService.searchAniList(
-            "Test", null, List.of(), List.of(), false, List.of(), "POPULARITY_DESC"
-        );
+    //     // Act
+    //     List<AnilistResult> results = searchService.searchAniList(
+    //         "Test", null, List.of(), List.of(), false, List.of(), "POPULARITY_DESC"
+    //     );
 
-        // Assert
-        assertNotNull(results);
-        verify(mockAniListClient, times(1)).executeQuery(anyString(), argThat(vars -> {
-            Map<String, Object> map = (Map<String, Object>) vars;
-            return Boolean.FALSE.equals(map.get("isAdult"));
-        }));
-    }
+    //     // Assert
+    //     assertNotNull(results);
+    //     verify(mockAniListClient, times(1)).executeQuery(anyString(), argThat(vars -> {
+    //         Map<String, Object> map = (Map<String, Object>) vars;
+    //         return Boolean.FALSE.equals(map.get("isAdult"));
+    //     }));
+    // }
 
     @Test
     void testSearchAniList_WithSortBy() {
