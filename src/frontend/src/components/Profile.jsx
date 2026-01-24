@@ -76,6 +76,8 @@ const Profile = ({ onLogin }) => {
     const [mangaRankingOrder, setMangaRankingOrder] = useState([]);
     const [draggingAnimeIndex, setDraggingAnimeIndex] = useState(null);
     const [draggingMangaIndex, setDraggingMangaIndex] = useState(null);
+    const [dragOverAnimeIndex, setDragOverAnimeIndex] = useState(null);
+    const [dragOverMangaIndex, setDragOverMangaIndex] = useState(null);
     
     // View switching state
     const [animeWatchedView, setAnimeWatchedView] = useState('watched'); // 'watched' or 'rankings'
@@ -112,13 +114,22 @@ const Profile = ({ onLogin }) => {
         return next;
     };
 
+    const handleAnimeDragOver = (e, index) => {
+        e.preventDefault();
+        if (draggingAnimeIndex !== null && draggingAnimeIndex !== index) {
+            setDragOverAnimeIndex(index);
+            // Real-time visual reordering
+            setAnimeRankingOrder(prev => reorderArray(prev, draggingAnimeIndex, index));
+            setDraggingAnimeIndex(index);
+        }
+    };
+
     const handleAnimeDrop = (toIndex) => {
-        setAnimeRankingOrder(prev => {
-            const next = reorderArray(prev, draggingAnimeIndex, toIndex);
-            localStorage.setItem('animeRankingOrder', JSON.stringify(next));
-            return next;
-        });
+        if (draggingAnimeIndex !== null) {
+            localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
+        }
         setDraggingAnimeIndex(null);
+        setDragOverAnimeIndex(null);
     };
 
     // Touch event handlers for mobile anime rankings
@@ -128,27 +139,46 @@ const Profile = ({ onLogin }) => {
 
     const handleAnimeTouchMove = (e) => {
         e.preventDefault(); // Prevent scrolling while dragging
+        // Detect which item is under the touch point
+        const touch = e.touches[0];
+        const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+        const rankingItem = elementAtPoint?.closest('.ranking-item');
+        if (rankingItem) {
+            const items = Array.from(rankingItem.parentElement.children);
+            const index = items.indexOf(rankingItem);
+            if (index !== -1 && index !== draggingAnimeIndex) {
+                setDragOverAnimeIndex(index);
+                setAnimeRankingOrder(prev => reorderArray(prev, draggingAnimeIndex, index));
+                setDraggingAnimeIndex(index);
+            }
+        }
     };
 
     const handleAnimeTouchEnd = (e, toIndex) => {
         e.preventDefault();
-        if (draggingAnimeIndex !== null && draggingAnimeIndex !== toIndex) {
-            setAnimeRankingOrder(prev => {
-                const next = reorderArray(prev, draggingAnimeIndex, toIndex);
-                localStorage.setItem('animeRankingOrder', JSON.stringify(next));
-                return next;
-            });
+        if (draggingAnimeIndex !== null) {
+            localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
         }
         setDraggingAnimeIndex(null);
+        setDragOverAnimeIndex(null);
+    };
+
+    const handleMangaDragOver = (e, index) => {
+        e.preventDefault();
+        if (draggingMangaIndex !== null && draggingMangaIndex !== index) {
+            setDragOverMangaIndex(index);
+            // Real-time visual reordering
+            setMangaRankingOrder(prev => reorderArray(prev, draggingMangaIndex, index));
+            setDraggingMangaIndex(index);
+        }
     };
 
     const handleMangaDrop = (toIndex) => {
-        setMangaRankingOrder(prev => {
-            const next = reorderArray(prev, draggingMangaIndex, toIndex);
-            localStorage.setItem('mangaRankingOrder', JSON.stringify(next));
-            return next;
-        });
+        if (draggingMangaIndex !== null) {
+            localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
+        }
         setDraggingMangaIndex(null);
+        setDragOverMangaIndex(null);
     };
 
     // Touch event handlers for mobile manga rankings
@@ -158,18 +188,28 @@ const Profile = ({ onLogin }) => {
 
     const handleMangaTouchMove = (e) => {
         e.preventDefault(); // Prevent scrolling while dragging
+        // Detect which item is under the touch point
+        const touch = e.touches[0];
+        const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+        const rankingItem = elementAtPoint?.closest('.ranking-item');
+        if (rankingItem) {
+            const items = Array.from(rankingItem.parentElement.children);
+            const index = items.indexOf(rankingItem);
+            if (index !== -1 && index !== draggingMangaIndex) {
+                setDragOverMangaIndex(index);
+                setMangaRankingOrder(prev => reorderArray(prev, draggingMangaIndex, index));
+                setDraggingMangaIndex(index);
+            }
+        }
     };
 
     const handleMangaTouchEnd = (e, toIndex) => {
         e.preventDefault();
-        if (draggingMangaIndex !== null && draggingMangaIndex !== toIndex) {
-            setMangaRankingOrder(prev => {
-                const next = reorderArray(prev, draggingMangaIndex, toIndex);
-                localStorage.setItem('mangaRankingOrder', JSON.stringify(next));
-                return next;
-            });
+        if (draggingMangaIndex !== null) {
+            localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
         }
         setDraggingMangaIndex(null);
+        setDragOverMangaIndex(null);
     };
 
     useEffect(() => {
@@ -1032,15 +1072,23 @@ const Profile = ({ onLogin }) => {
                                             return (
                                                 <li
                                                     key={id}
-                                                    className="ranking-item"
+                                                    className={`ranking-item ${draggingAnimeIndex === index ? 'dragging' : ''}`}
                                                     draggable
                                                     onDragStart={() => setDraggingAnimeIndex(index)}
-                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDragOver={(e) => handleAnimeDragOver(e, index)}
                                                     onDrop={() => handleAnimeDrop(index)}
+                                                    onDragEnd={() => handleAnimeDrop(index)}
                                                     onTouchStart={() => handleAnimeTouchStart(index)}
                                                     onTouchMove={handleAnimeTouchMove}
                                                     onTouchEnd={(e) => handleAnimeTouchEnd(e, index)}
-                                                    style={{ cursor: 'move', touchAction: 'none' }}
+                                                    style={{ 
+                                                        cursor: 'move', 
+                                                        touchAction: 'none',
+                                                        opacity: draggingAnimeIndex === index ? 0.5 : 1,
+                                                        transform: draggingAnimeIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                                        transition: 'all 0.2s ease',
+                                                        boxShadow: draggingAnimeIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
+                                                    }}
                                                 >
                                                     <span className="rank-num">{index + 1}</span>
                                                     {item.coverImageUrl && (
@@ -1272,15 +1320,23 @@ const Profile = ({ onLogin }) => {
                                             return (
                                                 <li
                                                     key={id}
-                                                    className="ranking-item"
+                                                    className={`ranking-item ${draggingMangaIndex === index ? 'dragging' : ''}`}
                                                     draggable
                                                     onDragStart={() => setDraggingMangaIndex(index)}
-                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDragOver={(e) => handleMangaDragOver(e, index)}
                                                     onDrop={() => handleMangaDrop(index)}
+                                                    onDragEnd={() => handleMangaDrop(index)}
                                                     onTouchStart={() => handleMangaTouchStart(index)}
                                                     onTouchMove={handleMangaTouchMove}
                                                     onTouchEnd={(e) => handleMangaTouchEnd(e, index)}
-                                                    style={{ cursor: 'move', touchAction: 'none' }}
+                                                    style={{ 
+                                                        cursor: 'move', 
+                                                        touchAction: 'none',
+                                                        opacity: draggingMangaIndex === index ? 0.5 : 1,
+                                                        transform: draggingMangaIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                                        transition: 'all 0.2s ease',
+                                                        boxShadow: draggingMangaIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
+                                                    }}
                                                 >
                                                     <span className="rank-num">{index + 1}</span>
                                                     {item.coverImageUrl && (
