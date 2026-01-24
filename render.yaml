@@ -17,7 +17,6 @@ services:
       - key: JWT_SECRET
         sync: false
 
-  - type: pserv
-    name: anilog-db
+databases:
+  - name: anilog-db
     plan: free
-    ipAllowList: []
