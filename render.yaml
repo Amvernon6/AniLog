@@ -19,8 +19,5 @@ services:
 
   - type: pserv
     name: anilog-db
-    env: postgres
     plan: free
-    databaseName: anilogdb_prod
-    databaseUser: anilog_prod_user
     ipAllowList: []
