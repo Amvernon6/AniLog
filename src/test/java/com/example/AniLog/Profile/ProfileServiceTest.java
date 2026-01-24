@@ -110,7 +110,8 @@ class ProfileServiceTest {
         request.setEmailAddress("newemail@example.com");
         request.setUsername("newusername");
         request.setFavoriteAnime("Attack on Titan");
-        request.setFavoriteGenre("Action, Drama");
+        String [] favoriteGenres = {"Action", "Drama"};
+        request.setFavoriteGenres(favoriteGenres);
         request.setFavoriteManga("One Piece");
         request.setAge(30);
 
@@ -126,8 +127,8 @@ class ProfileServiceTest {
         assertEquals("https://example.com/avatar.jpg", result.getAvatarUrl());
         assertEquals("newemail@example.com", result.getEmailAddress());
         assertEquals("newusername", result.getUsername());
-        assertEquals("Attack on Titan", result.getFavoriteAnime());
-        assertEquals("Action, Drama", result.getFavoriteGenre());
+        String[] expectedGenres = {"Action", "Drama"};
+        assertEquals(expectedGenres, result.getFavoriteGenres());
         assertEquals("One Piece", result.getFavoriteManga());
         assertEquals(30, result.getAge());
     }
@@ -250,7 +251,8 @@ class ProfileServiceTest {
         user.setBio("Test bio");
         user.setAvatarUrl("https://example.com/avatar.jpg");
         user.setFavoriteAnime("Test Anime");
-        user.setFavoriteGenre("Action");
+        String[] favoriteGenres = {"Action"};
+        user.setFavoriteGenres(favoriteGenres);
         user.setFavoriteManga("Test Manga");
         return user;
     }

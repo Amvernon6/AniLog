@@ -47,6 +47,29 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+tasks.register('buildFrontend') {
+	doLast {
+		exec {
+			workingDir = file('src/frontend')
+			if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+				commandLine 'cmd', '/c', 'npm', 'ci'
+			} else {
+				commandLine 'npm', 'ci'
+			}
+		}
+		exec {
+			workingDir = file('src/frontend')
+			if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+				commandLine 'cmd', '/c', 'npm', 'run', 'build'
+			} else {
+				commandLine 'npm', 'run', 'build'
+			}
+		}
+	}
+}
+
+bootJar.dependsOn 'buildFrontend'
+
 tasks.named('bootRun') {
 	// Load .env file if it exists
 	def envFile = file('.env')
