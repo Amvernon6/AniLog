@@ -121,12 +121,54 @@ const Profile = ({ onLogin }) => {
         setDraggingAnimeIndex(null);
     };
 
+    // Touch event handlers for mobile anime rankings
+    const handleAnimeTouchStart = (index) => {
+        setDraggingAnimeIndex(index);
+    };
+
+    const handleAnimeTouchMove = (e) => {
+        e.preventDefault(); // Prevent scrolling while dragging
+    };
+
+    const handleAnimeTouchEnd = (e, toIndex) => {
+        e.preventDefault();
+        if (draggingAnimeIndex !== null && draggingAnimeIndex !== toIndex) {
+            setAnimeRankingOrder(prev => {
+                const next = reorderArray(prev, draggingAnimeIndex, toIndex);
+                localStorage.setItem('animeRankingOrder', JSON.stringify(next));
+                return next;
+            });
+        }
+        setDraggingAnimeIndex(null);
+    };
+
     const handleMangaDrop = (toIndex) => {
         setMangaRankingOrder(prev => {
             const next = reorderArray(prev, draggingMangaIndex, toIndex);
             localStorage.setItem('mangaRankingOrder', JSON.stringify(next));
             return next;
         });
+        setDraggingMangaIndex(null);
+    };
+
+    // Touch event handlers for mobile manga rankings
+    const handleMangaTouchStart = (index) => {
+        setDraggingMangaIndex(index);
+    };
+
+    const handleMangaTouchMove = (e) => {
+        e.preventDefault(); // Prevent scrolling while dragging
+    };
+
+    const handleMangaTouchEnd = (e, toIndex) => {
+        e.preventDefault();
+        if (draggingMangaIndex !== null && draggingMangaIndex !== toIndex) {
+            setMangaRankingOrder(prev => {
+                const next = reorderArray(prev, draggingMangaIndex, toIndex);
+                localStorage.setItem('mangaRankingOrder', JSON.stringify(next));
+                return next;
+            });
+        }
         setDraggingMangaIndex(null);
     };
 
@@ -995,6 +1037,10 @@ const Profile = ({ onLogin }) => {
                                                     onDragStart={() => setDraggingAnimeIndex(index)}
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={() => handleAnimeDrop(index)}
+                                                    onTouchStart={() => handleAnimeTouchStart(index)}
+                                                    onTouchMove={handleAnimeTouchMove}
+                                                    onTouchEnd={(e) => handleAnimeTouchEnd(e, index)}
+                                                    style={{ cursor: 'move', touchAction: 'none' }}
                                                 >
                                                     <span className="rank-num">{index + 1}</span>
                                                     {item.coverImageUrl && (
@@ -1231,6 +1277,10 @@ const Profile = ({ onLogin }) => {
                                                     onDragStart={() => setDraggingMangaIndex(index)}
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={() => handleMangaDrop(index)}
+                                                    onTouchStart={() => handleMangaTouchStart(index)}
+                                                    onTouchMove={handleMangaTouchMove}
+                                                    onTouchEnd={(e) => handleMangaTouchEnd(e, index)}
+                                                    style={{ cursor: 'move', touchAction: 'none' }}
                                                 >
                                                     <span className="rank-num">{index + 1}</span>
                                                     {item.coverImageUrl && (
