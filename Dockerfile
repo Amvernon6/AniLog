@@ -10,7 +10,8 @@ RUN npm run build
 FROM gradle:8-jdk17 AS backend-build
 WORKDIR /app
 COPY . .
-RUN gradle build -x test
+# Skip buildFrontend task since frontend is built separately
+RUN gradle build -x test -x buildFrontend
 
 # Runtime
 FROM eclipse-temurin:17-jre-alpine
