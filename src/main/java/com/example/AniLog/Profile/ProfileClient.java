@@ -26,6 +26,15 @@ public class ProfileClient {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/safe/{id}")
+    public ResponseEntity<?> getSafeProfile(@PathVariable long id) {
+        User user = profileService.getSafeProfile(id);
+        if (user == null) {
+            return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
+        }
+        return ResponseEntity.ok(user);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProfile(@PathVariable long id, @RequestBody ProfileUpdateRequest request) {
         try {
@@ -114,7 +123,7 @@ public class ProfileClient {
         public void setAge(Integer age) {
             this.age = age;
         }
-        
+
         public int[] getAnimeRankingOrder() {
             return animeRankingOrder;
         }

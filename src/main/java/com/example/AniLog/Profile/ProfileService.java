@@ -15,6 +15,24 @@ public class ProfileService {
         return userRepository.findById(id);
     }
 
+    public User getSafeProfile(long id) {
+        User user = userRepository.findById(id);
+        if (user == null) {
+            return null;
+        }
+        User safeUser = new User();
+        safeUser.setId(user.getId());
+        safeUser.setUsername(user.getUsername());
+        safeUser.setBio(user.getBio());
+        safeUser.setAvatarUrl(user.getAvatarUrl());
+        safeUser.setFavoriteAnime(user.getFavoriteAnime());
+        safeUser.setFavoriteGenres(user.getFavoriteGenres());
+        safeUser.setFavoriteManga(user.getFavoriteManga());
+        safeUser.setAnimeRankingOrder(user.getAnimeRankingOrder());
+        safeUser.setMangaRankingOrder(user.getMangaRankingOrder());
+        return safeUser;
+    }
+
     @Transactional
     public User updateProfile(long id, ProfileClient.ProfileUpdateRequest request) {
         User user = userRepository.findById(id);
