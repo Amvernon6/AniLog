@@ -68,6 +68,8 @@ const Profile = ({ onLogin }) => {
         // favoriteAnime: '',
         // favoriteManga: '',
         favoriteGenres: [],
+        animeRankingOrder: [],
+        mangaRankingOrder: []
         // age: ''
     });
 
@@ -104,6 +106,11 @@ const Profile = ({ onLogin }) => {
             ...mangaIds.filter(id => !savedMangaOrder.includes(id))
         ];
         setMangaRankingOrder(reconciledMangaOrder);
+        setEditedProfileData(prev => ({
+            ...prev,
+            animeRankingOrder: savedAnimeOrder,
+            mangaRankingOrder: savedMangaOrder
+        }));
     }, [watchedItems]);
 
     const reorderArray = (arr, fromIndex, toIndex) => {
@@ -127,6 +134,12 @@ const Profile = ({ onLogin }) => {
     const handleAnimeDrop = (toIndex) => {
         if (draggingAnimeIndex !== null) {
             localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
+            const updatedData = {
+                ...editedProfileData,
+                animeRankingOrder: animeRankingOrder
+            };
+            setEditedProfileData(updatedData);
+            handleProfileUpdate(null, updatedData);
         }
         setDraggingAnimeIndex(null);
         setDragOverAnimeIndex(null);
@@ -158,6 +171,12 @@ const Profile = ({ onLogin }) => {
         e.preventDefault();
         if (draggingAnimeIndex !== null) {
             localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
+            const updatedData = {
+                ...editedProfileData,
+                animeRankingOrder: animeRankingOrder
+            };
+            setEditedProfileData(updatedData);
+            handleProfileUpdate(null, updatedData);
         }
         setDraggingAnimeIndex(null);
         setDragOverAnimeIndex(null);
@@ -176,6 +195,12 @@ const Profile = ({ onLogin }) => {
     const handleMangaDrop = (toIndex) => {
         if (draggingMangaIndex !== null) {
             localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
+            const updatedData = {
+                ...editedProfileData,
+                mangaRankingOrder: mangaRankingOrder
+            };
+            setEditedProfileData(updatedData);
+            handleProfileUpdate(null, updatedData);
         }
         setDraggingMangaIndex(null);
         setDragOverMangaIndex(null);
@@ -207,6 +232,12 @@ const Profile = ({ onLogin }) => {
         e.preventDefault();
         if (draggingMangaIndex !== null) {
             localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
+            const updatedData = {
+                ...editedProfileData,
+                mangaRankingOrder: mangaRankingOrder
+            };
+            setEditedProfileData(updatedData);
+            handleProfileUpdate(null, updatedData);
         }
         setDraggingMangaIndex(null);
         setDragOverMangaIndex(null);
@@ -724,16 +755,18 @@ const Profile = ({ onLogin }) => {
         }
     };
 
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
+    const handleProfileUpdate = async (e, updatedData = null) => {
+        e?.preventDefault();
         setIsLoading(true);
         setError(null);
+
+        const dataToSend = updatedData || editedProfileData;
 
         try {
             const safeId = localStorage.getItem('userId');
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
                 method: 'PUT',
-                body: JSON.stringify(editedProfileData)
+                body: JSON.stringify(dataToSend)
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);

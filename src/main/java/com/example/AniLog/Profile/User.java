@@ -42,6 +42,12 @@ public class User {
     @Column
     private String favoriteManga;
 
+    @Column
+    private int[] animeRankingOrder;
+
+    @Column
+    private int[] mangaRankingOrder;
+
     public Long getId() {
         return id;
     }
@@ -120,5 +126,21 @@ public class User {
 
     public void setFavoriteManga(String favoriteManga) {
         this.favoriteManga = favoriteManga;
+    }
+
+    public int[] getAnimeRankingOrder() {
+        return animeRankingOrder;
+    }
+
+    public void setAnimeRankingOrder(int[] animeRankingOrder) {
+        this.animeRankingOrder = animeRankingOrder;
+    }
+
+    public int[] getMangaRankingOrder() {
+        return mangaRankingOrder;
+    }
+
+    public void setMangaRankingOrder(int[] mangaRankingOrder) {
+        this.mangaRankingOrder = mangaRankingOrder;
     }
 }

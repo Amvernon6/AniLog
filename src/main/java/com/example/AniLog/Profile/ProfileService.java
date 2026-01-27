@@ -46,6 +46,12 @@ public class ProfileService {
         if (request.getAge() != null) {
             user.setAge(request.getAge());
         }
+        if (request.getAnimeRankingOrder() != null) {
+            user.setAnimeRankingOrder(request.getAnimeRankingOrder());
+        }
+        if (request.getMangaRankingOrder() != null) {
+            user.setMangaRankingOrder(request.getMangaRankingOrder());
+        }
 
         return userRepository.save(user);
     }

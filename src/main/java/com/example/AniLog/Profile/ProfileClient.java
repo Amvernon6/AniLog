@@ -46,6 +46,8 @@ public class ProfileClient {
         private String username;
         private String favoriteAnime;
         private String[] favoriteGenres;
+        private int[] animeRankingOrder;
+        private int[] mangaRankingOrder;
         private String favoriteManga;
         private Integer age;
 
@@ -111,6 +113,22 @@ public class ProfileClient {
 
         public void setAge(Integer age) {
             this.age = age;
+        }
+        
+        public int[] getAnimeRankingOrder() {
+            return animeRankingOrder;
+        }
+
+        public void setAnimeRankingOrder(int[] animeRankingOrder) {
+            this.animeRankingOrder = animeRankingOrder;
+        }
+
+        public int[] getMangaRankingOrder() {
+            return mangaRankingOrder;
+        }
+
+        public void setMangaRankingOrder(int[] mangaRankingOrder) {
+            this.mangaRankingOrder = mangaRankingOrder;
         }
     }
 }
