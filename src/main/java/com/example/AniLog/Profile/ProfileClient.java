@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -33,6 +34,15 @@ public class ProfileClient {
             return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
         }
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/safe/{username}/by-username")
+    public ResponseEntity<?> getSafeProfileByUsername(@PathVariable String username) {
+        List<User> users = profileService.getSafeProfileByUsername(username);
+        if (users == null || users.isEmpty()) {
+            return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
+        }
+        return ResponseEntity.ok(users);
     }
 
     @PutMapping("/{id}")

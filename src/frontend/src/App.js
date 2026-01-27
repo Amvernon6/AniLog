@@ -3,6 +3,7 @@ import './css/App.css';
 import Search from './components/Search';
 import Profile from './components/Profile';
 import Discover from './components/Discover';
+import UserSearch from './components/UserSearch';
 
 function App() {
   const [activeTab, setActiveTab] = useState('discover');
@@ -27,6 +28,8 @@ function App() {
         return <Search loggedIn={loggedIn} userData={userData} />;
       case 'library':
         return <Profile onLogin={handleLogin} />;
+      case 'users':
+        return <UserSearch loggedIn={loggedIn} userData={userData} />;
       default:
         return <Profile onLogin={handleLogin} />;
     }
@@ -48,6 +51,12 @@ function App() {
           onClick={() => setActiveTab('search')}
         >
           Search
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          Users
         </button>
         <button 
           className={`tab-button ${activeTab === 'library' ? 'active' : ''}`}

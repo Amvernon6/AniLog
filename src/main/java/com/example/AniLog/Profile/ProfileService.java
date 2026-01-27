@@ -2,6 +2,8 @@ package com.example.AniLog.Profile;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ProfileService {
@@ -31,6 +33,30 @@ public class ProfileService {
         safeUser.setAnimeRankingOrder(user.getAnimeRankingOrder());
         safeUser.setMangaRankingOrder(user.getMangaRankingOrder());
         return safeUser;
+    }
+
+    public List<User> getSafeProfileByUsername(String username) {
+        List<User> users = userRepository.findByFuzzyUsername(username);
+        if (users == null || users.isEmpty()) {
+            return null;
+        }
+        List<User> safeUsers = new ArrayList<>();
+
+        for (User user : users) {
+            User safeUser = new User();
+            safeUser.setId(user.getId());
+            safeUser.setUsername(user.getUsername());
+            safeUser.setBio(user.getBio());
+            safeUser.setAvatarUrl(user.getAvatarUrl());
+            safeUser.setFavoriteAnime(user.getFavoriteAnime());
+            safeUser.setFavoriteGenres(user.getFavoriteGenres());
+            safeUser.setFavoriteManga(user.getFavoriteManga());
+            safeUser.setAnimeRankingOrder(user.getAnimeRankingOrder());
+            safeUser.setMangaRankingOrder(user.getMangaRankingOrder());
+            safeUsers.add(safeUser);
+        }
+
+        return safeUsers;
     }
 
     @Transactional
