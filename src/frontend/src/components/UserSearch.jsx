@@ -155,7 +155,8 @@ export default function UserSearch({ loggedIn, userData }) {
         }
 
         const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!accessToken || !refreshToken) {
             showToast('You must be logged in to add items to in-progress list.', 'error');
             return;
         }
@@ -247,6 +248,7 @@ export default function UserSearch({ loggedIn, userData }) {
                         onAddToList={handleAddToList}
                         onRemoveFromList={handleRemoveFromList}
                         onAddToInProgress={handleAddToInProgress}
+                        accessToken={localStorage.getItem('authToken')}
                     />
                 }
                 {!selectedItem && results.length > 0 ? (

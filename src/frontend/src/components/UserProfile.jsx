@@ -1,97 +1,82 @@
 import React, { useState, useEffect } from "react";
 import '../css/profile.css';
 
-const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgress, onBack }) => {
+const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, onAddToMyList, onAddToInProgress, onBack }) => {
 
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [animeWatchedView, setAnimeWatchedView] = useState('watched');
     const [mangaReadView, setMangaReadView] = useState('read');
     const [watchedStatusFilter, setWatchedStatusFilter] = useState('ALL');
-    const [watchedItems, setWatchedItems] = useState([]);
     const [isLoadingWatched, setIsLoadingWatched] = useState(false);
     const [error, setError] = useState(null);
-    const [profileData, setProfileData] = useState({
-        bio: '',
-        avatarUrl: '',
-        emailAddress: '',
-        username: '',
-        favoriteAnime: '',
-        favoriteManga: '',
-        favoriteGenres: [],
-    });
     const [selectedWatchedItem, setSelectedWatchedItem] = useState(null);
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
     const [mangaRankingOrder, setMangaRankingOrder] = useState([]);
-
+    const [currUserInProgressItems, setCurrUserInProgressItems] = useState([]);
+    const [fetchedWatchedItems, setFetchedWatchedItems] = useState(false);
 
     useEffect(() => {
-        if (profileUserId) {
-            handleGetProfile(profileUserId);
+        if (selectedItem && fetchedWatchedItems === false) {
+            handleGetInProgressItems('ANIME').then(items => {
+                handleGetInProgressItems('MANGA').then(mangaItems => {
+                    const combinedItems = [...items, ...mangaItems];
+                    setCurrUserInProgressItems(combinedItems);
+                });
+            });
+
+            setFetchedWatchedItems(true);
         }
-    }, [profileUserId]);
+    }, [selectedItem, fetchedWatchedItems]);
 
     useEffect(() => {
-        if (profileUserId && (activeProfileTab === 'watched' || activeProfileTab === 'read')) {
-            const type = activeProfileTab === 'watched' ? 'ANIME' : 'MANGA';
-            handleGetWatchedItems(type);
-        }
-    }, [activeProfileTab, watchedStatusFilter, profileUserId]);
-
-    useEffect(() => {
-        const animeIds = (watchedItems || [])
+        const animeIds = (currUserInProgressItems || [])
             .filter(it => it.type === 'ANIME')
             .map(it => it.id);
         setAnimeRankingOrder(animeIds);
 
-        const mangaIds = (watchedItems || [])
+        const mangaIds = (currUserInProgressItems || [])
             .filter(it => it.type === 'MANGA')
             .map(it => it.id);
         setMangaRankingOrder(mangaIds);
-    }, [watchedItems]);
+    }, [currUserInProgressItems]);
 
-    const handleGetProfile = async (userId) => {
+    const parseErrorResponse = async (response) => {
+        const text = await response.text();
         try {
-            const response = await fetch(`/api/profile/${userId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch profile');
-            }
-
-            const data = await response.json();
-            setProfileData(data);
+            return JSON.parse(text);
         } catch (err) {
-            setError(err.message || 'Failed to load profile');
+            return { error: text || response.statusText || 'Request failed' };
         }
     };
 
-    const handleGetWatchedItems = async (type) => {
+    const handleGetInProgressItems = async (type) => {
         setIsLoadingWatched(true);
         setError(null);
 
         try {
-            const filterParam = watchedStatusFilter !== 'ALL' ? `?status=${watchedStatusFilter}` : '';
-            const response = await fetch(`/api/watched/${profileUserId}/${type}${filterParam}`, {
+            let url = `/api/user/${selectedItem.id}/watched/type/${type}`;
+            
+            // Add status filter if not ALL
+            if (watchedStatusFilter !== 'ALL') {
+                url = `/api/user/${selectedItem.id}/watched/type/${type}/status/${watchedStatusFilter}`;
+            }
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
 
             if (!response.ok) {
-                throw new Error('Failed to fetch watched items');
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to fetch watched items');
             }
-
-            const data = await response.json();
-            setWatchedItems(data);
+            return await response.json();
         } catch (err) {
-            setError(err.message || 'Failed to load watched items');
+            setError(err.message);
+            return [];
         } finally {
             setIsLoadingWatched(false);
         }
@@ -138,35 +123,35 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
                         <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
                         <div className="profile-header">
                             <div className="profile-avatar">
-                                {profileData.avatarUrl ? (
-                                    <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                                {selectedItem.avatarUrl ? (
+                                    <img src={selectedItem.avatarUrl} alt={`${selectedItem.username}'s avatar`} className="avatar-image" />
                                 ) : (
                                     <div className="avatar-placeholder">
-                                        {profileData.username ? profileData.username.charAt(0).toUpperCase() : '?'}
+                                        {selectedItem.username ? selectedItem.username.charAt(0).toUpperCase() : '?'}
                                     </div>
                                 )}
                             </div>
                             <div className="profile-info">
-                                <h2>{profileData.username}</h2>
+                                <h2>{selectedItem.username}</h2>
                             </div>
                         </div>
                 
                         <div className="profile-details">
                             <div className="profile-section">
                                 <h3>Favorite Anime</h3>
-                                <p>{profileData.favoriteAnime || 'Not specified'}</p>
+                                <p>{selectedItem.favoriteAnime || 'Not specified'}</p>
                             </div>
 
                             <div className="profile-section">
                                 <h3>Favorite Manga</h3>
-                                <p>{profileData.favoriteManga || 'Not specified'}</p>
+                                <p>{selectedItem.favoriteManga || 'Not specified'}</p>
                             </div>
                             
                             <div className="profile-section">
                                 <h3>Favorite Genres</h3>
-                                <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
-                                    ? profileData.favoriteGenres.join(', ')
-                                    : (profileData.favoriteGenres || 'Not specified')}
+                                <p>{Array.isArray(selectedItem.favoriteGenres) && selectedItem.favoriteGenres.length > 0 
+                                    ? selectedItem.favoriteGenres.join(', ')
+                                    : (selectedItem.favoriteGenres || 'Not specified')}
                                 </p>
                             </div>
                         </div>
@@ -215,7 +200,7 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
                                 <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
                                 <ul className="ranking-list">
                                     {animeRankingOrder.map((id, index) => {
-                                        const item = (watchedItems || []).find(i => i.id === id);
+                                        const item = (currUserInProgressItems || []).find(i => i.id === id);
                                         if (!item) return null;
                                         return (
                                             <li
@@ -245,18 +230,16 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
                                 </div>
                             ) : (
                                 <div className="watched-items-grid">
-                                    {watchedItems.length === 0 ? (
+                                    {currUserInProgressItems.filter(item => item.type === 'ANIME').length === 0 ? (
                                         <p className="tab-placeholder">
                                             No anime found.
                                         </p>
                                     ) : (
-                                        watchedItems.map((item) => (
+                                        currUserInProgressItems.filter(item => item.type === 'ANIME').map((item) => (
                                             <div 
                                                 key={item.id} 
                                                 className="watched-item-card" 
-                                                onClick={() => handleAddToMyList(item)}
                                                 style={{ cursor: 'pointer' }}
-                                                title="Click to add to your list"
                                             >
                                                 {item.coverImageUrl && (
                                                     <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
@@ -339,13 +322,12 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
                                 <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
                                 <ul className="ranking-list">
                                     {mangaRankingOrder.map((id, index) => {
-                                        const item = (watchedItems || []).find(i => i.id === id);
+                                        const item = (currUserInProgressItems || []).find(i => i.id === id);
                                         if (!item) return null;
                                         return (
                                             <li
                                                 key={id}
                                                 className="ranking-item"
-                                                onClick={() => handleAddToMyList(item)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <span className="rank-num">{index + 1}</span>
@@ -369,18 +351,16 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
                             </div>
                         ) : (
                             <div className="watched-items-grid">
-                                {watchedItems.length === 0 ? (
+                                {currUserInProgressItems.filter(item => item.type === 'MANGA').length === 0 ? (
                                     <p className="tab-placeholder">
                                         No manga found.
                                     </p>
                                 ) : (
-                                    watchedItems.map((item) => (
+                                    currUserInProgressItems.filter(item => item.type === 'MANGA').map((item) => (
                                         <div 
                                             key={item.id} 
                                             className="watched-item-card" 
-                                            onClick={() => handleAddToMyList(item)}
                                             style={{ cursor: 'pointer' }}
-                                            title="Click to add to your list"
                                         >
                                             {item.coverImageUrl && (
                                                 <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
