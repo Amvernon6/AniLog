@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../css/profile.css';
 
-const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgress}) => {
+const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgress, onBack }) => {
 
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [animeWatchedView, setAnimeWatchedView] = useState('watched');
@@ -22,6 +22,7 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
     const [selectedWatchedItem, setSelectedWatchedItem] = useState(null);
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
     const [mangaRankingOrder, setMangaRankingOrder] = useState([]);
+
 
     useEffect(() => {
         if (profileUserId) {
@@ -109,7 +110,7 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
     };
 
     return (
-        <div className="profile-container">
+        <div className="profile-logged-in" data-testid="profile-logged-in">
             <div className="profile-tabs">
                 <button 
                     className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
@@ -134,6 +135,7 @@ const UserProfile = ({ profileUserId, authToken, onAddToMyList, onAddToInProgres
             <div className="profile-tab-content">
                 {activeProfileTab === 'profile' && (
                     <div className="profile-view" data-testid="profile-view">
+                        <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
                         <div className="profile-header">
                             <div className="profile-avatar">
                                 {profileData.avatarUrl ? (
