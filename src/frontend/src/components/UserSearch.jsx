@@ -12,13 +12,15 @@ export default function UserSearch({ loggedIn, userData }) {
     const [inProgressItems, setInProgressItems] = useState([]);
     const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
     const [usersFollowing, setUsersFollowing] = useState([]);
+    const [usersFollowers, setUsersFollowers] = useState([]);
+    const [usersRequested, setUsersRequested] = useState([]);
 
     useEffect(() => async () => {
         if (!loggedIn || !userData) return;
         try {
             const userId = localStorage.getItem('userId');
             if (!userId) return;
-            const [addedItemsAnime, addedItemsManga, inProgressItemsAnime, inProgressItemsManga, usersFollowing] = await Promise.all([
+            const [addedItemsAnime, addedItemsManga, inProgressItemsAnime, inProgressItemsManga, usersFollowStatuses] = await Promise.all([
                 fetch(`/api/user/${userId}/list/ANIME`, {
                     method: 'POST',
                     headers: {
@@ -55,8 +57,8 @@ export default function UserSearch({ loggedIn, userData }) {
                     body: JSON.stringify({ userId: userData.id })
                 }).then(res => res.json()),
 
-                fetch(`/api/user/${userId}/following`, {
-                    method: 'POST',
+                fetch(`/api/user/${userId}/followStatuses`, {
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
@@ -71,11 +73,94 @@ export default function UserSearch({ loggedIn, userData }) {
                 inProgressMap.set(item.anilistId, item.status);
             });
             setInProgressItems(inProgressMap);
-            setUsersFollowing(usersFollowing);
+            setUsersFollowing(usersFollowStatuses.filter(follow => follow.followerId === userId && follow.status === 'FOLLOWING').map(follow => follow.targetUserId));
+            setUsersFollowers(usersFollowStatuses.filter(follow => follow.followeeId === userId && follow.status === 'FOLLOWING').map(follow => follow.targetUserId));
+            setUsersRequested(usersFollowStatuses.filter(follow => follow.followerId === userId && follow.status === 'REQUESTED').map(follow => follow.targetUserId));
         } catch (error) {
             console.error('Error fetching user data:', error);
         }
     }, [loggedIn, userData]);
+
+    const parseErrorResponse = async (response) => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (err) {
+            return { error: text || response.statusText || 'Request failed' };
+        }
+    };
+
+    const handleRequestUser = async () => {
+        const userId = localStorage.getItem('userId');
+        const accessToken = localStorage.getItem('accessToken');
+        try {
+            const response = await fetch(`/api/user/${userId}/request/${selectedItem.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to request user');
+            }
+            setUsersRequested(prev => [...prev, selectedItem.id]);
+            showToast("Successfully sent follow request!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error requesting user: " + err.message);
+            return null;
+        }
+    };
+
+    const handleFollowUser = async () => {
+        const userId = localStorage.getItem('userId');
+        const accessToken = localStorage.getItem('accessToken');
+        try {
+            const response = await fetch(`/api/user/${userId}/follow/${selectedItem.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to follow user');
+            }
+            setUsersFollowing(prev => [...prev, selectedItem.id]);
+            showToast("Successfully followed user!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error following user: " + err.message);
+            return null;
+        }
+    };
+
+    const handleUnfollowUser = async () => {
+        const userId = localStorage.getItem('userId');
+        const accessToken = localStorage.getItem('accessToken');
+        try {
+            const response = await fetch(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to unfollow user');
+            }
+            setUsersFollowing(prev => prev.filter(id => id !== selectedItem.id));
+            showToast("Successfully unfollowed user!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error unfollowing user: " + err.message);
+            return null;
+        }
+    };
 
     const handleSearch = async () => {
         if (!query.trim()) return;
@@ -316,8 +401,12 @@ export default function UserSearch({ loggedIn, userData }) {
                         onRemoveFromList={handleRemoveFromList}
                         onAddToInProgress={handleAddToInProgress}
                         accessToken={localStorage.getItem('authToken')}
-                        userId={localStorage.getItem('userId')}
                         usersFollowing={usersFollowing}
+                        usersFollowers={usersFollowers}
+                        usersRequested={usersRequested}
+                        onHandleFollow={handleFollowUser}
+                        onHandleUnfollow={handleUnfollowUser}
+                        onHandleFollowRequest={handleRequestUser}
                     />
                 }
                 {!selectedItem && results.length > 0 ? (

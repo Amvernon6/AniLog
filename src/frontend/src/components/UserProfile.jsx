@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../css/profile.css';
 
-const UserProfile = ({ selectedItem, userId, accessToken, usersFollowing, addedItems, inProgressItems, onAddToMyList, onAddToInProgress, onBack }) => {
+const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers, usersRequested, addedItems, inProgressItems, onHandleFollow, onHandleUnfollow, onHandleFollowRequest, onAddToMyList, onAddToInProgress, onBack }) => {
 
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [animeWatchedView, setAnimeWatchedView] = useState('watched');
@@ -68,50 +68,6 @@ const UserProfile = ({ selectedItem, userId, accessToken, usersFollowing, addedI
         }
     };
 
-    const handleFollowUser = async () => {
-        try {
-            const response = await fetch(`/api/user/${userId}/follow/${selectedItem.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-            if (!response.ok) {
-                const errorData = await parseErrorResponse(response);
-                throw new Error(errorData.error || 'Failed to follow user');
-            }
-            return await response.json();
-        } catch (err) {
-            showToast("Error following user: " + err.message);
-            return null;
-        } finally {
-            showToast("Successfully followed user!");
-        }
-    };
-
-    const handleUnfollowUser = async () => {
-        try {
-            const response = await fetch(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-            if (!response.ok) {
-                const errorData = await parseErrorResponse(response);
-                throw new Error(errorData.error || 'Failed to unfollow user');
-            }
-            return await response.json();
-        } catch (err) {
-            showToast("Error unfollowing user: " + err.message);
-            return null;
-        } finally {
-            showToast("Successfully unfollowed user!");
-        }
-    };
-
     const handleGetInProgressItems = async (type) => {
         setIsLoadingWatched(true);
         setError(null);
@@ -157,6 +113,24 @@ const UserProfile = ({ selectedItem, userId, accessToken, usersFollowing, addedI
         }
     };
 
+    const handleFollowUser = async (item) => {
+        if (onHandleFollow) {
+            onHandleFollow(item);
+        }
+    };
+
+    const handleUnfollowUser = async (item) => {
+        if (onHandleUnfollow) {
+            onHandleUnfollow(item);
+        }
+    };
+
+    const handleRequestUser = async (item) => {
+        if (onHandleFollowRequest) {
+            onHandleFollowRequest(item);
+        }
+    };
+
     return (
         <div className="profile-logged-in" data-testid="profile-logged-in">
             <div className="profile-tabs">
@@ -197,14 +171,26 @@ const UserProfile = ({ selectedItem, userId, accessToken, usersFollowing, addedI
                             <div className="profile-info">
                                 <h2>{selectedItem.username}</h2>
                             </div>
-                            {usersFollowing?.has(selectedItem.id) ? (
-                                <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
-                                    Unfollow
-                                </button>
+                            {usersFollowing?.find(userId => userId === selectedItem.id) ? (
+                                usersRequested?.find(userId => userId === selectedItem.id) ? (
+                                    <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button pending">
+                                        Requested
+                                    </button>
+                                ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
+                                        Unfollow
+                                    </button>
+                                )
                             ) : (
-                                <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
-                                    + Request to Follow
-                                </button>
+                                !usersFollowers?.find(userId => userId === selectedItem.id) ? (
+                                    <button onClick={(e) => { e.stopPropagation(); handleRequestUser(selectedItem.id); }} className="follow-button">
+                                        + Request to Follow
+                                    </button>
+                                ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
+                                        + Follow Back
+                                    </button>
+                                )
                             )}
                         </div>
                 
