@@ -11,6 +11,71 @@ export default function UserSearch({ loggedIn, userData }) {
     const [addedItems, setAddedItems] = useState([]);
     const [inProgressItems, setInProgressItems] = useState([]);
     const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+    const [usersFollowing, setUsersFollowing] = useState([]);
+
+    useEffect(() => async () => {
+        if (!loggedIn || !userData) return;
+        try {
+            const userId = localStorage.getItem('userId');
+            if (!userId) return;
+            const [addedItemsAnime, addedItemsManga, inProgressItemsAnime, inProgressItemsManga, usersFollowing] = await Promise.all([
+                fetch(`/api/user/${userId}/list/ANIME`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ userId: userData.id })
+                }).then(res => res.json()),
+
+                fetch(`/api/user/${userId}/list/MANGA`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ userId: userData.id })
+                }).then(res => res.json()),
+
+                fetch(`/api/user/${userId}/watched/ANIME`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ userId: userData.id })
+                }).then(res => res.json()),
+
+                fetch(`/api/user/${userId}/watched/MANGA`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ userId: userData.id })
+                }).then(res => res.json()),
+
+                fetch(`/api/user/${userId}/following`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ userId: userData.id })
+                }).then(res => res.json())
+            ]);
+
+            setAddedItems(new Set([...addedItemsAnime, ...addedItemsManga].map(item => item.anilistId)));
+            const inProgressMap = new Map();
+            [...inProgressItemsAnime, ...inProgressItemsManga].forEach(item => {
+                inProgressMap.set(item.anilistId, item.status);
+            });
+            setInProgressItems(inProgressMap);
+            setUsersFollowing(usersFollowing);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
+    }, [loggedIn, userData]);
 
     const handleSearch = async () => {
         if (!query.trim()) return;
@@ -65,6 +130,7 @@ export default function UserSearch({ loggedIn, userData }) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({
                     userId: parseInt(userId),
@@ -105,6 +171,7 @@ export default function UserSearch({ loggedIn, userData }) {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({
                     userId: parseInt(userId),
@@ -249,6 +316,8 @@ export default function UserSearch({ loggedIn, userData }) {
                         onRemoveFromList={handleRemoveFromList}
                         onAddToInProgress={handleAddToInProgress}
                         accessToken={localStorage.getItem('authToken')}
+                        userId={localStorage.getItem('userId')}
+                        usersFollowing={usersFollowing}
                     />
                 }
                 {!selectedItem && results.length > 0 ? (

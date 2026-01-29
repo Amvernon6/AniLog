@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../css/profile.css';
 
-const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, onAddToMyList, onAddToInProgress, onBack }) => {
+const UserProfile = ({ selectedItem, userId, accessToken, usersFollowing, addedItems, inProgressItems, onAddToMyList, onAddToInProgress, onBack }) => {
 
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [animeWatchedView, setAnimeWatchedView] = useState('watched');
@@ -14,6 +14,7 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
     const [mangaRankingOrder, setMangaRankingOrder] = useState([]);
     const [currUserInProgressItems, setCurrUserInProgressItems] = useState([]);
     const [fetchedWatchedItems, setFetchedWatchedItems] = useState(false);
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
     useEffect(() => {
         if (selectedItem && fetchedWatchedItems === false) {
@@ -51,12 +52,63 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
         }
     }, [currUserInProgressItems, selectedItem]);
 
+    const showToast = (message, type = 'info', duration = 3000) => {
+        setToast({ visible: true, message, type });
+        setTimeout(() => {
+            setToast({ visible: false, message: '', type: 'info' });
+        }, duration);
+    }
+
     const parseErrorResponse = async (response) => {
         const text = await response.text();
         try {
             return JSON.parse(text);
         } catch (err) {
             return { error: text || response.statusText || 'Request failed' };
+        }
+    };
+
+    const handleFollowUser = async () => {
+        try {
+            const response = await fetch(`/api/user/${userId}/follow/${selectedItem.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to follow user');
+            }
+            return await response.json();
+        } catch (err) {
+            showToast("Error following user: " + err.message);
+            return null;
+        } finally {
+            showToast("Successfully followed user!");
+        }
+    };
+
+    const handleUnfollowUser = async () => {
+        try {
+            const response = await fetch(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to unfollow user');
+            }
+            return await response.json();
+        } catch (err) {
+            showToast("Error unfollowing user: " + err.message);
+            return null;
+        } finally {
+            showToast("Successfully unfollowed user!");
         }
     };
 
@@ -145,6 +197,15 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                             <div className="profile-info">
                                 <h2>{selectedItem.username}</h2>
                             </div>
+                            {usersFollowing?.has(selectedItem.id) ? (
+                                <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
+                                    Unfollow
+                                </button>
+                            ) : (
+                                <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
+                                    + Request to Follow
+                                </button>
+                            )}
                         </div>
                 
                         <div className="profile-details">
