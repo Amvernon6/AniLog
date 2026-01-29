@@ -170,124 +170,199 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                 )}
 
                 {activeProfileTab === 'watched' && (
-                    <div className="watched-tab">
-                        <div className="watched-header">
-                            <h2>Watched Anime</h2>
-                            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                <div className="view-tabs">
-                                    <button
-                                        onClick={() => setAnimeWatchedView('watched')}
-                                        className={`view-tab-button ${animeWatchedView === 'watched' ? 'active' : ''}`}
-                                    >
-                                        Watched
-                                    </button>
-                                    <button
-                                        onClick={() => setAnimeWatchedView('rankings')}
-                                        className={`view-tab-button ${animeWatchedView === 'rankings' ? 'active' : ''}`}
-                                    >
-                                        Rankings
-                                    </button>
+                    selectedWatchedItem ? (
+                        <div className="modal-overlay" onClick={() => {
+                            setSelectedWatchedItem(null);
+                        }}>
+                            <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => {
+                                    setSelectedWatchedItem(null);
+                                }} className="modal-close">✕</button>
+                                
+                                <div className="watched-detail">
+                                    <div className="watched-detail-header">
+                                        {selectedWatchedItem.coverImageUrl && (
+                                            <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
+                                        )}
+                                        <div className="watched-detail-info">
+                                            <h2>{selectedWatchedItem.title}</h2>
+                                            <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
+                                                {selectedWatchedItem.status?.replace(/_/g, ' ')}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="watched-detail-body">
+                                        <div className="form-group">
+                                            <label>Status</label>
+                                            <span 
+                                                value={selectedWatchedItem.status} 
+                                                className="status-select"
+                                            >
+                                            </span>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Chapters Read</label>
+                                            <div className="progress-input-group">
+                                                <span
+                                                    type="number" 
+                                                    min="0"
+                                                    max={selectedWatchedItem.totalChapters || 9999}
+                                                    value={selectedWatchedItem.chaptersRead}
+                                                />
+                                                <span className="progress-separator">/</span>
+                                                <span 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={selectedWatchedItem.totalChapters}
+                                                    placeholder="Total"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Rating (0-10)</label>
+                                            <span 
+                                                type="number" 
+                                                min="0" 
+                                                max="10"
+                                                step="0.1"
+                                                value={selectedWatchedItem.rating}
+                                                placeholder="Rate this manga"
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Notes</label>
+                                            <p 
+                                                value={selectedWatchedItem.notes}
+                                                placeholder="Their thoughts about this manga..."
+                                                rows="4"
+                                                maxLength="1000"
+                                            />
+                                            <span className="char-count">{(selectedWatchedItem.notes || '').length}/1000</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                {animeWatchedView === 'watched' && <div className="status-filter">
-                                    <label>Filter by Status:</label>
-                                    <select 
-                                        value={watchedStatusFilter} 
-                                        onChange={(e) => setWatchedStatusFilter(e.target.value)}
-                                        data-testid="anime-status-filter"
-                                        className="status-filter-select"
-                                    >
-                                        <option value="ALL">All</option>
-                                        <option value="WATCHING">Watching</option>
-                                        <option value="COMPLETED">Completed</option>
-                                        <option value="ON_HOLD">On Hold</option>
-                                        <option value="DROPPED">Dropped</option>
-                                        <option value="PLAN_TO_WATCH">Plan to Watch</option>
-                                    </select>
-                                </div>}
                             </div>
                         </div>
-                        {animeWatchedView === 'rankings' && selectedItem.animeRankingOrder && selectedItem.animeRankingOrder.length > 0 && (
-                            <div className="ranking" style={{ marginTop: '16px' }}>
-                                <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
-                                <ul className="ranking-list">
-                                    {selectedItem.animeRankingOrder?.map((id, index) => {
-                                        const item = (currUserInProgressItems || []).find(i => i.id === id);
-                                        if (!item) return null;
-                                        return (
-                                            <li
-                                                key={id}
-                                                className="ranking-item"
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <span className="rank-num">{index + 1}</span>
-                                                {item.coverImageUrl && (
-                                                    <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
-                                                )}
-                                                <span className="rank-title">{item.title}</span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </div>
-                        )}
-                        {animeWatchedView === 'watched' && (
-                            <>
-                            {error && !selectedWatchedItem ? (
-                                <p className="error-message">{error}</p>
-                            ) : isLoadingWatched ? (
-                                <div className="loading-placeholder">
-                                    <p>Loading watched anime...</p>
+                    ) : ( 
+                        <div className="watched-tab">
+                            <div className="watched-header">
+                                <h2>Watched Anime</h2>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <div className="view-tabs">
+                                        <button
+                                            onClick={() => setAnimeWatchedView('watched')}
+                                            className={`view-tab-button ${animeWatchedView === 'watched' ? 'active' : ''}`}
+                                        >
+                                            Watched
+                                        </button>
+                                        <button
+                                            onClick={() => setAnimeWatchedView('rankings')}
+                                            className={`view-tab-button ${animeWatchedView === 'rankings' ? 'active' : ''}`}
+                                        >
+                                            Rankings
+                                        </button>
+                                    </div>
+                                    {animeWatchedView === 'watched' && <div className="status-filter">
+                                        <label>Filter by Status:</label>
+                                        <select 
+                                            value={watchedStatusFilter} 
+                                            onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                            data-testid="anime-status-filter"
+                                            className="status-filter-select"
+                                        >
+                                            <option value="ALL">All</option>
+                                            <option value="WATCHING">Watching</option>
+                                            <option value="COMPLETED">Completed</option>
+                                            <option value="ON_HOLD">On Hold</option>
+                                            <option value="DROPPED">Dropped</option>
+                                            <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                        </select>
+                                    </div>}
                                 </div>
-                            ) : (
-                                <div className="watched-items-grid">
-                                    {currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).length === 0 ? (
-                                        <p className="tab-placeholder">
-                                            No anime found.
-                                        </p>
-                                    ) : (
-                                        currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).map((item) => (
-                                            <div 
-                                                key={item.id} 
-                                                className="watched-item-card" 
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                {item.coverImageUrl && (
-                                                    <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
-                                                )}
-                                                <div className="watched-item-info">
-                                                    <h4 className="watched-item-title">{item.title}</h4>
-                                                    <span className={`watched-status status-${item.status?.toLowerCase()}`}>
-                                                        {item.status?.replace(/_/g, ' ')}
-                                                    </span>
-                                                    {item.episodesWatched != null && (
-                                                        <div className="progress-info">
-                                                            <div className="progress-bar">
-                                                                <div 
-                                                                    className="progress-fill" 
-                                                                    style={{ 
-                                                                        width: `${item.totalEpisodes ? (item.episodesWatched / item.totalEpisodes) * 100 : 0}%` 
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            <span className="progress-text">
-                                                                {item.episodesWatched}{item.totalEpisodes ? `/${item.totalEpisodes}` : ''} episodes
-                                                            </span>
-                                                        </div>
+                            </div>
+                            {animeWatchedView === 'rankings' && selectedItem.animeRankingOrder && selectedItem.animeRankingOrder.length > 0 && (
+                                <div className="ranking" style={{ marginTop: '16px' }}>
+                                    <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
+                                    <ul className="ranking-list">
+                                        {selectedItem.animeRankingOrder?.map((id, index) => {
+                                            const item = (currUserInProgressItems || []).find(i => i.id === id);
+                                            if (!item) return null;
+                                            return (
+                                                <li
+                                                    key={id}
+                                                    className="ranking-item"
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <span className="rank-num">{index + 1}</span>
+                                                    {item.coverImageUrl && (
+                                                        <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
                                                     )}
-                                                    {item.rating && (
-                                                        <div className="rating-display">
-                                                            ⭐ {item.rating}/10
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
+                                                    <span className="rank-title">{item.title}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
                                 </div>
                             )}
-                            </>
-                        )}
-                    </div>
+                            {animeWatchedView === 'watched' && (
+                                <>
+                                {error && !selectedWatchedItem ? (
+                                    <p className="error-message">{error}</p>
+                                ) : isLoadingWatched ? (
+                                    <div className="loading-placeholder">
+                                        <p>Loading watched anime...</p>
+                                    </div>
+                                ) : (
+                                    <div className="watched-items-grid">
+                                        {currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).length === 0 ? (
+                                            <p className="tab-placeholder">
+                                                No anime found.
+                                            </p>
+                                        ) : (
+                                            currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).map((item) => (
+                                                <div key={item.id} className="watched-item-card" onClick={() => {
+                                                    setSelectedWatchedItem(item);
+                                                }}>
+                                                    {item.coverImageUrl && (
+                                                        <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
+                                                    )}
+                                                    <div className="watched-item-info">
+                                                        <h4 className="watched-item-title">{item.title}</h4>
+                                                        <span className={`watched-status status-${item.status?.toLowerCase()}`}>
+                                                            {item.status?.replace(/_/g, ' ')}
+                                                        </span>
+                                                        {item.episodesWatched != null && (
+                                                            <div className="progress-info">
+                                                                <div className="progress-bar">
+                                                                    <div 
+                                                                        className="progress-fill" 
+                                                                        style={{ 
+                                                                            width: `${item.totalEpisodes ? (item.episodesWatched / item.totalEpisodes) * 100 : 0}%` 
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <span className="progress-text">
+                                                                    {item.episodesWatched}{item.totalEpisodes ? `/${item.totalEpisodes}` : ''} episodes
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {item.rating && (
+                                                            <div className="rating-display">
+                                                                ⭐ {item.rating}/10
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                </>
+                            )}
+                        </div>
+                    )
                 )}
 
                 {activeProfileTab === 'read' && (
