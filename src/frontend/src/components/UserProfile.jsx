@@ -230,12 +230,12 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                                 </div>
                             ) : (
                                 <div className="watched-items-grid">
-                                    {currUserInProgressItems.filter(item => item.type === 'ANIME').length === 0 ? (
+                                    {currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).length === 0 ? (
                                         <p className="tab-placeholder">
                                             No anime found.
                                         </p>
                                     ) : (
-                                        currUserInProgressItems.filter(item => item.type === 'ANIME').map((item) => (
+                                        currUserInProgressItems.filter(item => item.type === 'ANIME' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).map((item) => (
                                             <div 
                                                 key={item.id} 
                                                 className="watched-item-card" 
@@ -321,9 +321,8 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                             <div className="ranking" style={{ marginTop: '16px' }}>
                                 <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
                                 <ul className="ranking-list">
-                                    {mangaRankingOrder.map((id, index) => {
+                                    {mangaRankingOrder.filter(id => (currUserInProgressItems || []).some(i => i.id === id)).map((id, index) => {
                                         const item = (currUserInProgressItems || []).find(i => i.id === id);
-                                        if (!item) return null;
                                         return (
                                             <li
                                                 key={id}
@@ -351,12 +350,12 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                             </div>
                         ) : (
                             <div className="watched-items-grid">
-                                {currUserInProgressItems.filter(item => item.type === 'MANGA').length === 0 ? (
+                                {currUserInProgressItems.filter(item => item.type === 'MANGA' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).length === 0 ? (
                                     <p className="tab-placeholder">
                                         No manga found.
                                     </p>
                                 ) : (
-                                    currUserInProgressItems.filter(item => item.type === 'MANGA').map((item) => (
+                                    currUserInProgressItems.filter(item => item.type === 'MANGA' && (watchedStatusFilter === 'ALL' || item.status === watchedStatusFilter)).map((item) => (
                                         <div 
                                             key={item.id} 
                                             className="watched-item-card" 
