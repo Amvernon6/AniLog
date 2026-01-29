@@ -29,16 +29,27 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
     }, [selectedItem, fetchedWatchedItems]);
 
     useEffect(() => {
-        const animeIds = (currUserInProgressItems || [])
-            .filter(it => it.type === 'ANIME')
-            .map(it => it.id);
-        setAnimeRankingOrder(animeIds);
+        // Use the user's saved ranking order from their profile
+        if (selectedItem?.animeRankingOrder && Array.isArray(selectedItem.animeRankingOrder)) {
+            setAnimeRankingOrder(selectedItem.animeRankingOrder);
+        } else {
+            // Fallback to just listing anime items if no ranking order is saved
+            const animeIds = (currUserInProgressItems || [])
+                .filter(it => it.type === 'ANIME')
+                .map(it => it.id);
+            setAnimeRankingOrder(animeIds);
+        }
 
-        const mangaIds = (currUserInProgressItems || [])
-            .filter(it => it.type === 'MANGA')
-            .map(it => it.id);
-        setMangaRankingOrder(mangaIds);
-    }, [currUserInProgressItems]);
+        if (selectedItem?.mangaRankingOrder && Array.isArray(selectedItem.mangaRankingOrder)) {
+            setMangaRankingOrder(selectedItem.mangaRankingOrder);
+        } else {
+            // Fallback to just listing manga items if no ranking order is saved
+            const mangaIds = (currUserInProgressItems || [])
+                .filter(it => it.type === 'MANGA')
+                .map(it => it.id);
+            setMangaRankingOrder(mangaIds);
+        }
+    }, [currUserInProgressItems, selectedItem]);
 
     const parseErrorResponse = async (response) => {
         const text = await response.text();
@@ -195,18 +206,17 @@ const UserProfile = ({ selectedItem, accessToken, addedItems, inProgressItems, o
                                 </div>}
                             </div>
                         </div>
-                        {animeWatchedView === 'rankings' && animeRankingOrder && animeRankingOrder.length > 0 && (
+                        {animeWatchedView === 'rankings' && selectedItem.animeRankingOrder && selectedItem.animeRankingOrder.length > 0 && (
                             <div className="ranking" style={{ marginTop: '16px' }}>
                                 <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Rankings</h3>
                                 <ul className="ranking-list">
-                                    {animeRankingOrder.map((id, index) => {
+                                    {selectedItem.animeRankingOrder?.map((id, index) => {
                                         const item = (currUserInProgressItems || []).find(i => i.id === id);
                                         if (!item) return null;
                                         return (
                                             <li
                                                 key={id}
                                                 className="ranking-item"
-                                                onClick={() => handleAddToMyList(item)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <span className="rank-num">{index + 1}</span>
