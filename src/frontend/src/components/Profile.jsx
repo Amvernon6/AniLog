@@ -561,8 +561,8 @@ const Profile = ({ onLogin }) => {
                     avatarUrl: profileData.avatarUrl || '',
                     emailAddress: profileData.emailAddress || '',
                     username: profileData.username || '',
-                    // favoriteAnime: profileData.favoriteAnime || '',
-                    // favoriteManga: profileData.favoriteManga || '',
+                    favoriteAnime: profileData.favoriteAnime || '',
+                    favoriteManga: profileData.favoriteManga || '',
                     favoriteGenres: profileData.favoriteGenres || [],
                     // age: profileData.age || ''
                 });
@@ -1089,7 +1089,7 @@ const Profile = ({ onLogin }) => {
                                             <option value="COMPLETED">Completed</option>
                                             <option value="ON_HOLD">On Hold</option>
                                             <option value="DROPPED">Dropped</option>
-                                            <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                            <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
                                         </select>
                                     </div>}
                                 </div>
@@ -1231,7 +1231,7 @@ const Profile = ({ onLogin }) => {
                                                         <option value="COMPLETED">Completed</option>
                                                         <option value="ON_HOLD">On Hold</option>
                                                         <option value="DROPPED">Dropped</option>
-                                                        <option value="PLAN_TO_WATCH">Plan to Watch</option>
+                                                        <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
                                                     </select>
                                                 </div>
 
@@ -1239,19 +1239,22 @@ const Profile = ({ onLogin }) => {
                                                     <label>Episodes Watched</label>
                                                     <div className="progress-input-group">
                                                         <input 
-                                                            type="number" 
-                                                            min="0"
-                                                            max={editWatchedData.totalEpisodes || 9999}
+                                                            type="number"
+                                                            step="1" 
+                                                            max={(!editWatchedData.totalEpisodes || editWatchedData.totalEpisodes === 0) ? 9999 : editWatchedData.totalEpisodes}
                                                             value={editWatchedData.episodesWatched}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, episodesWatched: parseInt(e.target.value) || 0})}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, episodesWatched: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                            onWheel={(e) => e.currentTarget.blur()}
                                                         />
                                                         <span className="progress-separator">/</span>
                                                         <input 
                                                             type="number" 
+                                                            step="1"
                                                             min="0"
                                                             value={editWatchedData.totalEpisodes}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalEpisodes: parseInt(e.target.value) || 0})}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalEpisodes: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
                                                             placeholder="Total"
+                                                            onWheel={(e) => e.currentTarget.blur()}
                                                         />
                                                     </div>
                                                 </div>
@@ -1262,10 +1265,11 @@ const Profile = ({ onLogin }) => {
                                                         type="number" 
                                                         min="0" 
                                                         max="10"
-                                                        step="0.1"
                                                         value={editWatchedData.rating}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: parseFloat(e.target.value) || ''})}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
                                                         placeholder="Rate this anime"
+                                                        step="0.1"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                     />
                                                 </div>
 
@@ -1337,7 +1341,7 @@ const Profile = ({ onLogin }) => {
                                             <option value="COMPLETED">Completed</option>
                                             <option value="ON_HOLD">On Hold</option>
                                             <option value="DROPPED">Dropped</option>
-                                            <option value="PLAN_TO_READ">Plan to Read</option>
+                                            <option value="PLAN_TO_READ">Planning to Read Next</option>
                                         </select>
                                     </div>}
                                 </div>
@@ -1477,7 +1481,7 @@ const Profile = ({ onLogin }) => {
                                                         <option value="COMPLETED">Completed</option>
                                                         <option value="ON_HOLD">On Hold</option>
                                                         <option value="DROPPED">Dropped</option>
-                                                        <option value="PLAN_TO_READ">Plan to Read</option>
+                                                        <option value="PLAN_TO_READ">Planning to Read Next</option>
                                                     </select>
                                                 </div>
 
@@ -1487,17 +1491,19 @@ const Profile = ({ onLogin }) => {
                                                         <input 
                                                             type="number" 
                                                             min="0"
-                                                            max={editWatchedData.totalChapters || 9999}
+                                                            max={(editWatchedData.totalChapters || editWatchedData.totalChapters == 0) ? 9999 : editWatchedData.totalChapters}
                                                             value={editWatchedData.chaptersRead}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, chaptersRead: parseInt(e.target.value) || 0})}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, chaptersRead: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                            onWheel={(e) => e.currentTarget.blur()}
                                                         />
                                                         <span className="progress-separator">/</span>
                                                         <input 
                                                             type="number" 
                                                             min="0"
                                                             value={editWatchedData.totalChapters}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalChapters: parseInt(e.target.value) || 0})}
+                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalChapters: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
                                                             placeholder="Total"
+                                                            onWheel={(e) => e.currentTarget.blur()}
                                                         />
                                                     </div>
                                                 </div>
@@ -1508,10 +1514,11 @@ const Profile = ({ onLogin }) => {
                                                         type="number" 
                                                         min="0" 
                                                         max="10"
-                                                        step="0.1"
                                                         value={editWatchedData.rating}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: parseFloat(e.target.value) || ''})}
+                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
                                                         placeholder="Rate this manga"
+                                                        step="0.1"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                     />
                                                 </div>
 

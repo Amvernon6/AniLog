@@ -60,7 +60,7 @@ public class WatchedItem {
     private WatchStatus status; // WATCHING, COMPLETED, ON_HOLD, DROPPED, PLAN_TO_WATCH
 
     @Column
-    private Integer rating; // User rating out of 10
+    private Double rating; // User rating out of 10
 
     @Column(length = 1000)
     private String notes; // Personal notes
@@ -170,11 +170,11 @@ public class WatchedItem {
         this.status = status;
     }
 
-    public Integer getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(Integer rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 
