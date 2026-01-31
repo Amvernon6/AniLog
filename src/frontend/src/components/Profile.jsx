@@ -1,3 +1,4 @@
+
 import React, {useState, useEffect} from "react";
 import '../css/profile.css';
 import { makeAuthenticatedRequest, parseErrorResponse, refreshAccessToken } from '../utils/authHelper';
@@ -42,10 +43,13 @@ const Profile = ({ onLogin }) => {
         avatarUrl: '',
         emailAddress: '',
         username: '',
-        favoriteAnime: '',
-        favoriteManga: '',
+        // favoriteAnime: '',
+        // favoriteManga: '',
         favoriteGenres: [],
-        // age: ''
+        // age: '',
+        usersFollowing: [],
+        usersFollowedBy: [],
+        usersRequestedToFollow: []
     });
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [userList, setUserList] = useState([]);
@@ -113,6 +117,40 @@ const Profile = ({ onLogin }) => {
             mangaRankingOrder: savedMangaOrder
         }));
     }, [watchedItems]);
+
+    // Modal state for followers/following/requests
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [userModalType, setUserModalType] = useState(null); // 'followers', 'following', 'requests'
+    const [userModalList, setUserModalList] = useState([]);
+    const [userModalTitle, setUserModalTitle] = useState('');
+
+    // Helper to open modal with correct list
+    const openUserModal = (type) => {
+        let list = [];
+        let title = '';
+        if (type === 'followers') {
+            list = editedProfileData.usersFollowedBy || [];
+            title = 'Followers';
+        } else if (type === 'following') {
+            list = editedProfileData.usersFollowing || [];
+            title = 'Following';
+        } else if (type === 'requests') {
+            list = editedProfileData.usersRequestedToFollow || [];
+            title = 'Follow Requests';
+        }
+        setUserModalList(list);
+        setUserModalType(type);
+        setUserModalTitle(title);
+        setShowUserModal(true);
+    };
+
+    // Helper to close modal
+    const closeUserModal = () => {
+        setShowUserModal(false);
+        setUserModalType(null);
+        setUserModalList([]);
+        setUserModalTitle('');
+    };
 
     const reorderArray = (arr, fromIndex, toIndex) => {
         if (fromIndex === null || toIndex === null || fromIndex === toIndex) return arr;
@@ -508,8 +546,8 @@ const Profile = ({ onLogin }) => {
                     avatarUrl: profileData.avatarUrl || '',
                     emailAddress: profileData.emailAddress || '',
                     username: profileData.username || '',
-                    favoriteAnime: profileData.favoriteAnime || '',
-                    favoriteManga: profileData.favoriteManga || '',
+                    // favoriteAnime: profileData.favoriteAnime || '',
+                    // favoriteManga: profileData.favoriteManga || '',
                     favoriteGenres: profileData.favoriteGenres || [],
                     // age: profileData.age || ''
                 });
@@ -653,6 +691,33 @@ const Profile = ({ onLogin }) => {
         setError(null);
     }
 
+    const handleGetFollowStatuses = async (userId) => {
+        try {
+            const safeId = encodeURIComponent(userId);
+            const response = await makeAuthenticatedRequest(`/api/user/${safeId}/followStatuses`, {
+                headers: {
+                    'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
+                }
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to fetch follow statuses');
+            }
+            const data = await response.json();
+            const usersFollowing = data.filter(follow => follow.followerId === userId && follow.status == 'FOLLOWING');
+            const usersFollowedBy = data.filter(follow => follow.followeeId === userId && follow.status == 'FOLLOWING');
+            const usersRequestedToFollow = data.filter(follow => follow.followerId === userId && follow.status == 'REQUESTED');
+            setEditedProfileData(prev => ({
+                ...prev,
+                usersFollowing: usersFollowing || [],
+                usersFollowedBy: usersFollowedBy || [],   
+                usersRequestedToFollow: usersRequestedToFollow || []
+            }));
+        } catch (err) {
+            console.error('Error fetching follow statuses:', err);
+        }
+    };
+
     const handleGetProfile = async (userId) => {
         setIsLoading(true);
         setError(null);
@@ -673,6 +738,8 @@ const Profile = ({ onLogin }) => {
             // const topManga = mangaRankingOrder.length > 0 
             //     ? mangaData.find(i => i.id === mangaRankingOrder[0])
             //     : mangaData[0];
+
+            handleGetFollowStatuses(userId);
             
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
@@ -686,6 +753,7 @@ const Profile = ({ onLogin }) => {
             }
             const data = await response.json();
             setProfileData({
+                ...profileData,
                 bio: data.bio || '',
                 avatarUrl: data.avatarUrl || '',
                 emailAddress: data.emailAddress || '',
@@ -693,7 +761,7 @@ const Profile = ({ onLogin }) => {
                 // favoriteAnime: topAnime?.title || '',
                 // favoriteManga: topManga?.title || '',
                 favoriteGenres: data.favoriteGenres || [],
-                // age: data.age || ''
+                // age: data.age || '',
             });
             setOriginalUsername(data.username || '');
             setOriginalEmail(data.emailAddress || '');
@@ -897,6 +965,33 @@ const Profile = ({ onLogin }) => {
             )
         ) : (
             <div className="profile-logged-in" data-testid="profile-logged-in">
+                {/* Modal for followers/following/requests */}
+                {showUserModal && (
+                    <div className="modal-overlay" onClick={closeUserModal} style={{ zIndex: 1000 }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 400, margin: 'auto' }}>
+                            <button onClick={closeUserModal} className="modal-close" style={{ float: 'right', fontSize: 20, border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                            <h2 style={{ margin: '12px 0 20px 0', textAlign: 'center' }}>{userModalTitle}</h2>
+                            {userModalList.length === 0 ? (
+                                <p style={{ textAlign: 'center', color: '#888' }}>No users found.</p>
+                            ) : (
+                                <ul className="user-modal-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                    {userModalList.map((user, idx) => (
+                                        <li key={user.id || idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                                            {user.avatarUrl ? (
+                                                <img src={user.avatarUrl} alt={user.username} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', background: '#eee' }} />
+                                            ) : (
+                                                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#fff', fontSize: 18 }}>
+                                                    {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+                                                </div>
+                                            )}
+                                            <span style={{ fontWeight: 500 }}>{user.username || 'Unknown'}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                )}
                 <div className="profile-tabs">
                     <button 
                         className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
@@ -1551,6 +1646,18 @@ const Profile = ({ onLogin }) => {
                                         <div className="profile-info">
                                             <h2>{profileData.username}</h2>
                                             {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
+                                            {/* Followers/Following/Requests Buttons in header */}
+                                            <div className="profile-follow-bar" style={{ display: 'flex', gap: '16px', marginBottom: 0, marginTop: 8, justifyContent: 'center' }}>
+                                                <button className="follow-count-btn" onClick={() => openUserModal('followers')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowedBy?.length || 0}</span> Followers
+                                                </button>
+                                                <button className="follow-count-btn" onClick={() => openUserModal('following')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowing?.length || 0}</span> Following
+                                                </button>
+                                                <button className="follow-count-btn" onClick={() => openUserModal('requests')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersRequestedToFollow?.length || 0}</span> Requests
+                                                </button>
+                                            </div>
                                             <div className="profile-actions">
                                                 <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
                                                     Edit Profile
