@@ -57,6 +57,15 @@ public class ProfileClient {
         return ResponseEntity.ok(users);
     }
 
+    @PutMapping("/safe/by-ids")
+    public ResponseEntity<?> getSafeProfilesByIDs(@RequestBody Long[] ids) {
+        List<User> users = profileService.getSafeProfilesByIDs(ids);
+        if (users == null || users.isEmpty()) {
+            return ResponseEntity.status(404).body(new ErrorResponse("User not found"));
+        }
+        return ResponseEntity.ok(users);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProfile(
             @PathVariable long id,

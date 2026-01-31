@@ -14,4 +14,5 @@ public interface PostgreSQLUserRepository extends JpaRepository<User, Long> {
     List <User> findByFuzzyUsername(String username);
     User findByEmailAddress(String emailAddress);
     User findById(long id);
+    List<User> findByIdIn(List<Long> ids);
 }

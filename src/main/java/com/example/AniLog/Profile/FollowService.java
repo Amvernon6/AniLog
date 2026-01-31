@@ -86,6 +86,43 @@ public class FollowService {
         return allFollows;
     }
 
+    public void acceptFollowRequest(Long userId, Long targetUserId) {
+        if (userId == null || targetUserId == null) {
+            throw new IllegalArgumentException("User IDs cannot be null");
+        } else if (userId.equals(targetUserId)) {
+            throw new IllegalArgumentException("Users cannot follow themselves");
+        } else if (userRepository.findById(userId).isEmpty() || userRepository.findById(targetUserId).isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // Logic to change the follow relationship
+        Follow follow = followRepository.findByFollowerIdAndFolloweeId(targetUserId, userId);
+        if (follow != null && "REQUESTED".equals(follow.getStatus())) {
+            follow.setStatus("FOLLOWING");
+            followRepository.save(follow);
+        } else {
+            throw new IllegalArgumentException("No follow request found to accept");
+        }
+    }
+
+    public void denyFollowRequest(Long userId, Long targetUserId) {
+        if (userId == null || targetUserId == null) {
+            throw new IllegalArgumentException("User IDs cannot be null");
+        } else if (userId.equals(targetUserId)) {
+            throw new IllegalArgumentException("Users cannot follow themselves");
+        } else if (userRepository.findById(userId).isEmpty() || userRepository.findById(targetUserId).isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // Logic to change the follow relationship
+        Follow follow = followRepository.findByFollowerIdAndFolloweeId(targetUserId, userId);
+        if (follow != null && "REQUESTED".equals(follow.getStatus())) {
+            followRepository.deleteByFollowerIdAndFolloweeId(targetUserId, userId);
+        } else {
+            throw new IllegalArgumentException("No follow request found to deny");
+        }
+    }
+
     // public void blockUser(Long userId, Long targetUserId) {
     //     // Logic to block a user
     // }

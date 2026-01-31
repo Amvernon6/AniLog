@@ -1,7 +1,8 @@
 
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useRef} from "react";
 import '../css/profile.css';
 import { makeAuthenticatedRequest, parseErrorResponse, refreshAccessToken } from '../utils/authHelper';
+import UserProfile from "./UserProfile";
 
 const genres = [
     'Action',
@@ -31,6 +32,8 @@ const Profile = ({ onLogin }) => {
     // const [signupAge, setSignupAge] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
     const [isLoadingList, setIsLoadingList] = useState(false);
     const [isLoadingItem, setIsLoadingItem] = useState(false);
     const [signupButtonClicked, setSignupButtonClicked] = useState(false);
@@ -77,6 +80,9 @@ const Profile = ({ onLogin }) => {
         mangaRankingOrder: []
         // age: ''
     });
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
+    const toastTimerRef = useRef(null);
 
     // Drag-and-drop ranking state for all watched titles
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
@@ -123,25 +129,61 @@ const Profile = ({ onLogin }) => {
     const [userModalType, setUserModalType] = useState(null); // 'followers', 'following', 'requests'
     const [userModalList, setUserModalList] = useState([]);
     const [userModalTitle, setUserModalTitle] = useState('');
+    const [savedType, setSavedType] = useState(null); // 'followers', 'following', 'requests'
 
     // Helper to open modal with correct list
-    const openUserModal = (type) => {
+    const openUserModal = async (type) => {
+        setIsLoadingFollowers(true);
+
         let list = [];
         let title = '';
         if (type === 'followers') {
             list = editedProfileData.usersFollowedBy || [];
             title = 'Followers';
+            
+            try {
+                // Fetch follower details
+                const response = await makeAuthenticatedRequest('/api/profile/safe/by-ids', {
+                    method: 'PUT',
+                    body: JSON.stringify(list.map(f => f.followerId))
+                });
+                setUserModalList(response.ok ? await response.json() : []);
+            } catch (err) {
+                console.error('Error fetching follower details:', err);
+            }
         } else if (type === 'following') {
             list = editedProfileData.usersFollowing || [];
             title = 'Following';
+
+            try {
+                // Fetch follower details
+                const response = await makeAuthenticatedRequest('/api/profile/safe/by-ids', {
+                    method: 'PUT',
+                    body: JSON.stringify(list.map(f => f.followerId))
+                });
+                setUserModalList(response.ok ? await response.json() : []);
+            } catch (err) {
+                console.error('Error fetching follower details:', err);
+            }
         } else if (type === 'requests') {
             list = editedProfileData.usersRequestedToFollow || [];
             title = 'Follow Requests';
+
+            try {
+                // Fetch follower details
+                const response = await makeAuthenticatedRequest('/api/profile/safe/by-ids', {
+                    method: 'PUT',
+                    body: JSON.stringify(list.map(f => f.followerId))
+                });
+                setUserModalList(response.ok ? await response.json() : []);
+            } catch (err) {
+                console.error('Error fetching follower details:', err);
+            }
         }
-        setUserModalList(list);
         setUserModalType(type);
         setUserModalTitle(title);
         setShowUserModal(true);
+        setIsLoadingFollowers(false);
     };
 
     // Helper to close modal
@@ -280,6 +322,96 @@ const Profile = ({ onLogin }) => {
         }
         setDraggingMangaIndex(null);
         setDragOverMangaIndex(null);
+    };
+    
+    const showToast = (message, type = 'info', duration = 3200) => {
+        if (toastTimerRef.current) {
+            clearTimeout(toastTimerRef.current);
+        }
+        setToast({ message, type, visible: true });
+        toastTimerRef.current = setTimeout(() => {
+            setToast((prev) => ({ ...prev, visible: false }));
+        }, duration);
+    };
+
+    const handleRequestUser = async () => {
+        const userId = localStorage.getItem('userId');
+        try {
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/request/${selectedUser.id}`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to request user');
+            }
+            setProfileData(prev => ({
+                ...prev,
+                usersRequestedToFollow: [...prev.usersRequestedToFollow, selectedUser.id]
+            }));
+            showToast("Successfully sent follow request!");
+            // Only try to parse JSON if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return null;
+            }
+        } catch (err) {
+            console.log(err);
+            showToast("Error requesting user");
+            return null;
+        }
+    };
+
+    const handleFollowUser = async () => {
+        const userId = localStorage.getItem('userId');
+        try {
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/follow/${selectedUser.id}`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to follow user');
+            }
+            setProfileData(prev => ({
+                ...prev,
+                usersFollowing: [...prev.usersFollowing, selectedUser.id]
+            }));
+            showToast("Successfully followed user!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error following user");
+            return null;
+        }
+    };
+
+    const handleUnfollowUser = async () => {
+        const userId = localStorage.getItem('userId');
+        try {
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/unfollow/${selectedUser.id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to unfollow user');
+            }
+            setProfileData(prev => ({
+                ...prev,
+                usersFollowedBy: prev.usersFollowedBy.filter(f => f !== selectedUser.id)
+            }));
+            showToast("Successfully unfollowed user!");
+            // Only try to parse JSON if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return null;
+            }
+        } catch (err) {
+            console.log(err);
+            showToast("Error unfollowing user");
+            return null;
+        }
     };
 
     useEffect(() => {
@@ -691,6 +823,103 @@ const Profile = ({ onLogin }) => {
         setError(null);
     }
 
+     const handleAddToList = (item) => {
+        if (!item) return;
+
+        if (item.type == null || (item.type !== 'ANIME' && item.type !== 'MANGA')) {
+            showToast('Cannot add item: Invalid media type.', 'error');
+            return;
+        }
+
+        if (item.title == null || (item.title.english == null && item.title.romaji == null && item.title.nativeTitle == null)) {
+            showToast('Cannot add item: Title information is missing.', 'error');
+            return;
+        }
+
+        if (item.id == null) {
+            showToast('Cannot add item: Missing media ID.', 'error');
+            return;
+        }
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showToast('You must be logged in to add items to your list.', 'error');
+            return;
+        }
+
+        // Proceed to add item to list
+        setIsLoading(true);
+
+        try {
+            fetch('/api/user/list/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: parseInt(userId),
+                    type: item.type,
+                    title: item.title?.english || item.title?.romaji || item.title?.nativeTitle,
+                    coverImageUrl: item.coverImageUrl,
+                    anilistId: item.id
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showToast('Item added to list successfully.', 'success');
+                    setUserList(prev => new Set([...prev, item.id]));
+                } else {
+                    showToast('Failed to add item to list.', 'error');
+                }
+            });
+        } catch (error) {
+            console.error('Error adding item to list:', error);
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRemoveFromList = (item) => {
+        if (!item) return;
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showToast('You must be logged in to remove items from your list.', 'error');
+            return;
+        }
+
+        // Proceed to remove item from list
+        setIsLoading(true);
+        try {
+            fetch('/api/user/list/remove', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: parseInt(userId),
+                    anilistId: item.id
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showToast('Item removed from list successfully.', 'success');
+                    setUserList(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(item.id);
+                        return newSet;
+                    });
+                } else {
+                    showToast('Failed to remove item from list.', 'error');
+                }
+            });
+        } catch (error) {
+            console.error('Error removing item from list:', error);
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleGetFollowStatuses = async (userId) => {
         try {
             const safeId = encodeURIComponent(userId);
@@ -706,7 +935,7 @@ const Profile = ({ onLogin }) => {
             const data = await response.json();
             const usersFollowing = data.filter(follow => follow.followerId === userId && follow.status == 'FOLLOWING');
             const usersFollowedBy = data.filter(follow => follow.followeeId === userId && follow.status == 'FOLLOWING');
-            const usersRequestedToFollow = data.filter(follow => follow.followerId === userId && follow.status == 'REQUESTED');
+            const usersRequestedToFollow = data.filter(follow => follow.followeeId === userId && follow.status == 'REQUESTED');
             setEditedProfileData(prev => ({
                 ...prev,
                 usersFollowing: usersFollowing || [],
@@ -719,7 +948,7 @@ const Profile = ({ onLogin }) => {
     };
 
     const handleGetProfile = async (userId) => {
-        setIsLoading(true);
+        setIsLoadingProfile(true);
         setError(null);
 
         try {
@@ -770,13 +999,13 @@ const Profile = ({ onLogin }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setIsLoading(false);
+            setIsLoadingProfile(false);
         }
     };
 
     const handleProfileUpdate = async (e, updatedData = null) => {
         e?.preventDefault();
-        setIsLoading(true);
+        setIsLoadingProfile(true);
         setError(null);
 
         const dataToSend = updatedData || editedProfileData;
@@ -801,7 +1030,7 @@ const Profile = ({ onLogin }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setIsLoading(false);
+            setIsLoadingProfile(false);
         }
     };
 
@@ -851,6 +1080,52 @@ const Profile = ({ onLogin }) => {
         
         onLogin(null); // Notify parent component of logout
     };
+
+    const handleAcceptFollowRequest = async (requestingUserId) => {
+        try {
+            const userId = localStorage.getItem('userId');
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/accept-request/${requestingUserId}`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to accept follow request');
+            }
+            setProfileData(prev => ({
+                ...prev,
+                usersFollowedBy: [...prev.usersFollowedBy, requestingUserId],
+                usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
+            }));
+            showToast("Successfully accepted follow request!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error accepting follow request");
+            return null;
+        }
+    };
+
+    const handleDenyFollowRequest = async (requestingUserId) => {
+        try {
+            const userId = localStorage.getItem('userId');
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/decline-request/${requestingUserId}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                const errorData = await parseErrorResponse(response);
+                throw new Error(errorData.error || 'Failed to decline follow request');
+            }
+            setProfileData(prev => ({
+                ...prev,
+                usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
+            }));
+            showToast("Successfully declined follow request!");
+            return await response.json();
+        } catch (err) {
+            showToast("Error declining follow request");
+            return null;
+        }
+    };
+        
 
     // Spinner component
     const Spinner = () => (
@@ -967,30 +1242,76 @@ const Profile = ({ onLogin }) => {
             <div className="profile-logged-in" data-testid="profile-logged-in">
                 {/* Modal for followers/following/requests */}
                 {showUserModal && (
-                    <div className="modal-overlay" onClick={closeUserModal} style={{ zIndex: 1000 }}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 400, margin: 'auto' }}>
-                            <button onClick={closeUserModal} className="modal-close" style={{ float: 'right', fontSize: 20, border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
-                            <h2 style={{ margin: '12px 0 20px 0', textAlign: 'center' }}>{userModalTitle}</h2>
-                            {userModalList.length === 0 ? (
-                                <p style={{ textAlign: 'center', color: '#888' }}>No users found.</p>
-                            ) : (
-                                <ul className="user-modal-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {userModalList.map((user, idx) => (
-                                        <li key={user.id || idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                                            {user.avatarUrl ? (
-                                                <img src={user.avatarUrl} alt={user.username} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', background: '#eee' }} />
-                                            ) : (
-                                                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#fff', fontSize: 18 }}>
-                                                    {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+                    selectedUser ? (
+                        <UserProfile
+                            selectedItem={selectedUser}
+                            onBack={() => openUserModal(savedType)}
+                            inProgressItems={watchedItems}
+                            addedItems={userList}
+                            onAddToList={handleAddToList}
+                            onRemoveFromList={handleRemoveFromList}
+                            onAddToInProgress={handleAddListItemToInProgress}
+                            accessToken={localStorage.getItem('authToken')}
+                            usersFollowing={editWatchedData.usersFollowing}
+                            usersFollowers={editWatchedData.usersFollowedBy}
+                            usersRequested={editWatchedData.usersRequestedToFollow}
+                            onHandleFollow={handleFollowUser}
+                            onHandleUnfollow={handleUnfollowUser}
+                            onHandleFollowRequest={handleRequestUser}
+                        />
+                    ) : (
+                        <div className="modal-overlay" onClick={closeUserModal} style={{ zIndex: 1000 }}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 400, margin: 'auto' }}>
+                                <button onClick={closeUserModal} className="modal-close" style={{ float: 'right', fontSize: 20, border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                                <h2 style={{ margin: '12px 0 20px 0', textAlign: 'center' }}>{userModalTitle}</h2>
+                                {isLoadingFollowers ? (
+                                    <Spinner />
+                                ) : userModalList.length === 0 ? (
+                                    <p style={{ textAlign: 'center', color: '#888' }}>No users found.</p>
+                                ) : (
+                                    <ul className="user-modal-list">
+                                        {userModalList.map((user, idx) => (
+                                            <li
+                                                key={user.id || idx}
+                                                className="user-modal-list-item"
+                                                tabIndex={0}
+                                                role="button"
+                                                onClick={() => setSelectedUser(user)}
+                                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedUser(user); }}
+                                            >
+                                                {user.avatarUrl ? (
+                                                    <img src={user.avatarUrl} alt={user.username} className="user-modal-avatar" />
+                                                ) : (
+                                                    <div className="user-modal-avatar-placeholder">
+                                                        {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+                                                    </div>
+                                                )}
+                                                <span className="user-modal-username">{user.username || 'Unknown'}</span>
+                                                <div className="user-request-buttons">  
+                                                    {savedType === 'requests' && (
+                                                        <>
+                                                            <button
+                                                                className="approve-request-button"
+                                                                onClick={(e) => {handleAcceptFollowRequest(user.id); e.stopPropagation();}}
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                className="deny-request-button"
+                                                                onClick={(e) => {handleDenyFollowRequest(user.id); e.stopPropagation();}}
+                                                            >
+                                                                Deny
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <span style={{ fontWeight: 500 }}>{user.username || 'Unknown'}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )
                 )}
                 <div className="profile-tabs">
                     <button 
@@ -1629,7 +1950,7 @@ const Profile = ({ onLogin }) => {
 
                     {activeProfileTab === 'profile' && (
                         !isEditing ? (
-                            isLoading ? (
+                            isLoadingProfile ? (
                                 <Spinner />
                             ) : (
                                 <div className="profile-view" data-testid="profile-view">
@@ -1648,13 +1969,13 @@ const Profile = ({ onLogin }) => {
                                             {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
                                             {/* Followers/Following/Requests Buttons in header */}
                                             <div className="profile-follow-bar" style={{ display: 'flex', gap: '16px', marginBottom: 0, marginTop: 8, justifyContent: 'center' }}>
-                                                <button className="follow-count-btn" onClick={() => openUserModal('followers')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <button className="follow-count-btn" onClick={() => { openUserModal('followers'); setSavedType('followers'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowedBy?.length || 0}</span> Followers
                                                 </button>
-                                                <button className="follow-count-btn" onClick={() => openUserModal('following')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <button className="follow-count-btn" onClick={() => { openUserModal('following'); setSavedType('following'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowing?.length || 0}</span> Following
                                                 </button>
-                                                <button className="follow-count-btn" onClick={() => openUserModal('requests')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <button className="follow-count-btn" onClick={() => { openUserModal('requests'); setSavedType('requests'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     <span style={{ fontWeight: 600 }}>{editedProfileData.usersRequestedToFollow?.length || 0}</span> Requests
                                                 </button>
                                             </div>

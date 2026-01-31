@@ -60,6 +60,30 @@ public class ProfileService {
         return safeUsers;
     }
 
+    public List<User> getSafeProfilesByIDs(Long[] ids) {
+        List<User> users = userRepository.findByIdIn(List.of(ids));
+        if (users == null || users.isEmpty()) {
+            return null;
+        }
+        List<User> safeUsers = new ArrayList<>();
+
+        for (User user : users) {
+            User safeUser = new User();
+            safeUser.setId(user.getId());
+            safeUser.setUsername(user.getUsername());
+            safeUser.setBio(user.getBio());
+            safeUser.setAvatarUrl(user.getAvatarUrl());
+            safeUser.setFavoriteAnime(user.getFavoriteAnime());
+            safeUser.setFavoriteGenres(user.getFavoriteGenres());
+            safeUser.setFavoriteManga(user.getFavoriteManga());
+            safeUser.setAnimeRankingOrder(user.getAnimeRankingOrder());
+            safeUser.setMangaRankingOrder(user.getMangaRankingOrder());
+            safeUsers.add(safeUser);
+        }
+
+        return safeUsers;
+    }
+
     @Transactional
     public User updateProfile(long id, ProfileClient.ProfileUpdateRequest request) {
         User user = userRepository.findById(id);
