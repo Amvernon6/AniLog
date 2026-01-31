@@ -68,6 +68,8 @@ const Profile = ({ onLogin }) => {
     const [originalUsername, setOriginalUsername] = useState('');
     const [isEmailAvailable, setIsEmailAvailable] = useState(true);
     const [originalEmail, setOriginalEmail] = useState('');
+    const [isSavingWatchedItem, setIsSavingWatchedItem] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [editedProfileData, setEditedProfileData] = useState({
         bio: '',
         avatarUrl: '',
@@ -536,6 +538,7 @@ const Profile = ({ onLogin }) => {
     };
 
     const handleUpdateWatchedItem = async (itemId, updatedData) => {
+        setIsSavingWatchedItem(true);
         try {
             const response = await makeAuthenticatedRequest(
                 `/api/user/watched/${itemId}`,
@@ -556,6 +559,8 @@ const Profile = ({ onLogin }) => {
             setSelectedWatchedItem(null);
         } catch (err) {
             setError(err.message);
+        } finally {
+            setIsSavingWatchedItem(false);
         }
     };
 
@@ -992,6 +997,7 @@ const Profile = ({ onLogin }) => {
     const handleProfileUpdate = async (e, updatedData = null) => {
         e?.preventDefault();
         setIsLoadingProfile(true);
+        setIsSavingProfile(true);
         setError(null);
 
         const dataToSend = updatedData || editedProfileData;
@@ -1013,10 +1019,11 @@ const Profile = ({ onLogin }) => {
 
             setIsEditing(false);
             handleGetProfile(id);
+            setIsSavingProfile(false);
         } catch (err) {
             setError(err.message);
-        } finally {
             setIsLoadingProfile(false);
+            setIsSavingProfile(false); 
         }
     };
 
@@ -1665,8 +1672,9 @@ const Profile = ({ onLogin }) => {
                                                             <button 
                                                                 onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
                                                                 className="save-button"
+                                                                disabled={isSavingWatchedItem}
                                                             >
-                                                                Save Changes
+                                                                {isSavingWatchedItem ? 'Saving...' : 'Save Changes'}
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
@@ -1912,10 +1920,11 @@ const Profile = ({ onLogin }) => {
 
                                                         <div className="watched-detail-actions">
                                                             <button 
-                                                                onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
+                                                                onClick={() => { setIsSavingWatchedItem(true); handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData); }}
                                                                 className="save-button"
+                                                                disabled={isSavingWatchedItem}
                                                             >
-                                                                Save Changes
+                                                                {isSavingWatchedItem ? 'Saving...' : 'Save Changes'}
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
@@ -2135,8 +2144,8 @@ const Profile = ({ onLogin }) => {
                                             {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
                                             
                                             <div className="form-actions">
-                                                <button type="submit" disabled={isLoading || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
-                                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                                <button type="submit" disabled={isSavingProfile || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
+                                                    {isSavingProfile ? 'Saving...' : 'Save Changes'}
                                                 </button>
                                                 <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
                                                     Cancel
