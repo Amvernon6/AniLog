@@ -57,6 +57,8 @@ main {
   border-radius: 0;
   max-width: 1200px;
   margin: 0 auto 20px auto;
+  justify-content: center;
+  align-items: center;
 }
 
 .tab-button {
