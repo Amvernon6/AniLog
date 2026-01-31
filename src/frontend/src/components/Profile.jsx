@@ -134,6 +134,7 @@ const Profile = ({ onLogin }) => {
     // Helper to open modal with correct list
     const openUserModal = async (type) => {
         setIsLoadingFollowers(true);
+        setShowUserModal(true);
 
         let list = [];
         let title = '';
@@ -147,7 +148,8 @@ const Profile = ({ onLogin }) => {
                     method: 'PUT',
                     body: JSON.stringify(list.map(f => f.followerId))
                 });
-                setUserModalList(response.ok ? await response.json() : []);
+                const data = response.ok ? await response.json() : [];
+                setUserModalList(data);
             } catch (err) {
                 console.error('Error fetching follower details:', err);
             }
@@ -156,14 +158,15 @@ const Profile = ({ onLogin }) => {
             title = 'Following';
 
             try {
-                // Fetch follower details
+                // Fetch followee details
                 const response = await makeAuthenticatedRequest('/api/profile/safe/by-ids', {
                     method: 'PUT',
-                    body: JSON.stringify(list.map(f => f.followerId))
+                    body: JSON.stringify(list.map(f => f.followeeId))
                 });
-                setUserModalList(response.ok ? await response.json() : []);
+                const data = response.ok ? await response.json() : [];
+                setUserModalList(data);
             } catch (err) {
-                console.error('Error fetching follower details:', err);
+                console.error('Error fetching followee details:', err);
             }
         } else if (type === 'requests') {
             list = editedProfileData.usersRequestedToFollow || [];
@@ -175,14 +178,14 @@ const Profile = ({ onLogin }) => {
                     method: 'PUT',
                     body: JSON.stringify(list.map(f => f.followerId))
                 });
-                setUserModalList(response.ok ? await response.json() : []);
+                const data = response.ok ? await response.json() : [];
+                setUserModalList(data);
             } catch (err) {
-                console.error('Error fetching follower details:', err);
+                console.error('Error fetching requester details:', err);
             }
         }
         setUserModalType(type);
         setUserModalTitle(title);
-        setShowUserModal(true);
         setIsLoadingFollowers(false);
     };
 
@@ -418,9 +421,8 @@ const Profile = ({ onLogin }) => {
         // Check if user is already logged in on mount
         if (accessToken && localStorage.getItem('userId') != null) {
             const storedUserId = parseInt(localStorage.getItem('userId'), 10);
-            setLoggedIn(true);
-            setId(storedUserId);
             handleGetProfile(storedUserId);
+            setId(storedUserId);
             onLogin(storedUserId);
         }
     }, []);
@@ -666,26 +668,7 @@ const Profile = ({ onLogin }) => {
             onLogin(data.userId);
 
             // Fetch full profile data
-            const profileResponse = await makeAuthenticatedRequest(`/api/profile/${data.userId}`, {
-                headers: {
-                    'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
-                }
-            });
-            if (profileResponse.ok) {
-                const profileData = await profileResponse.json();
-                setProfileData({
-                    bio: profileData.bio || '',
-                    avatarUrl: profileData.avatarUrl || '',
-                    emailAddress: profileData.emailAddress || '',
-                    username: profileData.username || '',
-                    // favoriteAnime: profileData.favoriteAnime || '',
-                    // favoriteManga: profileData.favoriteManga || '',
-                    favoriteGenres: profileData.favoriteGenres || [],
-                    // age: profileData.age || ''
-                });
-                setOriginalUsername(profileData.username || '');
-                setOriginalEmail(profileData.emailAddress || '');
-            }
+            handleGetProfile(data.userId);
 
             onLogin(data.userId); // Notify parent component of login
         } catch (err) {
@@ -996,7 +979,9 @@ const Profile = ({ onLogin }) => {
             setOriginalEmail(data.emailAddress || '');
             setIsUsernameAvailable(true);
             setIsEmailAvailable(true);
+            setLoggedIn(true);
         } catch (err) {
+            handleLogout();
             setError(err.message);
         } finally {
             setIsLoadingProfile(false);
@@ -1148,7 +1133,7 @@ const Profile = ({ onLogin }) => {
     );
 
     return (
-        !LoggedIn ? (
+        !LoggedIn && !isLoadingProfile ? (
             !signupButtonClicked ? (
                 <div className="login-container" data-testid="login-container">
                     <h2>Login</h2>
@@ -1239,929 +1224,929 @@ const Profile = ({ onLogin }) => {
                 </div>
             )
         ) : (
-            <div className="profile-logged-in" data-testid="profile-logged-in">
-                {/* Modal for followers/following/requests */}
-                {showUserModal && (
-                    selectedUser ? (
-                        <UserProfile
-                            selectedItem={selectedUser}
-                            onBack={() => openUserModal(savedType)}
-                            inProgressItems={watchedItems}
-                            addedItems={userList}
-                            onAddToList={handleAddToList}
-                            onRemoveFromList={handleRemoveFromList}
-                            onAddToInProgress={handleAddListItemToInProgress}
-                            accessToken={localStorage.getItem('authToken')}
-                            usersFollowing={editWatchedData.usersFollowing}
-                            usersFollowers={editWatchedData.usersFollowedBy}
-                            usersRequested={editWatchedData.usersRequestedToFollow}
-                            onHandleFollow={handleFollowUser}
-                            onHandleUnfollow={handleUnfollowUser}
-                            onHandleFollowRequest={handleRequestUser}
-                        />
-                    ) : (
-                        <div className="modal-overlay" onClick={closeUserModal} style={{ zIndex: 1000 }}>
-                            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 400, margin: 'auto' }}>
-                                <button onClick={closeUserModal} className="modal-close" style={{ float: 'right', fontSize: 20, border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
-                                <h2 style={{ margin: '12px 0 20px 0', textAlign: 'center' }}>{userModalTitle}</h2>
-                                {isLoadingFollowers ? (
-                                    <Spinner />
-                                ) : userModalList.length === 0 ? (
-                                    <p style={{ textAlign: 'center', color: '#888' }}>No users found.</p>
-                                ) : (
-                                    <ul className="user-modal-list">
-                                        {userModalList.map((user, idx) => (
-                                            <li
-                                                key={user.id || idx}
-                                                className="user-modal-list-item"
-                                                tabIndex={0}
-                                                role="button"
-                                                onClick={() => setSelectedUser(user)}
-                                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedUser(user); }}
-                                            >
-                                                {user.avatarUrl ? (
-                                                    <img src={user.avatarUrl} alt={user.username} className="user-modal-avatar" />
-                                                ) : (
-                                                    <div className="user-modal-avatar-placeholder">
-                                                        {user.username ? user.username.charAt(0).toUpperCase() : '?'}
-                                                    </div>
-                                                )}
-                                                <span className="user-modal-username">{user.username || 'Unknown'}</span>
-                                                <div className="user-request-buttons">  
-                                                    {savedType === 'requests' && (
-                                                        <>
-                                                            <button
-                                                                className="approve-request-button"
-                                                                onClick={(e) => {handleAcceptFollowRequest(user.id); e.stopPropagation();}}
-                                                            >
-                                                                Approve
-                                                            </button>
-                                                            <button
-                                                                className="deny-request-button"
-                                                                onClick={(e) => {handleDenyFollowRequest(user.id); e.stopPropagation();}}
-                                                            >
-                                                                Deny
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        </div>
-                    )
-                )}
-                <div className="profile-tabs">
-                    <button 
-                        className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
-                        onClick={() => setActiveProfileTab('profile')}
-                    >
-                        Profile
-                    </button>
-                    <button 
-                        className={`profile-tab-button ${activeProfileTab === 'list' ? 'active' : ''}`}
-                        onClick={() => setActiveProfileTab('list')}
-                    >
-                        My List
-                    </button>
-                    <button 
-                        className={`profile-tab-button ${activeProfileTab === 'watched' ? 'active' : ''}`}
-                        onClick={() => setActiveProfileTab('watched')}
-                    >
-                        Anime
-                    </button>
-                    <button 
-                        className={`profile-tab-button ${activeProfileTab === 'read' ? 'active' : ''}`}
-                        onClick={() => setActiveProfileTab('read')}
-                    >
-                        Manga
-                    </button>
-                </div>
-
-                <div className="profile-tab-content">
-                    {activeProfileTab === 'list' && (
-                        <div className="list-tab">
-                            <div className="list-tab-buttons">
-                                <button onClick={() => setActiveListTab('anime')} data-testid="list-anime-tab" className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
-                                <button onClick={() => setActiveListTab('manga')} data-testid="list-manga-tab" className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
-                            </div>
-                            {error && !selectedListItem ? (
-                                <p className="error-message" data-testid="list-error">{error}</p>
-                            ) : ( isLoadingList ? (
-                                <div className="loading-placeholder" style={{ textAlign: 'center', padding: '80px 40px' }}>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading your list...</p>
-                                </div>
-                            ) : (
-                                <div className="user-lists" data-testid="user-lists">
-                                    {userList.length === 0 ? (
-                                        <p className="tab-placeholder">Your list is empty. Start adding {activeListTab.toLowerCase()} to your {activeListTab.toLowerCase() == 'anime' ? 'watch' : 'reading'} list using the <strong>Search</strong> or <strong>Discover</strong> tabs!</p>
-                                    ) : (
-                                        <ul className="user-list">
-                                            {[...userList]
-                                                .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
-                                                .map((item) => (
-                                                <li key={item.id} data-testid={`list-item-${item.id}`} className="list-item" onClick={() => handleListItemClick(item)}>
-                                                    {item.coverImageUrl && (
-                                                        <img src={item.coverImageUrl} alt={item.title} className="item-cover-image" />
-                                                    )}
-                                                    <div className="item-info">
-                                                        <span className="item-title">{item.title}</span>
-                                                    </div>
-                                                    <div className="list-item-buttons" onClick={(e) => e.stopPropagation()}>
-                                                        {listItemsAsInProgress.has(item.anilistId) ? (
-                                                            <button className="in-progress-button added">✓ In Progress</button>
-                                                        ) : (
-                                                            <button 
-                                                                className="in-progress-button"
-                                                                onClick={() => handleAddListItemToInProgress(item)}
-                                                            >
-                                                                + Mark as In Progress
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            ))}
-                            {selectedListItem && (
-                                <div className="modal-overlay" onClick={() => setSelectedListItem(null)}>
-                                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => setSelectedListItem(null)} className="modal-close">✕</button>
-                                        {isLoadingItem ? (
-                                            <div className="detail-inner" style={{ textAlign: 'center', padding: '80px 40px' }}>
-                                                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading details...</p>
-                                            </div>
-                                        ) : (
-                                            <div className="detail-view">
-                                                <div className="detail-inner">
-                                                    <div className="media-type">{selectedListItem.type} {selectedListItem.format != null && selectedListItem.format !== selectedListItem.type && `• ${selectedListItem.format}`}</div>
-                                                    <h2>{selectedListItem.title?.english || selectedListItem.title?.romaji || selectedListItem.title?.nativeTitle || 'Error Getting Title'}</h2>
-                                                    {selectedListItem.coverImageUrl && <img src={selectedListItem.coverImageUrl} alt={selectedListItem.title?.english || selectedListItem.title?.romaji} className="detail-cover-image" />}
-                                                    <div className="detail-info">
-                                                        {selectedListItem.year && <span>Year: {selectedListItem.year}</span>}
-                                                        {selectedListItem.averageScore && <span> IMDB Score: {(selectedListItem.averageScore / 10).toFixed(1)}/10</span>}
-                                                    </div>
-                                                {selectedListItem.description && (
-                                                    <div className="description" data-testid="item-description">
-                                                        <h4>Description</h4>
-                                                        <div dangerouslySetInnerHTML={{ __html: selectedListItem.description }} />
-                                                    </div>
-                                                )}
-                                                {selectedListItem.episodes && <div><strong>Episodes:</strong> {selectedListItem.episodes}</div>}
-                                                {selectedListItem.chapters && <div><strong>Chapters:</strong> {selectedListItem.chapters}</div>}
-                                                {selectedListItem.volumes && <div><strong>Volumes:</strong> {selectedListItem.volumes}</div>}
-                                                {selectedListItem.genres && selectedListItem.genres.length > 0 && (
-                                                    <div className="genres">
-                                                        <div className="genre-list">
-                                                            <strong>Genres:</strong> {selectedListItem.genres.join(', ')}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {selectedListItem.studios && selectedListItem.studios.length > 0 && (
-                                                    <div className="studios">
-                                                        <strong>Studios:</strong> {selectedListItem.studios.join(', ')}
-                                                    </div>
-                                                )}
-                                                {selectedListItem.synonyms && selectedListItem.synonyms.length > 0 && (
-                                                    <div className="synonyms">
-                                                        <strong>Other Names:</strong> {selectedListItem.synonyms.join(', ')}
-                                                    </div>
-                                                )}
-                                                {selectedListItem.status && <div className={`status status-${selectedListItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedListItem.status.replace(/_/g, ' ')}</div>}
-                                                {selectedListItem.isAdult && <div className="is-adult">⚠️ Adult Content</div>}
-                                                {selectedListItem.nextAiringEpisode && (
-                                                    <div className="next-airing">
-                                                        <strong>Next Episode:</strong> Episode {selectedListItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedListItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeProfileTab === 'watched' && (
-                        <div className="watched-tab">
-                            <div className="watched-header">
-                                <h2>Watched Anime</h2>
-                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                    <div className="view-tabs">
-                                        <button
-                                            onClick={() => setAnimeWatchedView('watched')}
-                                            className={`view-tab-button ${animeWatchedView === 'watched' ? 'active' : ''}`}
-                                        >
-                                            Watched
-                                        </button>
-                                        <button
-                                            onClick={() => setAnimeWatchedView('rankings')}
-                                            className={`view-tab-button ${animeWatchedView === 'rankings' ? 'active' : ''}`}
-                                        >
-                                            Rankings
-                                        </button>
-                                    </div>
-                                    {animeWatchedView === 'watched' && <div className="status-filter">
-                                        <label>Filter by Status:</label>
-                                        <select 
-                                            value={watchedStatusFilter} 
-                                            onChange={(e) => setWatchedStatusFilter(e.target.value)}
-                                            data-testid="anime-status-filter"
-                                            className="status-filter-select"
-                                        >
-                                            <option value="ALL">All</option>
-                                            <option value="WATCHING">Watching</option>
-                                            <option value="COMPLETED">Completed</option>
-                                            <option value="ON_HOLD">On Hold</option>
-                                            <option value="DROPPED">Dropped</option>
-                                            <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
-                                        </select>
-                                    </div>}
-                                </div>
-                            </div>
-                            {/* Ranking (All Anime) - Show only in rankings view */}
-                            {animeWatchedView === 'rankings' && animeRankingOrder && animeRankingOrder.length > 0 && (
-                                <div className="ranking" style={{ marginTop: '16px' }}>
-                                    <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
-                                    <ul className="ranking-list">
-                                        {animeRankingOrder.map((id, index) => {
-                                            const item = (watchedItems || []).find(i => i.id === id);
-                                            if (!item) return null;
-                                            return (
-                                                <li
-                                                    key={id}
-                                                    className={`ranking-item ${draggingAnimeIndex === index ? 'dragging' : ''}`}
-                                                    draggable
-                                                    onDragStart={() => setDraggingAnimeIndex(index)}
-                                                    onDragOver={(e) => handleAnimeDragOver(e, index)}
-                                                    onDrop={() => handleAnimeDrop(index)}
-                                                    onDragEnd={() => handleAnimeDrop(index)}
-                                                    onTouchStart={() => handleAnimeTouchStart(index)}
-                                                    onTouchMove={handleAnimeTouchMove}
-                                                    onTouchEnd={(e) => handleAnimeTouchEnd(e, index)}
-                                                    style={{ 
-                                                        cursor: 'move', 
-                                                        touchAction: 'none',
-                                                        opacity: draggingAnimeIndex === index ? 0.5 : 1,
-                                                        transform: draggingAnimeIndex === index ? 'scale(1.05)' : 'scale(1)',
-                                                        transition: 'all 0.2s ease',
-                                                        boxShadow: draggingAnimeIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
-                                                    }}
-                                                >
-                                                    <span className="rank-num">{index + 1}</span>
-                                                    {item.coverImageUrl && (
-                                                        <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
-                                                    )}
-                                                    <span className="rank-title">{item.title}</span>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {/* Watched grid - Show only in watched view */}
-                            {animeWatchedView === 'watched' && (
-                                <>
-                                {error && !selectedWatchedItem ? (
-                                <p className="error-message">{error}</p>
-                            ) : isLoadingWatched ? (
-                                <div className="loading-placeholder">
-                                    <p>Loading watched anime...</p>
-                                </div>
-                            ) : (
-                                <div className="watched-items-grid">
-                                    {watchedItems.length === 0 ? (
-                                        <p className="tab-placeholder">
-                                            No anime found. Add anime to your watched list from the <strong>My List</strong> or <strong>Search</strong> tabs!
-                                        </p>
-                                    ) : (
-                                        watchedItems.map((item) => (
-                                            <div key={item.id} className="watched-item-card" onClick={() => {
-                                                setSelectedWatchedItem(item);
-                                                setEditWatchedData({
-                                                    status: item.status,
-                                                    episodesWatched: item.episodesWatched || 0,
-                                                    totalEpisodes: item.totalEpisodes || 0,
-                                                    rating: item.rating || '',
-                                                    notes: item.notes || ''
-                                                });
-                                            }}>
-                                                {item.coverImageUrl && (
-                                                    <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
-                                                )}
-                                                <div className="watched-item-info">
-                                                    <h4 className="watched-item-title">{item.title}</h4>
-                                                    <span className={`watched-status status-${item.status?.toLowerCase()}`}>
-                                                        {item.status?.replace(/_/g, ' ')}
-                                                    </span>
-                                                    {item.episodesWatched != null && (
-                                                        <div className="progress-info">
-                                                            <div className="progress-bar">
-                                                                <div 
-                                                                    className="progress-fill" 
-                                                                    style={{ 
-                                                                        width: `${item.totalEpisodes ? (item.episodesWatched / item.totalEpisodes) * 100 : 0}%` 
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            <span className="progress-text">
-                                                                {item.episodesWatched}{item.totalEpisodes ? `/${item.totalEpisodes}` : ''} episodes
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {item.rating && (
-                                                        <div className="rating-display">
-                                                            ⭐ {item.rating}/10
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-
-                            {selectedWatchedItem && (
-                                <div className="modal-overlay" onClick={() => {
-                                    setSelectedWatchedItem(null);
-                                }}>
-                                    <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => {
-                                            setSelectedWatchedItem(null);
-                                        }} className="modal-close">✕</button>
-                                        
-                                        <div className="watched-detail">
-                                            <div className="watched-detail-header">
-                                                {selectedWatchedItem.coverImageUrl && (
-                                                    <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
-                                                )}
-                                                <div className="watched-detail-info">
-                                                    <h2>{selectedWatchedItem.title}</h2>
-                                                    <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
-                                                        {selectedWatchedItem.status?.replace(/_/g, ' ')}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="watched-detail-body">
-                                                <div className="form-group">
-                                                    <label>Status</label>
-                                                    <select 
-                                                        value={editWatchedData.status} 
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
-                                                        className="status-select"
-                                                    >
-                                                        <option value="WATCHING">Watching</option>
-                                                        <option value="COMPLETED">Completed</option>
-                                                        <option value="ON_HOLD">On Hold</option>
-                                                        <option value="DROPPED">Dropped</option>
-                                                        <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
-                                                    </select>
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Episodes Watched</label>
-                                                    <div className="progress-input-group">
-                                                        <input 
-                                                            type="number"
-                                                            step="1" 
-                                                            max={(!editWatchedData.totalEpisodes || editWatchedData.totalEpisodes === 0) ? 9999 : editWatchedData.totalEpisodes}
-                                                            value={editWatchedData.episodesWatched}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, episodesWatched: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
-                                                            onWheel={(e) => e.currentTarget.blur()}
-                                                        />
-                                                        <span className="progress-separator">/</span>
-                                                        <input 
-                                                            type="number" 
-                                                            step="1"
-                                                            min="0"
-                                                            value={editWatchedData.totalEpisodes}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalEpisodes: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
-                                                            placeholder="Total"
-                                                            onWheel={(e) => e.currentTarget.blur()}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Rating (0-10)</label>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0" 
-                                                        max="10"
-                                                        value={editWatchedData.rating}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
-                                                        placeholder="Rate this anime"
-                                                        step="0.1"
-                                                        onWheel={(e) => e.currentTarget.blur()}
-                                                    />
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Notes</label>
-                                                    <textarea 
-                                                        value={editWatchedData.notes}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
-                                                        placeholder="Your thoughts about this anime..."
-                                                        rows="4"
-                                                        maxLength="1000"
-                                                    />
-                                                    <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
-                                                </div>
-
-                                                <div className="watched-detail-actions">
-                                                    <button 
-                                                        onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
-                                                        className="save-button"
-                                                    >
-                                                        Save Changes
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
-                                                        className="remove-button"
-                                                    >
-                                                        Remove from List
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            </>
-                            )}
-                        </div>
-                    )}
-
-                    {activeProfileTab === 'read' && (
-                        <div className="watched-tab read-tab">
-                            <div className="watched-header">
-                                <h2>Read Manga</h2>
-                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                    <div className="view-tabs">
-                                        <button 
-                                            className={`view-tab-button ${mangaReadView === 'read' ? 'active' : ''}`}
-                                            onClick={() => setMangaReadView('read')}
-                                        >
-                                            Read
-                                        </button>
-                                        <button 
-                                            className={`view-tab-button ${mangaReadView === 'rankings' ? 'active' : ''}`}
-                                            onClick={() => setMangaReadView('rankings')}
-                                        >
-                                            Rankings
-                                        </button>
-                                    </div>
-                                    {mangaReadView === 'read' && <div className="status-filter">
-                                        <label>Filter by Status:</label>
-                                        <select 
-                                            value={watchedStatusFilter} 
-                                            onChange={(e) => setWatchedStatusFilter(e.target.value)}
-                                            data-testid="manga-status-filter"
-                                            className="status-filter-select"
-                                        >
-                                            <option value="ALL">All</option>
-                                            <option value="READING">Reading</option>
-                                            <option value="COMPLETED">Completed</option>
-                                            <option value="ON_HOLD">On Hold</option>
-                                            <option value="DROPPED">Dropped</option>
-                                            <option value="PLAN_TO_READ">Planning to Read Next</option>
-                                        </select>
-                                    </div>}
-                                </div>
-                            </div>
-                            {/* Ranking (All Manga) - Show only in rankings view */}
-                            {mangaReadView === 'rankings' && mangaRankingOrder && mangaRankingOrder.length > 0 && (
-                                <div className="ranking" style={{ marginTop: '16px' }}>
-                                    <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
-                                    <ul className="ranking-list">
-                                        {mangaRankingOrder.map((id, index) => {
-                                            const item = (watchedItems || []).find(i => i.id === id);
-                                            if (!item) return null;
-                                            return (
-                                                <li
-                                                    key={id}
-                                                    className={`ranking-item ${draggingMangaIndex === index ? 'dragging' : ''}`}
-                                                    draggable
-                                                    onDragStart={() => setDraggingMangaIndex(index)}
-                                                    onDragOver={(e) => handleMangaDragOver(e, index)}
-                                                    onDrop={() => handleMangaDrop(index)}
-                                                    onDragEnd={() => handleMangaDrop(index)}
-                                                    onTouchStart={() => handleMangaTouchStart(index)}
-                                                    onTouchMove={handleMangaTouchMove}
-                                                    onTouchEnd={(e) => handleMangaTouchEnd(e, index)}
-                                                    style={{ 
-                                                        cursor: 'move', 
-                                                        touchAction: 'none',
-                                                        opacity: draggingMangaIndex === index ? 0.5 : 1,
-                                                        transform: draggingMangaIndex === index ? 'scale(1.05)' : 'scale(1)',
-                                                        transition: 'all 0.2s ease',
-                                                        boxShadow: draggingMangaIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
-                                                    }}
-                                                >
-                                                    <span className="rank-num">{index + 1}</span>
-                                                    {item.coverImageUrl && (
-                                                        <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
-                                                    )}
-                                                    <span className="rank-title">{item.title}</span>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            )}
-                            {mangaReadView === 'read' && (
-                            <>
-                            {error && !selectedWatchedItem ? (
-                                <p className="error-message">{error}</p>
-                            ) : isLoadingWatched ? (
-                                <div className="loading-placeholder">
-                                    <p>Loading read manga...</p>
-                                </div>
-                            ) : (
-                                <div className="watched-items-grid">
-                                    {watchedItems.length === 0 ? (
-                                        <p className="tab-placeholder">
-                                            No manga found. Add manga to your read list from the <strong>My List</strong> or <strong>Search</strong> tabs!
-                                        </p>
-                                    ) : (
-                                        watchedItems.map((item) => (
-                                            <div key={item.id} className="watched-item-card" onClick={() => {
-                                                setSelectedWatchedItem(item);
-                                                setEditWatchedData({
-                                                    status: item.status,
-                                                    chaptersRead: item.chaptersRead || 0,
-                                                    totalChapters: item.totalChapters || 0,
-                                                    rating: item.rating || '',
-                                                    notes: item.notes || ''
-                                                });
-                                            }}>
-                                                {item.coverImageUrl && (
-                                                    <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
-                                                )}
-                                                <div className="watched-item-info">
-                                                    <h4 className="watched-item-title">{item.title}</h4>
-                                                    <span className={`watched-status status-${item.status?.toLowerCase()}`}>
-                                                        {item.status?.replace(/_/g, ' ')}
-                                                    </span>
-                                                    {item.chaptersRead != null && (
-                                                        <div className="progress-info">
-                                                            <div className="progress-bar">
-                                                                <div 
-                                                                    className="progress-fill" 
-                                                                    style={{ 
-                                                                        width: `${item.totalChapters ? (item.chaptersRead / item.totalChapters) * 100 : 0}%` 
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            <span className="progress-text">
-                                                                {item.chaptersRead}{item.totalChapters ? `/${item.totalChapters}` : ''} chapters
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {item.rating && (
-                                                        <div className="rating-display">
-                                                            ⭐ {item.rating}/10
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-
-                            {selectedWatchedItem && (
-                                <div className="modal-overlay" onClick={() => {
-                                    setSelectedWatchedItem(null);
-                                }}>
-                                    <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => {
-                                            setSelectedWatchedItem(null);
-                                        }} className="modal-close">✕</button>
-                                        
-                                        <div className="watched-detail">
-                                            <div className="watched-detail-header">
-                                                {selectedWatchedItem.coverImageUrl && (
-                                                    <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
-                                                )}
-                                                <div className="watched-detail-info">
-                                                    <h2>{selectedWatchedItem.title}</h2>
-                                                    <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
-                                                        {selectedWatchedItem.status?.replace(/_/g, ' ')}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="watched-detail-body">
-                                                <div className="form-group">
-                                                    <label>Status</label>
-                                                    <select 
-                                                        value={editWatchedData.status} 
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
-                                                        className="status-select"
-                                                    >
-                                                        <option value="READING">Reading</option>
-                                                        <option value="COMPLETED">Completed</option>
-                                                        <option value="ON_HOLD">On Hold</option>
-                                                        <option value="DROPPED">Dropped</option>
-                                                        <option value="PLAN_TO_READ">Planning to Read Next</option>
-                                                    </select>
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Chapters Read</label>
-                                                    <div className="progress-input-group">
-                                                        <input 
-                                                            type="number" 
-                                                            min="0"
-                                                            max={(editWatchedData.totalChapters || editWatchedData.totalChapters == 0) ? 9999 : editWatchedData.totalChapters}
-                                                            value={editWatchedData.chaptersRead}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, chaptersRead: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
-                                                            onWheel={(e) => e.currentTarget.blur()}
-                                                        />
-                                                        <span className="progress-separator">/</span>
-                                                        <input 
-                                                            type="number" 
-                                                            min="0"
-                                                            value={editWatchedData.totalChapters}
-                                                            onChange={(e) => setEditWatchedData({...editWatchedData, totalChapters: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
-                                                            placeholder="Total"
-                                                            onWheel={(e) => e.currentTarget.blur()}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Rating (0-10)</label>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0" 
-                                                        max="10"
-                                                        value={editWatchedData.rating}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
-                                                        placeholder="Rate this manga"
-                                                        step="0.1"
-                                                        onWheel={(e) => e.currentTarget.blur()}
-                                                    />
-                                                </div>
-
-                                                <div className="form-group">
-                                                    <label>Notes</label>
-                                                    <textarea 
-                                                        value={editWatchedData.notes}
-                                                        onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
-                                                        placeholder="Your thoughts about this manga..."
-                                                        rows="4"
-                                                        maxLength="1000"
-                                                    />
-                                                    <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
-                                                </div>
-
-                                                <div className="watched-detail-actions">
-                                                    <button 
-                                                        onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
-                                                        className="save-button"
-                                                    >
-                                                        Save Changes
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
-                                                        className="remove-button"
-                                                    >
-                                                        Remove from List
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            </>
-                            )}
-                        </div>
-                    )}
-
-                    {activeProfileTab === 'profile' && (
-                        !isEditing ? (
-                            isLoadingProfile ? (
+            selectedUser ? (
+                <UserProfile
+                    selectedItem={selectedUser}
+                    onBack={() => openUserModal(savedType)}
+                    inProgressItems={watchedItems}
+                    addedItems={userList}
+                    onAddToList={handleAddToList}
+                    onRemoveFromList={handleRemoveFromList}
+                    onAddToInProgress={handleAddListItemToInProgress}
+                    accessToken={localStorage.getItem('authToken')}
+                    usersFollowing={editWatchedData.usersFollowing}
+                    usersFollowers={editWatchedData.usersFollowedBy}
+                    usersRequested={editWatchedData.usersRequestedToFollow}
+                    onHandleFollow={handleFollowUser}
+                    onHandleUnfollow={handleUnfollowUser}
+                    onHandleFollowRequest={handleRequestUser}
+                />
+            ) : (
+                showUserModal ? (
+                    <div className="modal-overlay" onClick={closeUserModal} style={{ zIndex: 1000 }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 400, margin: 'auto' }}>
+                            <button onClick={closeUserModal} className="modal-close" style={{ float: 'right', fontSize: 20, border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                            <h2 style={{ margin: '12px 0 20px 0', textAlign: 'center' }}>{userModalTitle}</h2>
+                            {isLoadingFollowers ? (
                                 <Spinner />
+                            ) : userModalList.length === 0 ? (
+                                <p style={{ textAlign: 'center', color: '#888' }}>No users found.</p>
                             ) : (
-                                <div className="profile-view" data-testid="profile-view">
-                                    <div className="profile-header">
-                                        <div className="profile-avatar">
-                                            {profileData.avatarUrl ? (
-                                                <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                                <ul className="user-modal-list">
+                                    {userModalList.map((user, idx) => (
+                                        <li
+                                            key={user.id || idx}
+                                            className="user-modal-list-item"
+                                            tabIndex={0}
+                                            role="button"
+                                            onClick={() => setSelectedUser(user)}
+                                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedUser(user); }}
+                                        >
+                                            {user.avatarUrl ? (
+                                                <img src={user.avatarUrl} alt={user.username} className="user-modal-avatar" />
                                             ) : (
-                                                <div className="avatar-placeholder">
-                                                    {profileData.username.charAt(0).toUpperCase()}
+                                                <div className="user-modal-avatar-placeholder">
+                                                    {user.username ? user.username.charAt(0).toUpperCase() : '?'}
                                                 </div>
                                             )}
-                                        </div>
-                                        <div className="profile-info">
-                                            <h2>{profileData.username}</h2>
-                                            {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
-                                            {/* Followers/Following/Requests Buttons in header */}
-                                            <div className="profile-follow-bar" style={{ display: 'flex', gap: '16px', marginBottom: 0, marginTop: 8, justifyContent: 'center' }}>
-                                                <button className="follow-count-btn" onClick={() => { openUserModal('followers'); setSavedType('followers'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowedBy?.length || 0}</span> Followers
-                                                </button>
-                                                <button className="follow-count-btn" onClick={() => { openUserModal('following'); setSavedType('following'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowing?.length || 0}</span> Following
-                                                </button>
-                                                <button className="follow-count-btn" onClick={() => { openUserModal('requests'); setSavedType('requests'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ fontWeight: 600 }}>{editedProfileData.usersRequestedToFollow?.length || 0}</span> Requests
-                                                </button>
+                                            <span className="user-modal-username">{user.username || 'Unknown'}</span>
+                                            <div className="user-request-buttons">  
+                                                {savedType === 'requests' && (
+                                                    <>
+                                                        <button
+                                                            className="approve-request-button"
+                                                            onClick={(e) => {handleAcceptFollowRequest(user.id); e.stopPropagation();}}
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button
+                                                            className="deny-request-button"
+                                                            onClick={(e) => {handleDenyFollowRequest(user.id); e.stopPropagation();}}
+                                                        >
+                                                            Deny
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
-                                            <div className="profile-actions">
-                                                <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
-                                                    Edit Profile
-                                                </button>
-                                                <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
-                                                    Logout
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                            
-                                    <div className="profile-details">
-                                        <div className="profile-section">
-                                            <h3>Email Address</h3>
-                                            <p>{profileData.emailAddress || 'No email address provided.'}</p>
-                                        </div>
-                                        
-                                        {/* <div className="profile-section">
-                                            <h3>Bio</h3>
-                                            <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
-                                        </div> */}
-                                        
-                                        {/* <div className="profile-section">
-                                            <h3>Favorite Anime</h3>
-                                            <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
-                                        </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="profile-logged-in" data-testid="profile-logged-in">
+                        <div className="profile-tabs">
+                            <button 
+                                className={`profile-tab-button ${activeProfileTab === 'profile' ? 'active' : ''}`}
+                                onClick={() => setActiveProfileTab('profile')}
+                            >
+                                Profile
+                            </button>
+                            <button 
+                                className={`profile-tab-button ${activeProfileTab === 'list' ? 'active' : ''}`}
+                                onClick={() => setActiveProfileTab('list')}
+                            >
+                                My List
+                            </button>
+                            <button 
+                                className={`profile-tab-button ${activeProfileTab === 'watched' ? 'active' : ''}`}
+                                onClick={() => setActiveProfileTab('watched')}
+                            >
+                                Anime
+                            </button>
+                            <button 
+                                className={`profile-tab-button ${activeProfileTab === 'read' ? 'active' : ''}`}
+                                onClick={() => setActiveProfileTab('read')}
+                            >
+                                Manga
+                            </button>
+                        </div>
 
-                                        <div className="profile-section">
-                                            <h3>Favorite Manga</h3>
-                                            <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
-                                        </div> */}
-                                        
-                                        <div className="profile-section">
-                                            <h3>Favorite Genres</h3>
-                                            <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
-                                                ? profileData.favoriteGenres.join(', ')
-                                                : (profileData.favoriteGenres || 'Not specified')}
-                                            </p>
-                                        </div>
+                        <div className="profile-tab-content">
+                            {activeProfileTab === 'list' && (
+                                <div className="list-tab">
+                                    <div className="list-tab-buttons">
+                                        <button onClick={() => setActiveListTab('anime')} data-testid="list-anime-tab" className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
+                                        <button onClick={() => setActiveListTab('manga')} data-testid="list-manga-tab" className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
                                     </div>
+                                    {error && !selectedListItem ? (
+                                        <p className="error-message" data-testid="list-error">{error}</p>
+                                    ) : ( isLoadingList ? (
+                                        <div className="loading-placeholder" style={{ textAlign: 'center', padding: '80px 40px' }}>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading your list...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="user-lists" data-testid="user-lists">
+                                            {userList.length === 0 ? (
+                                                <p className="tab-placeholder">Your list is empty. Start adding {activeListTab.toLowerCase()} to your {activeListTab.toLowerCase() == 'anime' ? 'watch' : 'reading'} list using the <strong>Search</strong> or <strong>Discover</strong> tabs!</p>
+                                            ) : (
+                                                <ul className="user-list">
+                                                    {[...userList]
+                                                        .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
+                                                        .map((item) => (
+                                                        <li key={item.id} data-testid={`list-item-${item.id}`} className="list-item" onClick={() => handleListItemClick(item)}>
+                                                            {item.coverImageUrl && (
+                                                                <img src={item.coverImageUrl} alt={item.title} className="item-cover-image" />
+                                                            )}
+                                                            <div className="item-info">
+                                                                <span className="item-title">{item.title}</span>
+                                                            </div>
+                                                            <div className="list-item-buttons" onClick={(e) => e.stopPropagation()}>
+                                                                {listItemsAsInProgress.has(item.anilistId) ? (
+                                                                    <button className="in-progress-button added">✓ In Progress</button>
+                                                                ) : (
+                                                                    <button 
+                                                                        className="in-progress-button"
+                                                                        onClick={() => handleAddListItemToInProgress(item)}
+                                                                    >
+                                                                        + Mark as In Progress
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {selectedListItem && (
+                                        <div className="modal-overlay" onClick={() => setSelectedListItem(null)}>
+                                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                                <button onClick={() => setSelectedListItem(null)} className="modal-close">✕</button>
+                                                {isLoadingItem ? (
+                                                    <div className="detail-inner" style={{ textAlign: 'center', padding: '80px 40px' }}>
+                                                        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading details...</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="detail-view">
+                                                        <div className="detail-inner">
+                                                            <div className="media-type">{selectedListItem.type} {selectedListItem.format != null && selectedListItem.format !== selectedListItem.type && `• ${selectedListItem.format}`}</div>
+                                                            <h2>{selectedListItem.title?.english || selectedListItem.title?.romaji || selectedListItem.title?.nativeTitle || 'Error Getting Title'}</h2>
+                                                            {selectedListItem.coverImageUrl && <img src={selectedListItem.coverImageUrl} alt={selectedListItem.title?.english || selectedListItem.title?.romaji} className="detail-cover-image" />}
+                                                            <div className="detail-info">
+                                                                {selectedListItem.year && <span>Year: {selectedListItem.year}</span>}
+                                                                {selectedListItem.averageScore && <span> IMDB Score: {(selectedListItem.averageScore / 10).toFixed(1)}/10</span>}
+                                                            </div>
+                                                        {selectedListItem.description && (
+                                                            <div className="description" data-testid="item-description">
+                                                                <h4>Description</h4>
+                                                                <div dangerouslySetInnerHTML={{ __html: selectedListItem.description }} />
+                                                            </div>
+                                                        )}
+                                                        {selectedListItem.episodes && <div><strong>Episodes:</strong> {selectedListItem.episodes}</div>}
+                                                        {selectedListItem.chapters && <div><strong>Chapters:</strong> {selectedListItem.chapters}</div>}
+                                                        {selectedListItem.volumes && <div><strong>Volumes:</strong> {selectedListItem.volumes}</div>}
+                                                        {selectedListItem.genres && selectedListItem.genres.length > 0 && (
+                                                            <div className="genres">
+                                                                <div className="genre-list">
+                                                                    <strong>Genres:</strong> {selectedListItem.genres.join(', ')}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {selectedListItem.studios && selectedListItem.studios.length > 0 && (
+                                                            <div className="studios">
+                                                                <strong>Studios:</strong> {selectedListItem.studios.join(', ')}
+                                                            </div>
+                                                        )}
+                                                        {selectedListItem.synonyms && selectedListItem.synonyms.length > 0 && (
+                                                            <div className="synonyms">
+                                                                <strong>Other Names:</strong> {selectedListItem.synonyms.join(', ')}
+                                                            </div>
+                                                        )}
+                                                        {selectedListItem.status && <div className={`status status-${selectedListItem.status.toLowerCase()}`}><strong>Status:</strong> {selectedListItem.status.replace(/_/g, ' ')}</div>}
+                                                        {selectedListItem.isAdult && <div className="is-adult">⚠️ Adult Content</div>}
+                                                        {selectedListItem.nextAiringEpisode && (
+                                                            <div className="next-airing">
+                                                                <strong>Next Episode:</strong> Episode {selectedListItem.nextAiringEpisode.episode} releases on {new Date(Date.now() + selectedListItem.nextAiringEpisode.timeUntilAiring * 1000).toLocaleDateString()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )
-                        ) : (
-                            <div className="profile-edit" data-testid="profile-edit">
-                                <h2>Edit Profile</h2>
-                                <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
-                                    <div className="form-group">
-                                        <label>Username</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Enter your username"
-                                            value={editedProfileData.username}
-                                            onChange={(e) => {
-                                                setEditedProfileData({...editedProfileData, username: e.target.value});
-                                                checkUsernameAvailability(e.target.value);
-                                            }}
-                                            required
-                                            data-testid="username-input"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Avatar URL</label>
-                                        <input
-                                            type="url"
-                                            placeholder="https://example.com/your-avatar.jpg"
-                                            value={editedProfileData.avatarUrl}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, avatarUrl: e.target.value})}
-                                            data-testid="avatar-url-input"
-                                        />
-                                        {editedProfileData.avatarUrl && (
-                                            <div className="avatar-preview">
-                                                <img src={editedProfileData.avatarUrl} alt="Avatar preview" />
+                            )}
+
+                            {activeProfileTab === 'watched' && (
+                                <div className="watched-tab">
+                                    <div className="watched-header">
+                                        <h2>Watched Anime</h2>
+                                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                            <div className="view-tabs">
+                                                <button
+                                                    onClick={() => setAnimeWatchedView('watched')}
+                                                    className={`view-tab-button ${animeWatchedView === 'watched' ? 'active' : ''}`}
+                                                >
+                                                    Watched
+                                                </button>
+                                                <button
+                                                    onClick={() => setAnimeWatchedView('rankings')}
+                                                    className={`view-tab-button ${animeWatchedView === 'rankings' ? 'active' : ''}`}
+                                                >
+                                                    Rankings
+                                                </button>
                                             </div>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Email Address</label>
-                                        <textarea
-                                            placeholder="Enter your email address"
-                                            value={editedProfileData.emailAddress}
-                                            onChange={(e) => {
-                                                setEditedProfileData({...editedProfileData, emailAddress: e.target.value});
-                                                checkEmailAvailability(e.target.value);
-                                            }}
-                                            required
-                                            data-testid="email-textarea"
-                                        />
-                                    </div>
-                                    
-                                    {/* <div className="form-group">
-                                        <label>Bio</label>
-                                        <textarea
-                                            placeholder="Tell us about yourself..."
-                                            value={editedProfileData.bio}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, bio: e.target.value})}
-                                            maxLength="500"
-                                            rows="4"
-                                            data-testid="bio-textarea"
-                                        />
-                                        <span className="char-count">{editedProfileData.bio.length}/500</span>
-                                    </div> */}
-                                    
-                                    {/* <div className="form-group">
-                                        <label>Favorite Anime</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g., Attack on Titan"
-                                            value={editedProfileData.favoriteAnime}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteAnime: e.target.value})}
-                                            data-testid="favorite-anime-input"
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Favorite Manga</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g., One Piece"
-                                            value={editedProfileData.favoriteManga}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, favoriteManga: e.target.value})}
-                                            data-testid="favorite-manga-input"
-                                        />
-                                    </div> */}
-                                    
-                                    <div className="form-group">
-                                        <label>Favorite Genres</label>
-                                        <div className="genre-button-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                            {genres.map((genre) => {
-                                                const isSelected = (editedProfileData.favoriteGenres || []).includes(genre);
-                                                return (
-                                                    <button
-                                                        key={genre}
-                                                        type="button"
-                                                        onClick={() => toggleFavoriteGenre(genre)}
-                                                        className={`genre-button ${isSelected ? 'selected' : ''}`}
-                                                        data-testid={`favorite-genre-${genre}`}
-                                                        style={{
-                                                            padding: '6px 10px',
-                                                            borderRadius: '16px',
-                                                            border: '1px solid #ccc',
-                                                            backgroundColor: isSelected ? '#667eea' : '#f5f5f5',
-                                                            color: isSelected ? '#fff' : '#333',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 120ms ease',
-                                                        }}
-                                                    >
-                                                        {genre}
-                                                    </button>
-                                                );
-                                            })}
+                                            {animeWatchedView === 'watched' && <div className="status-filter">
+                                                <label>Filter by Status:</label>
+                                                <select 
+                                                    value={watchedStatusFilter} 
+                                                    onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                                    data-testid="anime-status-filter"
+                                                    className="status-filter-select"
+                                                >
+                                                    <option value="ALL">All</option>
+                                                    <option value="WATCHING">Watching</option>
+                                                    <option value="COMPLETED">Completed</option>
+                                                    <option value="ON_HOLD">On Hold</option>
+                                                    <option value="DROPPED">Dropped</option>
+                                                    <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
+                                                </select>
+                                            </div>}
                                         </div>
                                     </div>
-                                    
-                                    {/* <div className="form-group">
-                                        <label>Age</label>
-                                        <input
-                                            type="number"
-                                            placeholder="Your age"
-                                            value={editedProfileData.age}
-                                            onChange={(e) => setEditedProfileData({...editedProfileData, age: e.target.value})}
-                                            min="1"
-                                            max="120"
-                                            data-testid="age-input"
-                                        />
-                                    </div> */}
-                                    
-                                    {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
-                                    
-                                    <div className="form-actions">
-                                        <button type="submit" disabled={isLoading || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
-                                            {isLoading ? 'Saving...' : 'Save Changes'}
-                                        </button>
-                                        <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
-                                            Cancel
-                                        </button>
+                                    {/* Ranking (All Anime) - Show only in rankings view */}
+                                    {animeWatchedView === 'rankings' && animeRankingOrder && animeRankingOrder.length > 0 && (
+                                        <div className="ranking" style={{ marginTop: '16px' }}>
+                                            <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
+                                            <ul className="ranking-list">
+                                                {animeRankingOrder.map((id, index) => {
+                                                    const item = (watchedItems || []).find(i => i.id === id);
+                                                    if (!item) return null;
+                                                    return (
+                                                        <li
+                                                            key={id}
+                                                            className={`ranking-item ${draggingAnimeIndex === index ? 'dragging' : ''}`}
+                                                            draggable
+                                                            onDragStart={() => setDraggingAnimeIndex(index)}
+                                                            onDragOver={(e) => handleAnimeDragOver(e, index)}
+                                                            onDrop={() => handleAnimeDrop(index)}
+                                                            onDragEnd={() => handleAnimeDrop(index)}
+                                                            onTouchStart={() => handleAnimeTouchStart(index)}
+                                                            onTouchMove={handleAnimeTouchMove}
+                                                            onTouchEnd={(e) => handleAnimeTouchEnd(e, index)}
+                                                            style={{ 
+                                                                cursor: 'move', 
+                                                                touchAction: 'none',
+                                                                opacity: draggingAnimeIndex === index ? 0.5 : 1,
+                                                                transform: draggingAnimeIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                                                transition: 'all 0.2s ease',
+                                                                boxShadow: draggingAnimeIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
+                                                            }}
+                                                        >
+                                                            <span className="rank-num">{index + 1}</span>
+                                                            {item.coverImageUrl && (
+                                                                <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
+                                                            )}
+                                                            <span className="rank-title">{item.title}</span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Watched grid - Show only in watched view */}
+                                    {animeWatchedView === 'watched' && (
+                                        <>
+                                        {error && !selectedWatchedItem ? (
+                                        <p className="error-message">{error}</p>
+                                    ) : isLoadingWatched ? (
+                                        <div className="loading-placeholder">
+                                            <p>Loading watched anime...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="watched-items-grid">
+                                            {watchedItems.length === 0 ? (
+                                                <p className="tab-placeholder">
+                                                    No anime found. Add anime to your watched list from the <strong>My List</strong> or <strong>Search</strong> tabs!
+                                                </p>
+                                            ) : (
+                                                watchedItems.map((item) => (
+                                                    <div key={item.id} className="watched-item-card" onClick={() => {
+                                                        setSelectedWatchedItem(item);
+                                                        setEditWatchedData({
+                                                            status: item.status,
+                                                            episodesWatched: item.episodesWatched || 0,
+                                                            totalEpisodes: item.totalEpisodes || 0,
+                                                            rating: item.rating || '',
+                                                            notes: item.notes || ''
+                                                        });
+                                                    }}>
+                                                        {item.coverImageUrl && (
+                                                            <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
+                                                        )}
+                                                        <div className="watched-item-info">
+                                                            <h4 className="watched-item-title">{item.title}</h4>
+                                                            <span className={`watched-status status-${item.status?.toLowerCase()}`}>
+                                                                {item.status?.replace(/_/g, ' ')}
+                                                            </span>
+                                                            {item.episodesWatched != null && (
+                                                                <div className="progress-info">
+                                                                    <div className="progress-bar">
+                                                                        <div 
+                                                                            className="progress-fill" 
+                                                                            style={{ 
+                                                                                width: `${item.totalEpisodes ? (item.episodesWatched / item.totalEpisodes) * 100 : 0}%` 
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="progress-text">
+                                                                        {item.episodesWatched}{item.totalEpisodes ? `/${item.totalEpisodes}` : ''} episodes
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            {item.rating && (
+                                                                <div className="rating-display">
+                                                                    ⭐ {item.rating}/10
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {selectedWatchedItem && (
+                                        <div className="modal-overlay" onClick={() => {
+                                            setSelectedWatchedItem(null);
+                                        }}>
+                                            <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
+                                                <button onClick={() => {
+                                                    setSelectedWatchedItem(null);
+                                                }} className="modal-close">✕</button>
+                                                
+                                                <div className="watched-detail">
+                                                    <div className="watched-detail-header">
+                                                        {selectedWatchedItem.coverImageUrl && (
+                                                            <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
+                                                        )}
+                                                        <div className="watched-detail-info">
+                                                            <h2>{selectedWatchedItem.title}</h2>
+                                                            <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
+                                                                {selectedWatchedItem.status?.replace(/_/g, ' ')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="watched-detail-body">
+                                                        <div className="form-group">
+                                                            <label>Status</label>
+                                                            <select 
+                                                                value={editWatchedData.status} 
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
+                                                                className="status-select"
+                                                            >
+                                                                <option value="WATCHING">Watching</option>
+                                                                <option value="COMPLETED">Completed</option>
+                                                                <option value="ON_HOLD">On Hold</option>
+                                                                <option value="DROPPED">Dropped</option>
+                                                                <option value="PLAN_TO_WATCH">Planning to Watch Next</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Episodes Watched</label>
+                                                            <div className="progress-input-group">
+                                                                <input 
+                                                                    type="number"
+                                                                    step="1" 
+                                                                    max={(!editWatchedData.totalEpisodes || editWatchedData.totalEpisodes === 0) ? 9999 : editWatchedData.totalEpisodes}
+                                                                    value={editWatchedData.episodesWatched}
+                                                                    onChange={(e) => setEditWatchedData({...editWatchedData, episodesWatched: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                                    onWheel={(e) => e.currentTarget.blur()}
+                                                                />
+                                                                <span className="progress-separator">/</span>
+                                                                <input 
+                                                                    type="number" 
+                                                                    step="1"
+                                                                    min="0"
+                                                                    value={editWatchedData.totalEpisodes}
+                                                                    onChange={(e) => setEditWatchedData({...editWatchedData, totalEpisodes: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                                    placeholder="Total"
+                                                                    onWheel={(e) => e.currentTarget.blur()}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Rating (0-10)</label>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0" 
+                                                                max="10"
+                                                                value={editWatchedData.rating}
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
+                                                                placeholder="Rate this anime"
+                                                                step="0.1"
+                                                                onWheel={(e) => e.currentTarget.blur()}
+                                                            />
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Notes</label>
+                                                            <textarea 
+                                                                value={editWatchedData.notes}
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
+                                                                placeholder="Your thoughts about this anime..."
+                                                                rows="4"
+                                                                maxLength="1000"
+                                                            />
+                                                            <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
+                                                        </div>
+
+                                                        <div className="watched-detail-actions">
+                                                            <button 
+                                                                onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
+                                                                className="save-button"
+                                                            >
+                                                                Save Changes
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
+                                                                className="remove-button"
+                                                            >
+                                                                Remove from List
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    </>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeProfileTab === 'read' && (
+                                <div className="watched-tab read-tab">
+                                    <div className="watched-header">
+                                        <h2>Read Manga</h2>
+                                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                            <div className="view-tabs">
+                                                <button 
+                                                    className={`view-tab-button ${mangaReadView === 'read' ? 'active' : ''}`}
+                                                    onClick={() => setMangaReadView('read')}
+                                                >
+                                                    Read
+                                                </button>
+                                                <button 
+                                                    className={`view-tab-button ${mangaReadView === 'rankings' ? 'active' : ''}`}
+                                                    onClick={() => setMangaReadView('rankings')}
+                                                >
+                                                    Rankings
+                                                </button>
+                                            </div>
+                                            {mangaReadView === 'read' && <div className="status-filter">
+                                                <label>Filter by Status:</label>
+                                                <select 
+                                                    value={watchedStatusFilter} 
+                                                    onChange={(e) => setWatchedStatusFilter(e.target.value)}
+                                                    data-testid="manga-status-filter"
+                                                    className="status-filter-select"
+                                                >
+                                                    <option value="ALL">All</option>
+                                                    <option value="READING">Reading</option>
+                                                    <option value="COMPLETED">Completed</option>
+                                                    <option value="ON_HOLD">On Hold</option>
+                                                    <option value="DROPPED">Dropped</option>
+                                                    <option value="PLAN_TO_READ">Planning to Read Next</option>
+                                                </select>
+                                            </div>}
+                                        </div>
                                     </div>
-                                </form>
-                            </div>
-                        )
-                    )}
-                </div>
-            </div>
+                                    {/* Ranking (All Manga) - Show only in rankings view */}
+                                    {mangaReadView === 'rankings' && mangaRankingOrder && mangaRankingOrder.length > 0 && (
+                                        <div className="ranking" style={{ marginTop: '16px' }}>
+                                            <h3 style={{ color: '#667eea', marginBottom: '8px' }}>Your Rankings</h3>
+                                            <ul className="ranking-list">
+                                                {mangaRankingOrder.map((id, index) => {
+                                                    const item = (watchedItems || []).find(i => i.id === id);
+                                                    if (!item) return null;
+                                                    return (
+                                                        <li
+                                                            key={id}
+                                                            className={`ranking-item ${draggingMangaIndex === index ? 'dragging' : ''}`}
+                                                            draggable
+                                                            onDragStart={() => setDraggingMangaIndex(index)}
+                                                            onDragOver={(e) => handleMangaDragOver(e, index)}
+                                                            onDrop={() => handleMangaDrop(index)}
+                                                            onDragEnd={() => handleMangaDrop(index)}
+                                                            onTouchStart={() => handleMangaTouchStart(index)}
+                                                            onTouchMove={handleMangaTouchMove}
+                                                            onTouchEnd={(e) => handleMangaTouchEnd(e, index)}
+                                                            style={{ 
+                                                                cursor: 'move', 
+                                                                touchAction: 'none',
+                                                                opacity: draggingMangaIndex === index ? 0.5 : 1,
+                                                                transform: draggingMangaIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                                                transition: 'all 0.2s ease',
+                                                                boxShadow: draggingMangaIndex === index ? '0 8px 16px rgba(102, 126, 234, 0.4)' : 'none'
+                                                            }}
+                                                        >
+                                                            <span className="rank-num">{index + 1}</span>
+                                                            {item.coverImageUrl && (
+                                                                <img src={item.coverImageUrl} alt={item.title} className="rank-cover" />
+                                                            )}
+                                                            <span className="rank-title">{item.title}</span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {mangaReadView === 'read' && (
+                                    <>
+                                    {error && !selectedWatchedItem ? (
+                                        <p className="error-message">{error}</p>
+                                    ) : isLoadingWatched ? (
+                                        <div className="loading-placeholder">
+                                            <p>Loading read manga...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="watched-items-grid">
+                                            {watchedItems.length === 0 ? (
+                                                <p className="tab-placeholder">
+                                                    No manga found. Add manga to your read list from the <strong>My List</strong> or <strong>Search</strong> tabs!
+                                                </p>
+                                            ) : (
+                                                watchedItems.map((item) => (
+                                                    <div key={item.id} className="watched-item-card" onClick={() => {
+                                                        setSelectedWatchedItem(item);
+                                                        setEditWatchedData({
+                                                            status: item.status,
+                                                            chaptersRead: item.chaptersRead || 0,
+                                                            totalChapters: item.totalChapters || 0,
+                                                            rating: item.rating || '',
+                                                            notes: item.notes || ''
+                                                        });
+                                                    }}>
+                                                        {item.coverImageUrl && (
+                                                            <img src={item.coverImageUrl} alt={item.title} className="watched-item-cover" />
+                                                        )}
+                                                        <div className="watched-item-info">
+                                                            <h4 className="watched-item-title">{item.title}</h4>
+                                                            <span className={`watched-status status-${item.status?.toLowerCase()}`}>
+                                                                {item.status?.replace(/_/g, ' ')}
+                                                            </span>
+                                                            {item.chaptersRead != null && (
+                                                                <div className="progress-info">
+                                                                    <div className="progress-bar">
+                                                                        <div 
+                                                                            className="progress-fill" 
+                                                                            style={{ 
+                                                                                width: `${item.totalChapters ? (item.chaptersRead / item.totalChapters) * 100 : 0}%` 
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="progress-text">
+                                                                        {item.chaptersRead}{item.totalChapters ? `/${item.totalChapters}` : ''} chapters
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            {item.rating && (
+                                                                <div className="rating-display">
+                                                                    ⭐ {item.rating}/10
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {selectedWatchedItem && (
+                                        <div className="modal-overlay" onClick={() => {
+                                            setSelectedWatchedItem(null);
+                                        }}>
+                                            <div className="modal-content watched-detail-modal" onClick={(e) => e.stopPropagation()}>
+                                                <button onClick={() => {
+                                                    setSelectedWatchedItem(null);
+                                                }} className="modal-close">✕</button>
+                                                
+                                                <div className="watched-detail">
+                                                    <div className="watched-detail-header">
+                                                        {selectedWatchedItem.coverImageUrl && (
+                                                            <img src={selectedWatchedItem.coverImageUrl} alt={selectedWatchedItem.title} className="watched-detail-cover" />
+                                                        )}
+                                                        <div className="watched-detail-info">
+                                                            <h2>{selectedWatchedItem.title}</h2>
+                                                            <span className={`watched-status status-${selectedWatchedItem.status?.toLowerCase()}`}>
+                                                                {selectedWatchedItem.status?.replace(/_/g, ' ')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="watched-detail-body">
+                                                        <div className="form-group">
+                                                            <label>Status</label>
+                                                            <select 
+                                                                value={editWatchedData.status} 
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, status: e.target.value})}
+                                                                className="status-select"
+                                                            >
+                                                                <option value="READING">Reading</option>
+                                                                <option value="COMPLETED">Completed</option>
+                                                                <option value="ON_HOLD">On Hold</option>
+                                                                <option value="DROPPED">Dropped</option>
+                                                                <option value="PLAN_TO_READ">Planning to Read Next</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Chapters Read</label>
+                                                            <div className="progress-input-group">
+                                                                <input 
+                                                                    type="number" 
+                                                                    min="0"
+                                                                    max={(editWatchedData.totalChapters || editWatchedData.totalChapters == 0) ? 9999 : editWatchedData.totalChapters}
+                                                                    value={editWatchedData.chaptersRead}
+                                                                    onChange={(e) => setEditWatchedData({...editWatchedData, chaptersRead: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                                    onWheel={(e) => e.currentTarget.blur()}
+                                                                />
+                                                                <span className="progress-separator">/</span>
+                                                                <input 
+                                                                    type="number" 
+                                                                    min="0"
+                                                                    value={editWatchedData.totalChapters}
+                                                                    onChange={(e) => setEditWatchedData({...editWatchedData, totalChapters: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                                                                    placeholder="Total"
+                                                                    onWheel={(e) => e.currentTarget.blur()}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Rating (0-10)</label>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0" 
+                                                                max="10"
+                                                                value={editWatchedData.rating}
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, rating: e.target.value === '' ? '' : parseFloat(e.target.value) || 0})}
+                                                                placeholder="Rate this manga"
+                                                                step="0.1"
+                                                                onWheel={(e) => e.currentTarget.blur()}
+                                                            />
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label>Notes</label>
+                                                            <textarea 
+                                                                value={editWatchedData.notes}
+                                                                onChange={(e) => setEditWatchedData({...editWatchedData, notes: e.target.value})}
+                                                                placeholder="Your thoughts about this manga..."
+                                                                rows="4"
+                                                                maxLength="1000"
+                                                            />
+                                                            <span className="char-count">{(editWatchedData.notes || '').length}/1000</span>
+                                                        </div>
+
+                                                        <div className="watched-detail-actions">
+                                                            <button 
+                                                                onClick={() => handleUpdateWatchedItem(selectedWatchedItem.id, editWatchedData)}
+                                                                className="save-button"
+                                                            >
+                                                                Save Changes
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleRemoveWatchedItem(selectedWatchedItem.anilistId)}
+                                                                className="remove-button"
+                                                            >
+                                                                Remove from List
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    </>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeProfileTab === 'profile' && (
+                                !isEditing ? (
+                                    isLoadingProfile ? (
+                                        <Spinner />
+                                    ) : (
+                                        <div className="profile-view" data-testid="profile-view">
+                                            <div className="profile-header">
+                                                <div className="profile-avatar">
+                                                    {profileData.avatarUrl ? (
+                                                        <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                                                    ) : (
+                                                        <div className="avatar-placeholder">
+                                                            {profileData.username.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="profile-info">
+                                                    <h2>{profileData.username}</h2>
+                                                    {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
+                                                    {/* Followers/Following/Requests Buttons in header */}
+                                                    <div className="profile-follow-bar" style={{ display: 'flex', gap: '16px', marginBottom: 0, marginTop: 8, justifyContent: 'center' }}>
+                                                        <button className="follow-count-btn" onClick={() => { openUserModal('followers'); setSavedType('followers'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowedBy?.length || 0}</span> Followers
+                                                        </button>
+                                                        <button className="follow-count-btn" onClick={() => { openUserModal('following'); setSavedType('following'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowing?.length || 0}</span> Following
+                                                        </button>
+                                                        <button className="follow-count-btn" onClick={() => { openUserModal('requests'); setSavedType('requests'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersRequestedToFollow?.length || 0}</span> Requests
+                                                        </button>
+                                                    </div>
+                                                    <div className="profile-actions">
+                                                        <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
+                                                            Edit Profile
+                                                        </button>
+                                                        <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
+                                                            Logout
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    
+                                            <div className="profile-details">
+                                                <div className="profile-section">
+                                                    <h3>Email Address</h3>
+                                                    <p>{profileData.emailAddress || 'No email address provided.'}</p>
+                                                </div>
+                                                
+                                                {/* <div className="profile-section">
+                                                    <h3>Bio</h3>
+                                                    <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
+                                                </div> */}
+                                                
+                                                {/* <div className="profile-section">
+                                                    <h3>Favorite Anime</h3>
+                                                    <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
+                                                </div>
+
+                                                <div className="profile-section">
+                                                    <h3>Favorite Manga</h3>
+                                                    <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
+                                                </div> */}
+                                                
+                                                <div className="profile-section">
+                                                    <h3>Favorite Genres</h3>
+                                                    <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
+                                                        ? profileData.favoriteGenres.join(', ')
+                                                        : (profileData.favoriteGenres || 'Not specified')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="profile-edit" data-testid="profile-edit">
+                                        <h2>Edit Profile</h2>
+                                        <form onSubmit={handleProfileUpdate} className="profile-edit-form" data-testid="profile-edit-form">
+                                            <div className="form-group">
+                                                <label>Username</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter your username"
+                                                    value={editedProfileData.username}
+                                                    onChange={(e) => {
+                                                        setEditedProfileData({...editedProfileData, username: e.target.value});
+                                                        checkUsernameAvailability(e.target.value);
+                                                    }}
+                                                    required
+                                                    data-testid="username-input"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Avatar URL</label>
+                                                <input
+                                                    type="url"
+                                                    placeholder="https://example.com/your-avatar.jpg"
+                                                    value={editedProfileData.avatarUrl}
+                                                    onChange={(e) => setEditedProfileData({...editedProfileData, avatarUrl: e.target.value})}
+                                                    data-testid="avatar-url-input"
+                                                />
+                                                {editedProfileData.avatarUrl && (
+                                                    <div className="avatar-preview">
+                                                        <img src={editedProfileData.avatarUrl} alt="Avatar preview" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Email Address</label>
+                                                <textarea
+                                                    placeholder="Enter your email address"
+                                                    value={editedProfileData.emailAddress}
+                                                    onChange={(e) => {
+                                                        setEditedProfileData({...editedProfileData, emailAddress: e.target.value});
+                                                        checkEmailAvailability(e.target.value);
+                                                    }}
+                                                    required
+                                                    data-testid="email-textarea"
+                                                />
+                                            </div>
+                                            
+                                            {/* <div className="form-group">
+                                                <label>Bio</label>
+                                                <textarea
+                                                    placeholder="Tell us about yourself..."
+                                                    value={editedProfileData.bio}
+                                                    onChange={(e) => setEditedProfileData({...editedProfileData, bio: e.target.value})}
+                                                    maxLength="500"
+                                                    rows="4"
+                                                    data-testid="bio-textarea"
+                                                />
+                                                <span className="char-count">{editedProfileData.bio.length}/500</span>
+                                            </div> */}
+                                            
+                                            {/* <div className="form-group">
+                                                <label>Favorite Anime</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g., Attack on Titan"
+                                                    value={editedProfileData.favoriteAnime}
+                                                    onChange={(e) => setEditedProfileData({...editedProfileData, favoriteAnime: e.target.value})}
+                                                    data-testid="favorite-anime-input"
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Favorite Manga</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g., One Piece"
+                                                    value={editedProfileData.favoriteManga}
+                                                    onChange={(e) => setEditedProfileData({...editedProfileData, favoriteManga: e.target.value})}
+                                                    data-testid="favorite-manga-input"
+                                                />
+                                            </div> */}
+                                            
+                                            <div className="form-group">
+                                                <label>Favorite Genres</label>
+                                                <div className="genre-button-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                    {genres.map((genre) => {
+                                                        const isSelected = (editedProfileData.favoriteGenres || []).includes(genre);
+                                                        return (
+                                                            <button
+                                                                key={genre}
+                                                                type="button"
+                                                                onClick={() => toggleFavoriteGenre(genre)}
+                                                                className={`genre-button ${isSelected ? 'selected' : ''}`}
+                                                                data-testid={`favorite-genre-${genre}`}
+                                                                style={{
+                                                                    padding: '6px 10px',
+                                                                    borderRadius: '16px',
+                                                                    border: '1px solid #ccc',
+                                                                    backgroundColor: isSelected ? '#667eea' : '#f5f5f5',
+                                                                    color: isSelected ? '#fff' : '#333',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 120ms ease',
+                                                                }}
+                                                            >
+                                                                {genre}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* <div className="form-group">
+                                                <label>Age</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Your age"
+                                                    value={editedProfileData.age}
+                                                    onChange={(e) => setEditedProfileData({...editedProfileData, age: e.target.value})}
+                                                    min="1"
+                                                    max="120"
+                                                    data-testid="age-input"
+                                                />
+                                            </div> */}
+                                            
+                                            {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
+                                            
+                                            <div className="form-actions">
+                                                <button type="submit" disabled={isLoading || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
+                                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                                </button>
+                                                <button type="button" onClick={() => setIsEditing(false)} className="cancel-button" data-testid="cancel-edit-button">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </div>
+                )
+            )
         )
     );
 }

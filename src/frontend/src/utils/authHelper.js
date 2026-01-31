@@ -69,22 +69,24 @@ export const makeAuthenticatedRequest = async (url, options = {}) => {
 
     // If 401 Unauthorized, try to refresh token and retry once
     if (response.status === 401) {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-            const newToken = await refreshAccessToken();
-            if (newToken) {
-                accessToken = newToken;
-                requestOptions.headers['Authorization'] = `Bearer ${newToken}`;
-                response = await fetch(url, requestOptions);
-            } else {
-                // Refresh failed, session expired
-                handleSessionExpired();
-                return response;
-            }
-        } else {
-            handleSessionExpired();
-            return response;
-        }
+        // const refreshToken = localStorage.getItem('refreshToken');
+        // if (refreshToken) {
+        //     const newToken = await refreshAccessToken();
+        //     if (newToken) {
+        //         accessToken = newToken;
+        //         requestOptions.headers['Authorization'] = `Bearer ${newToken}`;
+        //         response = await fetch(url, requestOptions);
+        //     } else {
+        //         // Refresh failed, session expired
+        //         handleSessionExpired();
+        //         return response;
+        //     }
+        // } else {
+        //     handleSessionExpired();
+        //     return response;
+        // }
+        handleSessionExpired();
+        return response;
     }
 
     return response;
