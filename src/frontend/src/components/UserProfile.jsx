@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
+import '../css/userprofile.css';
 import '../css/profile.css';
 
-const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers, usersRequested, addedItems, inProgressItems, onHandleFollow, onHandleUnfollow, onHandleFollowRequest, onAddToMyList, onAddToInProgress, onBack }) => {
+const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers, usersRequested, addedItems, inProgressItems, onHandleFollow, onHandleUnfollow, onHandleFollowRequest, onAddToMyList, onAddToInProgress, onBack, onRefresh }) => {
 
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
     const [animeWatchedView, setAnimeWatchedView] = useState('watched');
     const [mangaReadView, setMangaReadView] = useState('read');
     const [watchedStatusFilter, setWatchedStatusFilter] = useState('ALL');
     const [isLoadingWatched, setIsLoadingWatched] = useState(false);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
     const [error, setError] = useState(null);
     const [selectedWatchedItem, setSelectedWatchedItem] = useState(null);
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
@@ -18,14 +20,17 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
 
     useEffect(() => {
         if (selectedItem && fetchedWatchedItems === false) {
+            setIsLoadingProfile(true);
             handleGetInProgressItems('ANIME').then(items => {
                 handleGetInProgressItems('MANGA').then(mangaItems => {
                     const combinedItems = [...items, ...mangaItems];
                     setCurrUserInProgressItems(combinedItems);
+                    setIsLoadingProfile(false);
                 });
             });
 
             setFetchedWatchedItems(true);
+            setIsLoadingProfile(false);
         }
     }, [selectedItem, fetchedWatchedItems]);
 
@@ -67,6 +72,26 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
             return { error: text || response.statusText || 'Request failed' };
         }
     };
+
+    // Spinner component
+    const Spinner = () => (
+        <div className="spinner-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+            <div className="spinner" style={{
+                border: '6px solid #f3f3f3',
+                borderTop: '6px solid #3498db',
+                borderRadius: '50%',
+                width: 48,
+                height: 48,
+                animation: 'spin 1s linear infinite'
+            }} />
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
+        </div>
+    );
 
     const handleGetInProgressItems = async (type) => {
         setIsLoadingWatched(true);
@@ -156,64 +181,70 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
 
             <div className="profile-tab-content">
                 {activeProfileTab === 'profile' && (
-                    <div className="profile-view" data-testid="profile-view">
-                        <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
-                        <div className="profile-header">
-                            <div className="profile-avatar">
-                                {selectedItem.avatarUrl ? (
-                                    <img src={selectedItem.avatarUrl} alt={`${selectedItem.username}'s avatar`} className="avatar-image" />
+                    isLoadingProfile ? (
+                        <Spinner />
+                    ) : (
+                        <div className="profile-view" data-testid="profile-view">
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                                <button onClick={onBack} className="back-button" data-testid="back-button">← Back</button>
+                            </div>
+                            <div className="profile-header">
+                                <div className="profile-avatar">
+                                    {selectedItem.avatarUrl ? (
+                                        <img src={selectedItem.avatarUrl} alt={`${selectedItem.username}'s avatar`} className="avatar-image" />
+                                    ) : (
+                                        <div className="avatar-placeholder">
+                                            {selectedItem.username ? selectedItem.username.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="profile-info">
+                                    <h2>{selectedItem.username}</h2>
+                                </div>
+                                {usersFollowing?.find(userId => userId === selectedItem.id) || usersRequested?.find(userId => userId === selectedItem.id) ? (
+                                    usersRequested?.find(userId => userId === selectedItem.id) ? (
+                                        <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button pending">
+                                            Requested
+                                        </button>
+                                    ) : (
+                                        <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
+                                            Unfollow
+                                        </button>
+                                    )
                                 ) : (
-                                    <div className="avatar-placeholder">
-                                        {selectedItem.username ? selectedItem.username.charAt(0).toUpperCase() : '?'}
-                                    </div>
+                                    !usersFollowers?.find(userId => userId === selectedItem.id) ? (
+                                        <button onClick={(e) => { e.stopPropagation(); handleRequestUser(selectedItem.id); }} className="follow-button">
+                                            + Request to Follow
+                                        </button>
+                                    ) : (
+                                        <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
+                                            + Follow Back
+                                        </button>
+                                    )
                                 )}
                             </div>
-                            <div className="profile-info">
-                                <h2>{selectedItem.username}</h2>
-                            </div>
-                            {usersFollowing?.find(userId => userId === selectedItem.id) ? (
-                                usersRequested?.find(userId => userId === selectedItem.id) ? (
-                                    <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button pending">
-                                        Requested
-                                    </button>
-                                ) : (
-                                    <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
-                                        Unfollow
-                                    </button>
-                                )
-                            ) : (
-                                !usersFollowers?.find(userId => userId === selectedItem.id) ? (
-                                    <button onClick={(e) => { e.stopPropagation(); handleRequestUser(selectedItem.id); }} className="follow-button">
-                                        + Request to Follow
-                                    </button>
-                                ) : (
-                                    <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
-                                        + Follow Back
-                                    </button>
-                                )
-                            )}
-                        </div>
-                
-                        <div className="profile-details">
-                            <div className="profile-section">
-                                <h3>Favorite Anime</h3>
-                                <p>{selectedItem.favoriteAnime || 'Not specified'}</p>
-                            </div>
+                    
+                            <div className="profile-details">
+                                <div className="profile-section">
+                                    <h3>Favorite Anime</h3>
+                                    <p>{selectedItem.favoriteAnime || 'Not specified'}</p>
+                                </div>
 
-                            <div className="profile-section">
-                                <h3>Favorite Manga</h3>
-                                <p>{selectedItem.favoriteManga || 'Not specified'}</p>
-                            </div>
-                            
-                            <div className="profile-section">
-                                <h3>Favorite Genres</h3>
-                                <p>{Array.isArray(selectedItem.favoriteGenres) && selectedItem.favoriteGenres.length > 0 
-                                    ? selectedItem.favoriteGenres.join(', ')
-                                    : (selectedItem.favoriteGenres || 'Not specified')}
-                                </p>
+                                <div className="profile-section">
+                                    <h3>Favorite Manga</h3>
+                                    <p>{selectedItem.favoriteManga || 'Not specified'}</p>
+                                </div>
+                                
+                                <div className="profile-section">
+                                    <h3>Favorite Genres</h3>
+                                    <p>{Array.isArray(selectedItem.favoriteGenres) && selectedItem.favoriteGenres.length > 0 
+                                        ? selectedItem.favoriteGenres.join(', ')
+                                        : (selectedItem.favoriteGenres || 'Not specified')}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )
                 )}
 
                 {activeProfileTab === 'watched' && (

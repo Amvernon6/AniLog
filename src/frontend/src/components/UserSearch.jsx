@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../css/usersearch.css';
 import UserProfile from './UserProfile';
+import { makeAuthenticatedRequest, parseErrorResponse } from '../utils/authHelper';
 
 export default function UserSearch({ loggedIn, userData }) {
     const [query, setQuery] = useState('');
@@ -14,56 +15,33 @@ export default function UserSearch({ loggedIn, userData }) {
     const [usersFollowing, setUsersFollowing] = useState([]);
     const [usersFollowers, setUsersFollowers] = useState([]);
     const [usersRequested, setUsersRequested] = useState([]);
-
-    useEffect(() => async () => {
-        if (!loggedIn || !userData) return;
+    
+    const fetchUserData = async () => {
+        console.log("Fetching user data for UserSearch");
+        console.log("LoggedIn status:", loggedIn);
+        if (!loggedIn) return;
         try {
             const userId = localStorage.getItem('userId');
             if (!userId) return;
             const [addedItemsAnime, addedItemsManga, inProgressItemsAnime, inProgressItemsManga, usersFollowStatuses] = await Promise.all([
-                fetch(`/api/user/${userId}/list/ANIME`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ userId: userData.id })
+                makeAuthenticatedRequest(`/api/user/${userId}/list/ANIME`, {
+                    method: 'GET'
                 }).then(res => res.json()),
 
-                fetch(`/api/user/${userId}/list/MANGA`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ userId: userData.id })
+                makeAuthenticatedRequest(`/api/user/${userId}/list/MANGA`, {
+                    method: 'GET'
                 }).then(res => res.json()),
 
-                fetch(`/api/user/${userId}/watched/ANIME`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ userId: userData.id })
+                makeAuthenticatedRequest(`/api/user/${userId}/watched/type/ANIME`, {
+                    method: 'GET'
                 }).then(res => res.json()),
 
-                fetch(`/api/user/${userId}/watched/MANGA`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ userId: userData.id })
+                makeAuthenticatedRequest(`/api/user/${userId}/watched/type/MANGA`, {
+                    method: 'GET'
                 }).then(res => res.json()),
 
-                fetch(`/api/user/${userId}/followStatuses`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ userId: userData.id })
+                makeAuthenticatedRequest(`/api/user/${userId}/followStatuses`, {
+                    method: 'GET'
                 }).then(res => res.json())
             ]);
 
@@ -73,33 +51,23 @@ export default function UserSearch({ loggedIn, userData }) {
                 inProgressMap.set(item.anilistId, item.status);
             });
             setInProgressItems(inProgressMap);
-            setUsersFollowing(usersFollowStatuses.filter(follow => follow.followerId === userId && follow.status === 'FOLLOWING').map(follow => follow.targetUserId));
-            setUsersFollowers(usersFollowStatuses.filter(follow => follow.followeeId === userId && follow.status === 'FOLLOWING').map(follow => follow.targetUserId));
-            setUsersRequested(usersFollowStatuses.filter(follow => follow.followerId === userId && follow.status === 'REQUESTED').map(follow => follow.targetUserId));
+            setUsersFollowing(usersFollowStatuses.filter(follow => follow.followerId == userId && follow.status == 'FOLLOWING').map(follow => follow.followeeId));
+            setUsersFollowers(usersFollowStatuses.filter(follow => follow.followeeId == userId && follow.status == 'FOLLOWING').map(follow => follow.followerId));
+            setUsersRequested(usersFollowStatuses.filter(follow => follow.followerId == userId && follow.status == 'REQUESTED').map(follow => follow.followeeId));
         } catch (error) {
             console.error('Error fetching user data:', error);
         }
-    }, [loggedIn, userData]);
+    }
 
-    const parseErrorResponse = async (response) => {
-        const text = await response.text();
-        try {
-            return JSON.parse(text);
-        } catch (err) {
-            return { error: text || response.statusText || 'Request failed' };
-        }
-    };
+    useEffect(() => {
+        fetchUserData();
+    }, [loggedIn, userData]);
 
     const handleRequestUser = async () => {
         const userId = localStorage.getItem('userId');
-        const accessToken = localStorage.getItem('accessToken');
         try {
-            const response = await fetch(`/api/user/${userId}/request/${selectedItem.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/request/${selectedItem.id}`, {
+                method: 'POST'
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -107,23 +75,25 @@ export default function UserSearch({ loggedIn, userData }) {
             }
             setUsersRequested(prev => [...prev, selectedItem.id]);
             showToast("Successfully sent follow request!");
-            return await response.json();
+            // Only try to parse JSON if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return null;
+            }
         } catch (err) {
-            showToast("Error requesting user: " + err.message);
+            console.log(err);
+            showToast("Error requesting user");
             return null;
         }
     };
 
     const handleFollowUser = async () => {
         const userId = localStorage.getItem('userId');
-        const accessToken = localStorage.getItem('accessToken');
         try {
-            const response = await fetch(`/api/user/${userId}/follow/${selectedItem.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/follow/${selectedItem.id}`, {
+                method: 'POST'
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -133,21 +103,16 @@ export default function UserSearch({ loggedIn, userData }) {
             showToast("Successfully followed user!");
             return await response.json();
         } catch (err) {
-            showToast("Error following user: " + err.message);
+            showToast("Error following user");
             return null;
         }
     };
 
     const handleUnfollowUser = async () => {
         const userId = localStorage.getItem('userId');
-        const accessToken = localStorage.getItem('accessToken');
         try {
-            const response = await fetch(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${accessToken}`
-                }
+            const response = await makeAuthenticatedRequest(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
+                method: 'DELETE'
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
@@ -155,9 +120,16 @@ export default function UserSearch({ loggedIn, userData }) {
             }
             setUsersFollowing(prev => prev.filter(id => id !== selectedItem.id));
             showToast("Successfully unfollowed user!");
-            return await response.json();
+            // Only try to parse JSON if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return null;
+            }
         } catch (err) {
-            showToast("Error unfollowing user: " + err.message);
+            console.log(err);
+            showToast("Error unfollowing user");
             return null;
         }
     };
@@ -211,12 +183,8 @@ export default function UserSearch({ loggedIn, userData }) {
         setLoading(true);
 
         try {
-            fetch('/api/user/list/add', {
+            const response = makeAuthenticatedRequest('/api/user/list/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                },
                 body: JSON.stringify({
                     userId: parseInt(userId),
                     type: item.type,
@@ -224,17 +192,17 @@ export default function UserSearch({ loggedIn, userData }) {
                     coverImageUrl: item.coverImageUrl,
                     anilistId: item.id
                 })
-            }).then(response => {
-                if (response.ok) {
-                    showToast('Item added to list successfully.', 'success');
-                    setAddedItems(prev => new Set([...prev, item.id]));
-                } else {
-                    showToast('Failed to add item to list.', 'error');
-                }
             });
+            
+            if (response.ok) {
+                showToast('Item added to list successfully.', 'success');
+                setAddedItems(prev => new Set([...prev, item.id]));
+            } else {
+                showToast('Failed to add item to list.', 'error');
+            }
         } catch (error) {
             console.error('Error adding item to list:', error);
-            setLoading(false);
+            showToast('Error adding item to list.', 'error');
         } finally {
             setLoading(false);
         }
@@ -252,31 +220,27 @@ export default function UserSearch({ loggedIn, userData }) {
         // Proceed to remove item from list
         setLoading(true);
         try {
-            fetch('/api/user/list/remove', {
+            const response = makeAuthenticatedRequest('/api/user/list/remove', {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                },
                 body: JSON.stringify({
                     userId: parseInt(userId),
                     anilistId: item.id
                 })
-            }).then(response => {
-                if (response.ok) {
-                    showToast('Item removed from list successfully.', 'success');
-                    setAddedItems(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(item.id);
-                        return newSet;
-                    });
-                } else {
-                    showToast('Failed to remove item from list.', 'error');
-                }
             });
+            
+            if (response.ok) {
+                showToast('Item removed from list successfully.', 'success');
+                setAddedItems(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(item.id);
+                    return newSet;
+                });
+            } else {
+                showToast('Failed to remove item from list.', 'error');
+            }
         } catch (error) {
             console.error('Error removing item from list:', error);
-            setLoading(false);
+            showToast('Error removing item from list.', 'error');
         } finally {
             setLoading(false);
         }
@@ -319,12 +283,8 @@ export default function UserSearch({ loggedIn, userData }) {
             const mediaType = item.type === 'ANIME' ? 'ANIME' : 'MANGA';
             const statusType = item.type === 'ANIME' ? 'WATCHING' : 'READING';
 
-            fetch('/api/user/watched/add', {
+            const response = makeAuthenticatedRequest('/api/user/watched/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
                 body: JSON.stringify({
                     userId: parseInt(userId),
                     type: mediaType,
@@ -335,14 +295,14 @@ export default function UserSearch({ loggedIn, userData }) {
                     totalChapters: item.chapters || null,
                     status: statusType
                 })
-            }).then(response => {
-                if (response.ok) {
-                    showToast(`Added to in-progress ${item.type === 'ANIME' ? 'anime' : 'manga'} list!`, 'success');
-                    setInProgressItems(prev => new Map(prev).set(item.id, statusType));
-                } else {
-                    showToast('Failed to add item to in-progress list.', 'error');
-                }
             });
+            
+            if (response.ok) {
+                showToast(`Added to in-progress ${item.type === 'ANIME' ? 'anime' : 'manga'} list!`, 'success');
+                setInProgressItems(prev => new Map(prev).set(item.id, statusType));
+            } else {
+                showToast('Failed to add item to in-progress list.', 'error');
+            }
 
             try {
                 handleRemoveFromList(item);
@@ -389,6 +349,7 @@ export default function UserSearch({ loggedIn, userData }) {
                         <button id="search-button" data-testid="search-button" onClick={handleSearch} disabled={loading}>
                             {loading ? 'Searching...' : 'Search'}
                         </button>
+
                 </div>
             ) : null}
             <div className="search-results">
@@ -407,6 +368,7 @@ export default function UserSearch({ loggedIn, userData }) {
                         onHandleFollow={handleFollowUser}
                         onHandleUnfollow={handleUnfollowUser}
                         onHandleFollowRequest={handleRequestUser}
+                        onRefresh={fetchUserData}
                     />
                 }
                 {!selectedItem && results.length > 0 ? (

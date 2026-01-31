@@ -23,13 +23,13 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'discover':
-        return <Discover loggedIn={loggedIn} userData={userData} />;
+        return <Discover loggedIn={loggedIn} />;
       case 'search':
-        return <Search loggedIn={loggedIn} userData={userData} />;
+        return <Search loggedIn={loggedIn} />;
       case 'library':
         return <Profile onLogin={handleLogin} />;
       case 'users':
-        return <UserSearch loggedIn={loggedIn} userData={userData} />;
+        return <UserSearch loggedIn={loggedIn} />;
       default:
         return <Profile onLogin={handleLogin} />;
     }

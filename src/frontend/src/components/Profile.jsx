@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from "react";
 import '../css/profile.css';
+import { makeAuthenticatedRequest, parseErrorResponse, refreshAccessToken } from '../utils/authHelper';
 
 const genres = [
     'Action',
@@ -250,6 +251,7 @@ const Profile = ({ onLogin }) => {
             setLoggedIn(true);
             setId(storedUserId);
             handleGetProfile(storedUserId);
+            onLogin(storedUserId);
         }
     }, []);
 
@@ -279,66 +281,6 @@ const Profile = ({ onLogin }) => {
         } catch (err) {
             return { error: text || response.statusText || 'Request failed' };
         }
-    };
-
-    const refreshAccessToken = async () => {
-        if (!refreshToken) {
-            setError('Session expired. Please log in again.');
-            handleLogout();
-            return null;
-        }
-
-        try {
-            const response = await fetch('/api/refresh', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to refresh token');
-            }
-
-            const data = await response.json();
-            const newAccessToken = data.accessToken;
-
-            // Update tokens in state and storage
-            setAccessToken(newAccessToken);
-            localStorage.setItem('accessToken', newAccessToken);
-
-            return newAccessToken;
-        } catch (err) {
-            setError('Session expired. Please log in again.');
-            handleLogout();
-            return null;
-        }
-    };
-
-    const makeAuthenticatedRequest = async (url, options = {}) => {
-        let currentToken = accessToken;
-
-        const requestOptions = {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-                'Authorization': `Bearer ${currentToken}`
-            }
-        };
-
-        let response = await fetch(url, requestOptions);
-
-        // If 401, try to refresh token and retry
-        if (response.status === 401 && refreshToken) {
-            const newToken = await refreshAccessToken();
-            if (newToken) {
-                currentToken = newToken;
-                requestOptions.headers['Authorization'] = `Bearer ${newToken}`;
-                response = await fetch(url, requestOptions);
-            }
-        }
-
-        return response;
     };
 
     const handleGetUserList = async (type) => {
@@ -551,9 +493,14 @@ const Profile = ({ onLogin }) => {
             setRefreshToken(data.refreshToken);
             setLoggedIn(true);
             setId(data.userId);
+            onLogin(data.userId);
 
             // Fetch full profile data
-            const profileResponse = await makeAuthenticatedRequest(`/api/profile/${data.userId}`);
+            const profileResponse = await makeAuthenticatedRequest(`/api/profile/${data.userId}`, {
+                headers: {
+                    'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
+                }
+            });
             if (profileResponse.ok) {
                 const profileData = await profileResponse.json();
                 setProfileData({
@@ -728,7 +675,11 @@ const Profile = ({ onLogin }) => {
                 : mangaData[0];
             
             const safeId = encodeURIComponent(userId);
-            const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`);
+            const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
+                headers: {
+                    'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
+                }
+            });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
                 throw new Error(errorData.error || 'Failed to fetch profile');
@@ -766,6 +717,9 @@ const Profile = ({ onLogin }) => {
             const safeId = localStorage.getItem('userId');
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
                 method: 'PUT',
+                headers: {
+                    'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
+                },
                 body: JSON.stringify(dataToSend)
             });
             if (!response.ok) {
@@ -829,6 +783,26 @@ const Profile = ({ onLogin }) => {
         
         onLogin(null); // Notify parent component of logout
     };
+
+    // Spinner component
+    const Spinner = () => (
+        <div className="spinner-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+            <div className="spinner" style={{
+                border: '6px solid #f3f3f3',
+                borderTop: '6px solid #3498db',
+                borderRadius: '50%',
+                width: 48,
+                height: 48,
+                animation: 'spin 1s linear infinite'
+            }} />
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
+        </div>
+    );
 
     return (
         !LoggedIn ? (
@@ -1560,61 +1534,65 @@ const Profile = ({ onLogin }) => {
 
                     {activeProfileTab === 'profile' && (
                         !isEditing ? (
-                            <div className="profile-view" data-testid="profile-view">
-                                <div className="profile-header">
-                                    <div className="profile-avatar">
-                                        {profileData.avatarUrl ? (
-                                            <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
-                                        ) : (
-                                            <div className="avatar-placeholder">
-                                                {profileData.username.charAt(0).toUpperCase()}
+                            isLoading ? (
+                                <Spinner />
+                            ) : (
+                                <div className="profile-view" data-testid="profile-view">
+                                    <div className="profile-header">
+                                        <div className="profile-avatar">
+                                            {profileData.avatarUrl ? (
+                                                <img src={profileData.avatarUrl} alt={`${profileData.username}'s avatar`} className="avatar-image" />
+                                            ) : (
+                                                <div className="avatar-placeholder">
+                                                    {profileData.username.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="profile-info">
+                                            <h2>{profileData.username}</h2>
+                                            {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
+                                            <div className="profile-actions">
+                                                <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
+                                                    Edit Profile
+                                                </button>
+                                                <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
+                                                    Logout
+                                                </button>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
-                                    <div className="profile-info">
-                                        <h2>{profileData.username}</h2>
-                                        {/* {profileData.age && <p className="profile-age">Age: {profileData.age}</p>} */}
-                                        <div className="profile-actions">
-                                            <button onClick={() => { setEditedProfileData(profileData); setIsEditing(true)}} className="edit-profile-button" data-testid="edit-profile-button">
-                                                Edit Profile
-                                            </button>
-                                            <button onClick={handleLogout} className="logout-button" data-testid="logout-button">
-                                                Logout
-                                            </button>
+                            
+                                    <div className="profile-details">
+                                        <div className="profile-section">
+                                            <h3>Email Address</h3>
+                                            <p>{profileData.emailAddress || 'No email address provided.'}</p>
+                                        </div>
+                                        
+                                        {/* <div className="profile-section">
+                                            <h3>Bio</h3>
+                                            <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
+                                        </div> */}
+                                        
+                                        <div className="profile-section">
+                                            <h3>Favorite Anime</h3>
+                                            <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
+                                        </div>
+
+                                        <div className="profile-section">
+                                            <h3>Favorite Manga</h3>
+                                            <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
+                                        </div>
+                                        
+                                        <div className="profile-section">
+                                            <h3>Favorite Genres</h3>
+                                            <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
+                                                ? profileData.favoriteGenres.join(', ')
+                                                : (profileData.favoriteGenres || 'Not specified')}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
-                        
-                                <div className="profile-details">
-                                    <div className="profile-section">
-                                        <h3>Email Address</h3>
-                                        <p>{profileData.emailAddress || 'No email address provided.'}</p>
-                                    </div>
-                                    
-                                    {/* <div className="profile-section">
-                                        <h3>Bio</h3>
-                                        <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
-                                    </div> */}
-                                    
-                                    <div className="profile-section">
-                                        <h3>Favorite Anime</h3>
-                                        <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
-                                    </div>
-
-                                    <div className="profile-section">
-                                        <h3>Favorite Manga</h3>
-                                        <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
-                                    </div>
-                                    
-                                    <div className="profile-section">
-                                        <h3>Favorite Genres</h3>
-                                        <p>{Array.isArray(profileData.favoriteGenres) && profileData.favoriteGenres.length > 0 
-                                            ? profileData.favoriteGenres.join(', ')
-                                            : (profileData.favoriteGenres || 'Not specified')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                            )
                         ) : (
                             <div className="profile-edit" data-testid="profile-edit">
                                 <h2>Edit Profile</h2>
