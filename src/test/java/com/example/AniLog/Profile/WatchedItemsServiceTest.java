@@ -47,7 +47,7 @@ class WatchedItemsServiceTest {
         testWatchedItem.setEpisodesWatched(0);
         testWatchedItem.setTotalEpisodes(26);
         testWatchedItem.setStatus(WatchedItem.WatchStatus.WATCHING);
-        testWatchedItem.setRating(8);
+        testWatchedItem.setRating(8.2);
 
         WatchedItem testWatchedItem2 = new WatchedItem();
         testWatchedItem2.setId(2L);
@@ -269,7 +269,7 @@ class WatchedItemsServiceTest {
         updatedItem.setUserId(1L);
         updatedItem.setStatus(WatchedItem.WatchStatus.COMPLETED);
         updatedItem.setEpisodesWatched(26);
-        updatedItem.setRating(9);
+        updatedItem.setRating(9.0);
 
         when(watchedItemsRepository.findById(1L))
             .thenReturn(Optional.of(testWatchedItem));
