@@ -658,21 +658,21 @@ const Profile = ({ onLogin }) => {
         setError(null);
 
         try {
-            // Load watched items directly (without state updates) so we can get top rated anime/manga
-            const animeData = await fetchWatchedItemsData('ANIME');
-            const mangaData = await fetchWatchedItemsData('MANGA');
+            // // Load watched items directly (without state updates) so we can get top rated anime/manga
+            // const animeData = await fetchWatchedItemsData('ANIME');
+            // const mangaData = await fetchWatchedItemsData('MANGA');
             
-            // Get top anime from the fetched data
-            const animeRankingOrder = JSON.parse(localStorage.getItem('animeRankingOrder') || '[]');
-            const topAnime = animeRankingOrder.length > 0 
-                ? animeData.find(i => i.id === animeRankingOrder[0])
-                : animeData[0];
+            // // Get top anime from the fetched data
+            // const animeRankingOrder = JSON.parse(localStorage.getItem('animeRankingOrder') || '[]');
+            // const topAnime = animeRankingOrder.length > 0 
+            //     ? animeData.find(i => i.id === animeRankingOrder[0])
+            //     : animeData[0];
             
-            // Get top manga from the fetched data
-            const mangaRankingOrder = JSON.parse(localStorage.getItem('mangaRankingOrder') || '[]');
-            const topManga = mangaRankingOrder.length > 0 
-                ? mangaData.find(i => i.id === mangaRankingOrder[0])
-                : mangaData[0];
+            // // Get top manga from the fetched data
+            // const mangaRankingOrder = JSON.parse(localStorage.getItem('mangaRankingOrder') || '[]');
+            // const topManga = mangaRankingOrder.length > 0 
+            //     ? mangaData.find(i => i.id === mangaRankingOrder[0])
+            //     : mangaData[0];
             
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
@@ -690,8 +690,8 @@ const Profile = ({ onLogin }) => {
                 avatarUrl: data.avatarUrl || '',
                 emailAddress: data.emailAddress || '',
                 username: data.username || '',
-                favoriteAnime: topAnime?.title || '',
-                favoriteManga: topManga?.title || '',
+                // favoriteAnime: topAnime?.title || '',
+                // favoriteManga: topManga?.title || '',
                 favoriteGenres: data.favoriteGenres || [],
                 // age: data.age || ''
             });
@@ -754,8 +754,8 @@ const Profile = ({ onLogin }) => {
             avatarUrl: '',
             emailAddress: '',
             username: '',
-            favoriteAnime: '',
-            favoriteManga: '',
+            // favoriteAnime: '',
+            // favoriteManga: '',
             favoriteGenres: [],
             // age: ''
         });
@@ -764,8 +764,8 @@ const Profile = ({ onLogin }) => {
             avatarUrl: '',
             emailAddress: '',
             username: '',
-            favoriteAnime: '',
-            favoriteManga: '',
+            // favoriteAnime: '',
+            // favoriteManga: '',
             favoriteGenres: [],
             // age: ''
         });
@@ -1573,7 +1573,7 @@ const Profile = ({ onLogin }) => {
                                             <p>{profileData.bio || 'No bio yet. Click "Edit Profile" to add one!'}</p>
                                         </div> */}
                                         
-                                        <div className="profile-section">
+                                        {/* <div className="profile-section">
                                             <h3>Favorite Anime</h3>
                                             <p>{profileData.favoriteAnime || 'Your #1 rated anime from the rankings tab will appear here'}</p>
                                         </div>
@@ -1581,7 +1581,7 @@ const Profile = ({ onLogin }) => {
                                         <div className="profile-section">
                                             <h3>Favorite Manga</h3>
                                             <p>{profileData.favoriteManga || 'Your #1 rated manga from the rankings tab will appear here'}</p>
-                                        </div>
+                                        </div> */}
                                         
                                         <div className="profile-section">
                                             <h3>Favorite Genres</h3>

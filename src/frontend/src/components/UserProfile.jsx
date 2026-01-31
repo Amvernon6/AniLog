@@ -225,7 +225,7 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                             </div>
                     
                             <div className="profile-details">
-                                <div className="profile-section">
+                                {/* <div className="profile-section">
                                     <h3>Favorite Anime</h3>
                                     <p>{selectedItem.favoriteAnime || 'Not specified'}</p>
                                 </div>
@@ -233,7 +233,7 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                                 <div className="profile-section">
                                     <h3>Favorite Manga</h3>
                                     <p>{selectedItem.favoriteManga || 'Not specified'}</p>
-                                </div>
+                                </div> */}
                                 
                                 <div className="profile-section">
                                     <h3>Favorite Genres</h3>
