@@ -1227,7 +1227,7 @@ const Profile = ({ onLogin }) => {
             selectedUser ? (
                 <UserProfile
                     selectedItem={selectedUser}
-                    onBack={() => openUserModal(savedType)}
+                    onBack={() => setSelectedUser(null)}
                     inProgressItems={watchedItems}
                     addedItems={userList}
                     onAddToList={handleAddToList}
