@@ -195,6 +195,7 @@ const Profile = ({ onLogin }) => {
         setUserModalType(null);
         setUserModalList([]);
         setUserModalTitle('');
+        handleGetFollowStatuses(id);
     };
 
     const reorderArray = (arr, fromIndex, toIndex) => {
@@ -1081,6 +1082,7 @@ const Profile = ({ onLogin }) => {
                 usersFollowedBy: [...prev.usersFollowedBy, requestingUserId],
                 usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
             }));
+            setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
             showToast("Successfully accepted follow request!");
             return await response.json();
         } catch (err) {
@@ -1103,6 +1105,7 @@ const Profile = ({ onLogin }) => {
                 ...prev,
                 usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
             }));
+            setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
             showToast("Successfully declined follow request!");
             return await response.json();
         } catch (err) {
