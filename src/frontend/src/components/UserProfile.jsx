@@ -19,6 +19,10 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
     const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
     useEffect(() => {
+        console.log('Selected Item changed:', selectedItem);
+        console.log('Following:', usersFollowing);
+        console.log('Followers:', usersFollowers);
+        console.log('Requested:', usersRequested);
         if (selectedItem && fetchedWatchedItems === false) {
             setIsLoadingProfile(true);
             handleGetInProgressItems('ANIME').then(items => {

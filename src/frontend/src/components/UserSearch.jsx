@@ -145,7 +145,7 @@ export default function UserSearch({ loggedIn, userData }) {
                 throw new Error('Network response was not ok');
             }
             const data = await response.json();
-            setResults(data ? data : []);
+            setResults(data ? data.filter(user => user.id != localStorage.getItem('userId')) : []);
         } catch (error) {
             console.error('Error fetching user data:', error);
             setResults([]);
