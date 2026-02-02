@@ -205,9 +205,9 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                                 <div className="profile-info">
                                     <h2>{selectedItem.username}</h2>
                                 </div>
-                                {usersFollowing?.find(userId => userId === selectedItem.id) || usersRequested?.find(userId => userId === selectedItem.id) ? (
-                                    usersRequested?.find(userId => userId === selectedItem.id) ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button pending">
+                                {usersFollowing?.find(userID => userID == selectedItem.id) || usersRequested?.find(userID => userID == selectedItem.id) ? (
+                                    usersRequested?.find(userID => userID == selectedItem.id) ? (
+                                        <button onClick={(e) => { e.stopPropagation(); }} disabled={true} className="follow-button pending">
                                             Requested
                                         </button>
                                     ) : (
@@ -216,7 +216,7 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                                         </button>
                                     )
                                 ) : (
-                                    !usersFollowers?.find(userId => userId === selectedItem.id) ? (
+                                    !usersFollowers?.find(userID => userID == selectedItem.id) ? (
                                         <button onClick={(e) => { e.stopPropagation(); handleRequestUser(selectedItem.id); }} className="follow-button">
                                             + Request to Follow
                                         </button>

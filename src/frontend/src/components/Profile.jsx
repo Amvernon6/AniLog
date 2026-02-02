@@ -52,6 +52,7 @@ const Profile = ({ onLogin }) => {
         // age: '',
         usersFollowing: [],
         usersFollowedBy: [],
+        usersWantToFollow: [],
         usersRequestedToFollow: []
     });
     const [activeProfileTab, setActiveProfileTab] = useState('profile');
@@ -141,7 +142,7 @@ const Profile = ({ onLogin }) => {
         let list = [];
         let title = '';
         if (type === 'followers') {
-            list = editedProfileData.usersFollowedBy || [];
+            list = profileData.usersFollowedBy || [];
             title = 'Followers';
             
             try {
@@ -156,7 +157,7 @@ const Profile = ({ onLogin }) => {
                 console.error('Error fetching follower details:', err);
             }
         } else if (type === 'following') {
-            list = editedProfileData.usersFollowing || [];
+            list = profileData.usersFollowing || [];
             title = 'Following';
 
             try {
@@ -171,7 +172,7 @@ const Profile = ({ onLogin }) => {
                 console.error('Error fetching followee details:', err);
             }
         } else if (type === 'requests') {
-            list = editedProfileData.usersRequestedToFollow || [];
+            list = profileData.usersWantToFollow || [];
             title = 'Follow Requests';
 
             try {
@@ -352,7 +353,7 @@ const Profile = ({ onLogin }) => {
             }
             setProfileData(prev => ({
                 ...prev,
-                usersRequestedToFollow: [...prev.usersRequestedToFollow, selectedUser.id]
+                usersWantToFollow: [...prev.usersWantToFollow, selectedUser.id]
             }));
             showToast("Successfully sent follow request!");
             // Only try to parse JSON if response is JSON
@@ -910,6 +911,7 @@ const Profile = ({ onLogin }) => {
     };
 
     const handleGetFollowStatuses = async (userId) => {
+        setIsLoadingProfile(true);
         try {
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/user/${safeId}/followStatuses`, {
@@ -922,17 +924,21 @@ const Profile = ({ onLogin }) => {
                 throw new Error(errorData.error || 'Failed to fetch follow statuses');
             }
             const data = await response.json();
-            const usersFollowing = data.filter(follow => follow.followerId === userId && follow.status == 'FOLLOWING');
-            const usersFollowedBy = data.filter(follow => follow.followeeId === userId && follow.status == 'FOLLOWING');
-            const usersRequestedToFollow = data.filter(follow => follow.followeeId === userId && follow.status == 'REQUESTED');
-            setEditedProfileData(prev => ({
+            const usersFollowing = data.filter(follow => follow.followerId == userId && follow.status == 'FOLLOWING');
+            const usersFollowedBy = data.filter(follow => follow.followeeId == userId && follow.status == 'FOLLOWING');
+            const usersWantToFollow = data.filter(follow => follow.followeeId == userId && follow.status == 'REQUESTED');
+            const usersRequestedToFollow = data.filter(follow => follow.followerId == userId && follow.status == 'REQUESTED');
+            setProfileData(prev => ({
                 ...prev,
                 usersFollowing: usersFollowing || [],
                 usersFollowedBy: usersFollowedBy || [],   
+                usersWantToFollow: usersWantToFollow || [],
                 usersRequestedToFollow: usersRequestedToFollow || []
             }));
         } catch (err) {
             console.error('Error fetching follow statuses:', err);
+        } finally {
+            setIsLoadingProfile(false);
         }
     };
 
@@ -1087,7 +1093,7 @@ const Profile = ({ onLogin }) => {
             setProfileData(prev => ({
                 ...prev,
                 usersFollowedBy: [...prev.usersFollowedBy, requestingUserId],
-                usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
+                usersWantToFollow: prev.usersWantToFollow.filter(r => r !== requestingUserId)
             }));
             setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
             showToast("Successfully accepted follow request!");
@@ -1110,7 +1116,7 @@ const Profile = ({ onLogin }) => {
             }
             setProfileData(prev => ({
                 ...prev,
-                usersRequestedToFollow: prev.usersRequestedToFollow.filter(r => r !== requestingUserId)
+                usersWantToFollow: prev.usersWantToFollow.filter(r => r !== requestingUserId)
             }));
             setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
             showToast("Successfully declined follow request!");
@@ -1155,6 +1161,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => { setEmailOrUsername(e.target.value)}}
                             required
                             data-testid="login-email-input"
+                            disabled={isLoading}
                         />
                         <input
                             type="password"
@@ -1163,6 +1170,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             data-testid="login-password-input"
+                            disabled={isLoading}
                         />
                         <button id="login-button" type="submit" disabled={isLoading} data-testid="login-submit-button">
                             {isLoading ? 'Logging in...' : 'Login'}
@@ -1184,6 +1192,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => { setSignupEmailAddress(e.target.value); checkEmailAvailability(e.target.value); } }
                             required
                             data-testid="signup-email-input"
+                            disabled={isLoading}
                         />
                         <input
                             type="text"
@@ -1192,6 +1201,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => { setSignupUsername(e.target.value);  checkUsernameAvailability(e.target.value); }}
                             required
                             data-testid="signup-username-input"
+                            disabled={isLoading}
                         />
                         <input
                             type="password"
@@ -1200,6 +1210,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => setSignupPassword(e.target.value)}
                             required
                             data-testid="signup-password-input"
+                            disabled={isLoading}
                         />
                         <input
                             type="password"
@@ -1208,6 +1219,7 @@ const Profile = ({ onLogin }) => {
                             onChange={(e) => setSignupConfirmPassword(e.target.value)}
                             required
                             data-testid="signup-confirm-password-input"
+                            disabled={isLoading}
                         />
                         <div className="password-requirements">
                             Password must be 8 or more characters, contain uppercase & lowercase letters, a number, & a special character.
@@ -1244,9 +1256,9 @@ const Profile = ({ onLogin }) => {
                     onRemoveFromList={handleRemoveFromList}
                     onAddToInProgress={handleAddListItemToInProgress}
                     accessToken={localStorage.getItem('authToken')}
-                    usersFollowing={editWatchedData.usersFollowing}
-                    usersFollowers={editWatchedData.usersFollowedBy}
-                    usersRequested={editWatchedData.usersRequestedToFollow}
+                    usersFollowing={profileData.usersFollowing.map(r => r.followeeId)}
+                    usersFollowers={profileData.usersFollowedBy.map(r => r.followerId)}
+                    usersRequested={profileData.usersRequestedToFollow.map(r => r.followeeId)}
                     onHandleFollow={handleFollowUser}
                     onHandleUnfollow={handleUnfollowUser}
                     onHandleFollowRequest={handleRequestUser}
@@ -1965,13 +1977,13 @@ const Profile = ({ onLogin }) => {
                                                     {/* Followers/Following/Requests Buttons in header */}
                                                     <div className="profile-follow-bar" style={{ display: 'flex', gap: '16px', marginBottom: 0, marginTop: 8, justifyContent: 'center' }}>
                                                         <button className="follow-count-btn" onClick={() => { openUserModal('followers'); setSavedType('followers'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowedBy?.length || 0}</span> Followers
+                                                            <span style={{ fontWeight: 600 }}>{profileData.usersFollowedBy?.length || 0}</span> Followers
                                                         </button>
                                                         <button className="follow-count-btn" onClick={() => { openUserModal('following'); setSavedType('following'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersFollowing?.length || 0}</span> Following
+                                                            <span style={{ fontWeight: 600 }}>{profileData.usersFollowing?.length || 0}</span> Following
                                                         </button>
                                                         <button className="follow-count-btn" onClick={() => { openUserModal('requests'); setSavedType('requests'); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <span style={{ fontWeight: 600 }}>{editedProfileData.usersRequestedToFollow?.length || 0}</span> Requests
+                                                            <span style={{ fontWeight: 600 }}>{profileData.usersWantToFollow?.length || 0}</span> Requests
                                                         </button>
                                                     </div>
                                                     <div className="profile-actions">
