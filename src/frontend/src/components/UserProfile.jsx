@@ -17,6 +17,7 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
     const [currUserInProgressItems, setCurrUserInProgressItems] = useState([]);
     const [fetchedWatchedItems, setFetchedWatchedItems] = useState(false);
     const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+    const [isFollowing, setIsFollowing] = useState(false);
 
     useEffect(() => {
         console.log('Selected Item changed:', selectedItem);
@@ -35,6 +36,7 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
 
             setFetchedWatchedItems(true);
             setIsLoadingProfile(false);
+            setIsFollowing(usersFollowing?.some(userID => userID == selectedItem.id) || false);
         }
     }, [selectedItem, fetchedWatchedItems]);
 
@@ -172,12 +174,16 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                 <button 
                     className={`profile-tab-button ${activeProfileTab === 'watched' ? 'active' : ''}`}
                     onClick={() => setActiveProfileTab('watched')}
+                    disabled={!isFollowing}
+                    hidden={!isFollowing}
                 >
                     Anime
                 </button>
                 <button 
                     className={`profile-tab-button ${activeProfileTab === 'read' ? 'active' : ''}`}
                     onClick={() => setActiveProfileTab('read')}
+                    disabled={!isFollowing}
+                    hidden={!isFollowing}
                 >
                     Manga
                 </button>
