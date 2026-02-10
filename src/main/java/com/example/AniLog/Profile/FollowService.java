@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -21,8 +22,10 @@ public class FollowService {
             throw new IllegalArgumentException("User IDs cannot be null");
         } else if (userId.equals(targetUserId)) {
             throw new IllegalArgumentException("Users cannot follow themselves");
-        } else if (userRepository.findById(userId).isEmpty() || userRepository.findById(targetUserId).isEmpty()) {
-            throw new IllegalArgumentException("User not found");
+        } else if (userRepository.findById(userId).isEmpty()) {
+            throw new IllegalArgumentException("Follower User not found");
+        } else if (userRepository.findById(targetUserId).isEmpty()) {
+            throw new IllegalArgumentException("Followee User not found");
         }
 
         // Logic to change the follow relationship

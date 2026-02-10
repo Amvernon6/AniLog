@@ -24,10 +24,10 @@ public class LoginService {
     @Transactional
     public LoginResponse login(String entry, String password) {
         // Query the user by username
-        User userByUsername = userRepository.findByUsername(entry);
+        User userByUsername = userRepository.findByUsername(entry).orElse(null);
 
         // Query the user by email
-        User userByEmail = userRepository.findByEmailAddress(entry);
+        User userByEmail = userRepository.findByEmailAddress(entry).orElse(null);
 
         // Determine which user to use
         User user = (userByUsername != null) ? userByUsername : userByEmail;

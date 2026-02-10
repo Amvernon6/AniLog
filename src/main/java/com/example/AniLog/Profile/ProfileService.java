@@ -15,11 +15,11 @@ public class ProfileService {
     }
 
     public User getProfile(long id) {
-        return userRepository.findById(id);
+        return userRepository.findById(id).orElse(null);
     }
 
     public User getSafeProfile(long id) {
-        User user = userRepository.findById(id);
+        User user = userRepository.findById(id).orElse(null);
         if (user == null) {
             return null;
         }
@@ -86,7 +86,7 @@ public class ProfileService {
 
     @Transactional
     public User updateProfile(long id, ProfileClient.ProfileUpdateRequest request) {
-        User user = userRepository.findById(id);
+        User user = userRepository.findById(id).orElse(null);
         if (user == null) {
             return null;
         }

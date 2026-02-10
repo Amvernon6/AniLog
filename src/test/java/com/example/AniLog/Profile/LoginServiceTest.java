@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Optional;
 
 class LoginServiceTest {
 
@@ -46,17 +47,17 @@ class LoginServiceTest {
         String password = "TestPassword123!";
         String hashedPassword = "$2a$10$hashedPassword";
         
-        User mockUser = createMockUser(1L, username, "test@example.com", hashedPassword);
+        Optional<User> mockUser = createMockUser(1L, username, "test@example.com", hashedPassword);
         
         when(userRepository.findByUsername(username)).thenReturn(mockUser);
-        when(userRepository.findByEmailAddress(username)).thenReturn(null);
+        when(userRepository.findByEmailAddress(username)).thenReturn(Optional.empty());
         when(jwtUtil.generateAccessToken(anyLong(), anyString())).thenReturn("access-token");
         when(jwtUtil.generateRefreshToken(anyLong())).thenReturn("refresh-token");
 
         // Use a real PasswordEncoder for testing
         PasswordEncoder realEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         String realHashedPassword = realEncoder.encode(password);
-        mockUser.setPasswordHash(realHashedPassword);
+        mockUser.get().setPasswordHash(realHashedPassword);
 
         // Act
         LoginService serviceWithRealEncoder = new LoginService(userRepository, refreshTokenRepository, jwtUtil);
@@ -77,9 +78,9 @@ class LoginServiceTest {
         String email = "test@example.com";
         String password = "TestPassword123!";
         
-        User mockUser = createMockUser(2L, "testuser", email, "hashedPassword");
+        Optional<User> mockUser = createMockUser(2L, "testuser", email, "hashedPassword");
         
-        when(userRepository.findByUsername(email)).thenReturn(null);
+        when(userRepository.findByUsername(email)).thenReturn(Optional.empty());
         when(userRepository.findByEmailAddress(email)).thenReturn(mockUser);
         when(jwtUtil.generateAccessToken(anyLong(), anyString())).thenReturn("access-token");
         when(jwtUtil.generateRefreshToken(anyLong())).thenReturn("refresh-token");
@@ -87,7 +88,7 @@ class LoginServiceTest {
         // Use a real PasswordEncoder
         PasswordEncoder realEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         String realHashedPassword = realEncoder.encode(password);
-        mockUser.setPasswordHash(realHashedPassword);
+        mockUser.get().setPasswordHash(realHashedPassword);
 
         // Act
         LoginService serviceWithRealEncoder = new LoginService(userRepository, refreshTokenRepository, jwtUtil);
@@ -103,8 +104,8 @@ class LoginServiceTest {
     @SuppressWarnings("null")
     void testLogin_UserNotFound() {
         // Arrange
-        when(userRepository.findByUsername(anyString())).thenReturn(null);
-        when(userRepository.findByEmailAddress(anyString())).thenReturn(null);
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findByEmailAddress(anyString())).thenReturn(Optional.empty());
 
         // Act
         LoginService.LoginResponse response = loginService.login("nonexistent", "password");
@@ -120,13 +121,13 @@ class LoginServiceTest {
     void testLogin_WrongPassword() {
         // Arrange
         String username = "testuser";
-        User mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
+        Optional<User> mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
         
         when(userRepository.findByUsername(username)).thenReturn(mockUser);
         
         // Use real password encoder
         PasswordEncoder realEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-        mockUser.setPasswordHash(realEncoder.encode("correctPassword"));
+        mockUser.get().setPasswordHash(realEncoder.encode("correctPassword"));
 
         // Act
         LoginService serviceWithRealEncoder = new LoginService(userRepository, refreshTokenRepository, jwtUtil);
@@ -143,14 +144,14 @@ class LoginServiceTest {
         String username = "testuser";
         String password = "TestPassword123!";
         
-        User mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
+        Optional<User> mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
         
         when(userRepository.findByUsername(username)).thenReturn(mockUser);
         when(jwtUtil.generateAccessToken(anyLong(), anyString())).thenReturn("access-token");
         when(jwtUtil.generateRefreshToken(anyLong())).thenReturn("refresh-token");
 
         PasswordEncoder realEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-        mockUser.setPasswordHash(realEncoder.encode(password));
+        mockUser.get().setPasswordHash(realEncoder.encode(password));
 
         // Act
         LoginService serviceWithRealEncoder = new LoginService(userRepository, refreshTokenRepository, jwtUtil);
@@ -167,14 +168,14 @@ class LoginServiceTest {
         String username = "testuser";
         String password = "TestPassword123!";
         
-        User mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
+        Optional<User> mockUser = createMockUser(1L, username, "test@example.com", "hashedPassword");
         
         when(userRepository.findByUsername(username)).thenReturn(mockUser);
         when(jwtUtil.generateAccessToken(anyLong(), anyString())).thenReturn("access-token");
         when(jwtUtil.generateRefreshToken(anyLong())).thenReturn("refresh-token-value");
 
         PasswordEncoder realEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-        mockUser.setPasswordHash(realEncoder.encode(password));
+        mockUser.get().setPasswordHash(realEncoder.encode(password));
 
         // Act
         LoginService serviceWithRealEncoder = new LoginService(userRepository, refreshTokenRepository, jwtUtil);
@@ -202,12 +203,12 @@ class LoginServiceTest {
     }
 
     // Helper method
-    private User createMockUser(Long id, String username, String email, String passwordHash) {
+    private Optional<User> createMockUser(Long id, String username, String email, String passwordHash) {
         User user = new User();
         user.setId(id);
         user.setUsername(username);
         user.setEmailAddress(email);
         user.setPasswordHash(passwordHash);
-        return user;
+        return Optional.of(user);
     }
 }

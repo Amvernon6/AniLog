@@ -1,5 +1,7 @@
 package com.example.AniLog.Profile;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -98,8 +100,8 @@ class RegistrationServiceTest {
     void testUserExists_True() {
         // Arrange
         String username = "existinguser";
-        User existingUser = new User();
-        existingUser.setUsername(username);
+        Optional<User> existingUser = Optional.of(new User());
+        existingUser.get().setUsername(username);
 
         when(userRepository.findByUsername(username)).thenReturn(existingUser);
 
@@ -114,7 +116,7 @@ class RegistrationServiceTest {
     void testUserExists_False() {
         // Arrange
         String username = "nonexistentuser";
-        when(userRepository.findByUsername(username)).thenReturn(null);
+        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
         // Act
         boolean exists = registrationService.userExists(username);
@@ -127,8 +129,8 @@ class RegistrationServiceTest {
     void testEmailExists_True() {
         // Arrange
         String email = "existing@example.com";
-        User existingUser = new User();
-        existingUser.setEmailAddress(email);
+        Optional<User> existingUser = Optional.of(new User());
+        existingUser.get().setEmailAddress(email);
 
         when(userRepository.findByEmailAddress(email.toLowerCase())).thenReturn(existingUser);
 
@@ -143,7 +145,7 @@ class RegistrationServiceTest {
     void testEmailExists_False() {
         // Arrange
         String email = "nonexistent@example.com";
-        when(userRepository.findByEmailAddress(email.toLowerCase())).thenReturn(null);
+        when(userRepository.findByEmailAddress(email.toLowerCase())).thenReturn(Optional.empty());
 
         // Act
         boolean exists = registrationService.emailExists(email);
@@ -156,8 +158,8 @@ class RegistrationServiceTest {
     void testEmailExists_CaseInsensitive() {
         // Arrange
         String email = "User@Example.COM";
-        User existingUser = new User();
-        existingUser.setEmailAddress("user@example.com");
+        Optional<User> existingUser = Optional.of(new User());
+        existingUser.get().setEmailAddress("user@example.com");
 
         when(userRepository.findByEmailAddress("user@example.com")).thenReturn(existingUser);
 

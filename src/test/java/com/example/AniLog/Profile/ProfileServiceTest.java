@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
+import java.util.Optional;
 
 class ProfileServiceTest {
 
@@ -30,7 +31,7 @@ class ProfileServiceTest {
     void testGetProfile_Success() {
         // Arrange
         long userId = 1L;
-        User mockUser = createMockUser(userId);
+        Optional<User> mockUser = createMockUser(userId);
 
         when(userRepository.findById(userId)).thenReturn(mockUser);
 
@@ -48,7 +49,7 @@ class ProfileServiceTest {
     void testGetProfile_UserNotFound() {
         // Arrange
         long userId = 999L;
-        when(userRepository.findById(userId)).thenReturn(null);
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act
         User result = profileService.getProfile(userId);
@@ -61,7 +62,7 @@ class ProfileServiceTest {
     void testUpdateProfile_Success() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
+        Optional<User> existingUser = createMockUser(userId);
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setBio("Updated bio");
@@ -79,7 +80,7 @@ class ProfileServiceTest {
         assertEquals("Updated bio", result.getBio());
         assertEquals("https://example.com/new-avatar.jpg", result.getAvatarUrl());
         assertEquals("New Anime", result.getFavoriteAnime());
-        verify(userRepository).save(existingUser);
+        verify(userRepository).save(existingUser.get());
     }
 
     @Test
@@ -89,7 +90,7 @@ class ProfileServiceTest {
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setBio("Updated bio");
 
-        when(userRepository.findById(userId)).thenReturn(null);
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act
         User result = profileService.updateProfile(userId, request);
@@ -103,7 +104,7 @@ class ProfileServiceTest {
     void testUpdateProfile_AllFields() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
+        Optional<User> existingUser = createMockUser(userId);
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setBio("New bio");
@@ -138,9 +139,9 @@ class ProfileServiceTest {
     void testUpdateProfile_PartialUpdate() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
-        existingUser.setBio("Original bio");
-        existingUser.setFavoriteAnime("Original anime");
+        Optional<User> existingUser = createMockUser(userId);
+        existingUser.get().setBio("Original bio");
+        existingUser.get().setFavoriteAnime("Original anime");
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setBio("Updated bio");
@@ -162,9 +163,9 @@ class ProfileServiceTest {
     void testUpdateProfile_NullValues() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
-        existingUser.setBio("Original bio");
-        existingUser.setAvatarUrl("https://example.com/original.jpg");
+        Optional<User> existingUser = createMockUser(userId);
+        existingUser.get().setBio("Original bio");
+        existingUser.get().setAvatarUrl("https://example.com/original.jpg");
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         // All fields are null
@@ -185,8 +186,8 @@ class ProfileServiceTest {
     void testUpdateProfile_EmailUpdate() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
-        existingUser.setEmailAddress("old@example.com");
+        Optional<User> existingUser = createMockUser(userId);
+        existingUser.get().setEmailAddress("old@example.com");
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setEmailAddress("new@example.com");
@@ -205,8 +206,8 @@ class ProfileServiceTest {
     void testUpdateProfile_UsernameUpdate() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
-        existingUser.setUsername("oldusername");
+        Optional<User> existingUser = createMockUser(userId);
+        existingUser.get().setUsername("oldusername");
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setUsername("newusername");
@@ -225,8 +226,8 @@ class ProfileServiceTest {
     void testUpdateProfile_AgeUpdate() {
         // Arrange
         long userId = 1L;
-        User existingUser = createMockUser(userId);
-        existingUser.setAge(25);
+        Optional<User> existingUser = createMockUser(userId);
+        existingUser.get().setAge(25);
         
         ProfileClient.ProfileUpdateRequest request = new ProfileClient.ProfileUpdateRequest();
         request.setAge(26);
@@ -242,7 +243,7 @@ class ProfileServiceTest {
     }
 
     // Helper method
-    private User createMockUser(Long id) {
+    private Optional<User> createMockUser(Long id) {
         User user = new User();
         user.setId(id);
         user.setUsername("testuser");
@@ -255,6 +256,6 @@ class ProfileServiceTest {
         String[] favoriteGenres = {"Action"};
         user.setFavoriteGenres(favoriteGenres);
         user.setFavoriteManga("Test Manga");
-        return user;
+        return Optional.of(user);
     }
 }

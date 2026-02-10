@@ -1,5 +1,7 @@
 package com.example.AniLog.Profile;
 
+import java.util.Optional;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,10 +26,12 @@ public class RegistrationService {
     }
 
     public boolean userExists(String username) {
-        return userRepository.findByUsername(username) != null;
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        return userOpt != null && userOpt.isPresent();
     }
 
     public boolean emailExists(String emailAddress) {
-        return userRepository.findByEmailAddress(emailAddress.toLowerCase()) != null;
+        Optional<User> emailOpt = userRepository.findByEmailAddress(emailAddress.toLowerCase());
+        return emailOpt != null && emailOpt.isPresent();
     }
 }
