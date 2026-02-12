@@ -223,7 +223,7 @@ const Profile = ({ onLogin }) => {
         if (draggingAnimeIndex !== null) {
             localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
             const updatedData = {
-                ...editedProfileData,
+                ...profileData,
                 animeRankingOrder: animeRankingOrder
             };
             setEditedProfileData(updatedData);
@@ -260,7 +260,7 @@ const Profile = ({ onLogin }) => {
         if (draggingAnimeIndex !== null) {
             localStorage.setItem('animeRankingOrder', JSON.stringify(animeRankingOrder));
             const updatedData = {
-                ...editedProfileData,
+                ...profileData,
                 animeRankingOrder: animeRankingOrder
             };
             setEditedProfileData(updatedData);
@@ -284,7 +284,7 @@ const Profile = ({ onLogin }) => {
         if (draggingMangaIndex !== null) {
             localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
             const updatedData = {
-                ...editedProfileData,
+                ...profileData,
                 mangaRankingOrder: mangaRankingOrder
             };
             setEditedProfileData(updatedData);
@@ -321,7 +321,7 @@ const Profile = ({ onLogin }) => {
         if (draggingMangaIndex !== null) {
             localStorage.setItem('mangaRankingOrder', JSON.stringify(mangaRankingOrder));
             const updatedData = {
-                ...editedProfileData,
+                ...profileData,
                 mangaRankingOrder: mangaRankingOrder
             };
             setEditedProfileData(updatedData);
