@@ -8,16 +8,25 @@ import UserSearch from './components/UserSearch';
 function App() {
   const [activeTab, setActiveTab] = useState('discover');
   const [loggedIn, setLoggedIn] = useState(false);
-  const [userData, setUserData] = useState(null);
 
   const handleLogin = (data) => {
     setLoggedIn(true);
-    setUserData(data);
+
+    // Store tokens and user info
+    if (data && data.accessToken && data.refreshToken && data.userId) {
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('userId', data.userId);
+    }
   };
 
   const handleLogout = () => {
     setLoggedIn(false);
-    setUserData(null);
+
+    // Clear tokens from storage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
   };
 
   const renderTabContent = () => {
@@ -27,11 +36,11 @@ function App() {
       case 'search':
         return <Search loggedIn={loggedIn} />;
       case 'library':
-        return <Profile onLogin={handleLogin} />;
+        return <Profile Login={handleLogin} Logout={handleLogout} />;
       case 'users':
         return <UserSearch loggedIn={loggedIn} />;
       default:
-        return <Profile onLogin={handleLogin} />;
+        return <Profile Login={handleLogin} Logout={handleLogout} />;
     }
   };
 

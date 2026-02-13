@@ -10,7 +10,7 @@ import TitleDetail from './TitleDetail';
 
 const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
 
-const Discover = () => {
+const Discover = ({ loggedIn }) => {
     const getCachedData = () => {
         try {
             const cached = localStorage.getItem('discoverData');
@@ -177,7 +177,7 @@ const Discover = () => {
         setLoading(true);
 
         // Fetch user's lists if logged in
-        if (userId) {
+        if (loggedIn && userId) {
             const [animeList, mangaList, watchedItems] = await Promise.all([
                 fetchJson(`/api/user/${userId}/list/ANIME`),
                 fetchJson(`/api/user/${userId}/list/MANGA`),
@@ -194,7 +194,7 @@ const Discover = () => {
         if (!item?.id) return;
         
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             alert('You must be logged in to add items to your list.');
             return;
         }
@@ -221,7 +221,7 @@ const Discover = () => {
         if (!item?.id) return;
         
         const userId = localStorage.getItem('userId');
-        if (!userId) return;
+        if (!loggedIn || !userId) return;
 
         fetch(`/api/user/list/remove/${userId}/${item.id}`, {
             method: 'DELETE'
@@ -241,7 +241,7 @@ const Discover = () => {
         
         const userId = localStorage.getItem('userId');
         const accessToken = localStorage.getItem('accessToken');
-        if (!userId || !accessToken) {
+        if (!loggedIn || !userId || !accessToken) {
             alert('You must be logged in to mark items as in-progress.');
             return;
         }

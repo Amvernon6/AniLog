@@ -57,7 +57,7 @@ const sortOptions = [
     { value: 'TITLE_ENGLISH', label: 'Title Z-A' }
 ];
 
-const Search = () => {
+const Search = ({ loggedIn }) => {
     const [query, setQuery] = useState('');
     const [type, setType] = useState('');
     const [format, setFormat] = useState([]);
@@ -227,7 +227,7 @@ const Search = () => {
         }
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to add items to your list.', 'error');
             return;
         }
@@ -268,7 +268,7 @@ const Search = () => {
         if (!item) return;
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to remove items from your list.', 'error');
             return;
         }
@@ -324,7 +324,7 @@ const Search = () => {
         }
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to add items to in-progress list.', 'error');
             return;
         }

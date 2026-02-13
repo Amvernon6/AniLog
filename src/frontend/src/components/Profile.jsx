@@ -21,7 +21,7 @@ const genres = [
     'Thriller'
 ];
 
-const Profile = ({ onLogin }) => {
+const Profile = ({ Login, Logout }) => {
     const [id, setId] = useState(null);
     const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -427,7 +427,7 @@ const Profile = ({ onLogin }) => {
             const storedUserId = parseInt(localStorage.getItem('userId'), 10);
             handleGetProfile(storedUserId);
             setId(storedUserId);
-            onLogin(storedUserId);
+            Login(null);
         }
     }, []);
 
@@ -662,22 +662,15 @@ const Profile = ({ onLogin }) => {
                 throw new Error(errorData.error || 'Login failed');
             }
             const data = await response.json();
-
-            // Store tokens and user info
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-            localStorage.setItem('userId', data.userId);
             
             setAccessToken(data.accessToken);
             setRefreshToken(data.refreshToken);
             setLoggedIn(true);
             setId(data.userId);
-            onLogin(data.userId);
+            Login(data);
 
             // Fetch full profile data
             handleGetProfile(data.userId);
-
-            onLogin(data.userId); // Notify parent component of login
         } catch (err) {
             setError(err.message);
         } finally {
@@ -1072,12 +1065,7 @@ const Profile = ({ onLogin }) => {
         setOriginalEmail('');
         setOriginalUsername('');
         
-        // Clear tokens from storage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userId');
-        
-        onLogin(null); // Notify parent component of logout
+        Logout();
     };
 
     const handleAcceptFollowRequest = async (requestingUserId) => {

@@ -3,7 +3,7 @@ import '../css/usersearch.css';
 import UserProfile from './UserProfile';
 import { makeAuthenticatedRequest, parseErrorResponse } from '../utils/authHelper';
 
-export default function UserSearch({ loggedIn, userData }) {
+export default function UserSearch({ loggedIn }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [searchExecuted, setSearchExecuted] = useState(false);
@@ -61,10 +61,14 @@ export default function UserSearch({ loggedIn, userData }) {
 
     useEffect(() => {
         fetchUserData();
-    }, [loggedIn, userData]);
+    }, [loggedIn]);
 
     const handleRequestUser = async () => {
         const userId = localStorage.getItem('userId');
+        if (!loggedIn || !userId) {
+            showToast('You must be logged in to send follow requests.', 'error');
+            return;
+        }
         try {
             const response = await makeAuthenticatedRequest(`/api/user/${userId}/request/${selectedItem.id}`, {
                 method: 'POST'
@@ -91,6 +95,10 @@ export default function UserSearch({ loggedIn, userData }) {
 
     const handleFollowUser = async () => {
         const userId = localStorage.getItem('userId');
+        if (!loggedIn || !userId) {
+            showToast('You must be logged in to follow users.', 'error');
+            return;
+        }
         try {
             const response = await makeAuthenticatedRequest(`/api/user/${userId}/follow/${selectedItem.id}`, {
                 method: 'POST'
@@ -110,6 +118,10 @@ export default function UserSearch({ loggedIn, userData }) {
 
     const handleUnfollowUser = async () => {
         const userId = localStorage.getItem('userId');
+        if (!loggedIn || !userId) {
+            showToast('You must be logged in to unfollow users.', 'error');
+            return;
+        }
         try {
             const response = await makeAuthenticatedRequest(`/api/user/${userId}/unfollow/${selectedItem.id}`, {
                 method: 'DELETE'
@@ -174,7 +186,7 @@ export default function UserSearch({ loggedIn, userData }) {
         }
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to add items to your list.', 'error');
             return;
         }
@@ -212,7 +224,7 @@ export default function UserSearch({ loggedIn, userData }) {
         if (!item) return;
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to remove items from your list.', 'error');
             return;
         }
@@ -265,7 +277,7 @@ export default function UserSearch({ loggedIn, userData }) {
         }
 
         const userId = localStorage.getItem('userId');
-        if (!userId) {
+        if (!loggedIn || !userId) {
             showToast('You must be logged in to add items to in-progress list.', 'error');
             return;
         }
