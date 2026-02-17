@@ -22,6 +22,7 @@ const genres = [
 ];
 
 const Profile = ({ Login, Logout }) => {
+    const [error, setError] = useState(null);
     const [id, setId] = useState(null);
     const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -30,7 +31,6 @@ const Profile = ({ Login, Logout }) => {
     const [signupPassword, setSignupPassword] = useState('');
     const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
     // const [signupAge, setSignupAge] = useState('');
-    const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
     const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
@@ -428,6 +428,8 @@ const Profile = ({ Login, Logout }) => {
             handleGetProfile(storedUserId);
             setId(storedUserId);
             Login(null);
+        } else {
+            setIsLoadingProfile(false);
         }
     }, []);
 
@@ -473,7 +475,8 @@ const Profile = ({ Login, Logout }) => {
             const data = await response.json();
             setUserList(data);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error fetching user list");
         } finally {
             setIsLoadingList(false);
         }
@@ -481,7 +484,7 @@ const Profile = ({ Login, Logout }) => {
 
     const handleListItemClick = async (item) => {
         if (!item.anilistId) {
-            setError('Unable to load details for this item');
+            console.error('Unable to load details for this item');
             return;
         }
 
@@ -496,7 +499,8 @@ const Profile = ({ Login, Logout }) => {
             const fullItemData = await response.json();
             setSelectedListItem(fullItemData[0]);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error fetching item details");
         } finally {
             setIsLoadingItem(false);
         }
@@ -519,7 +523,7 @@ const Profile = ({ Login, Logout }) => {
             }
             return await response.json();
         } catch (err) {
-            setError(err.message);
+            console.error(err);
             return [];
         }
     };
@@ -532,7 +536,8 @@ const Profile = ({ Login, Logout }) => {
             const data = await fetchWatchedItemsData(type);
             setWatchedItems(data);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error fetching watched items");
         } finally {
             setIsLoadingWatched(false);
         }
@@ -559,7 +564,8 @@ const Profile = ({ Login, Logout }) => {
             handleGetWatchedItems(type);
             setSelectedWatchedItem(null);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error updating watched item");
         } finally {
             setIsSavingWatchedItem(false);
         }
@@ -588,13 +594,14 @@ const Profile = ({ Login, Logout }) => {
             handleGetWatchedItems(type);
             setSelectedWatchedItem(null);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error removing watched item");
         }
     };
 
     const handleAddListItemToInProgress = async (item) => {
         if (!item || !item.anilistId) {
-            setError('Cannot add item: Invalid data');
+            console.error('Cannot add item: Invalid data');
             return;
         }
 
@@ -643,7 +650,8 @@ const Profile = ({ Login, Logout }) => {
                 console.log('Item was not in list or already removed');
             }
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error adding item to in-progress list");
         }
     };
 
@@ -672,6 +680,7 @@ const Profile = ({ Login, Logout }) => {
             // Fetch full profile data
             handleGetProfile(data.userId);
         } catch (err) {
+            console.error(err);
             setError(err.message);
         } finally {
             setIsLoading(false);
@@ -684,7 +693,7 @@ const Profile = ({ Login, Logout }) => {
         setError(null);
 
         if (signupPassword !== signupConfirmPassword) {
-            setError("Passwords do not match");
+            console.error("Passwords do not match");
             setIsLoading(false);
             return;
         }
@@ -710,6 +719,7 @@ const Profile = ({ Login, Logout }) => {
             alert('Registration successful! You can now log in.');
             setSignupButtonClicked(false);
         } catch (err) {
+            console.error(err);
             setError(err.message);
         } finally {
             setIsLoading(false);
@@ -738,6 +748,7 @@ const Profile = ({ Login, Logout }) => {
             }
             const data = await response.json();
             if (!data.available) {
+                console.error('Email address is already being used on a different account');
                 setError('Email address is already being used on a different account');
                 setIsEmailAvailable(false);
             } else {
@@ -772,6 +783,7 @@ const Profile = ({ Login, Logout }) => {
             }
             const data = await response.json();
             if (!data.available) {
+                console.error('Username is already taken');
                 setError('Username is already taken');
                 setIsUsernameAvailable(false);
             } else {
@@ -937,7 +949,6 @@ const Profile = ({ Login, Logout }) => {
 
     const handleGetProfile = async (userId) => {
         setIsLoadingProfile(true);
-        setError(null);
 
         try {
             // // Load watched items directly (without state updates) so we can get top rated anime/manga
@@ -955,10 +966,32 @@ const Profile = ({ Login, Logout }) => {
             // const topManga = mangaRankingOrder.length > 0 
             //     ? mangaData.find(i => i.id === mangaRankingOrder[0])
             //     : mangaData[0];
+            
 
-            await handleGetFollowStatuses(userId);
+            let usersFollowing = [];
+            let usersFollowedBy = [];
+            let usersWantToFollow = [];
+            let usersRequestedToFollow = [];
 
-            setIsLoadingProfile(true);
+            try {
+                const safeId = encodeURIComponent(userId);
+                const response = await makeAuthenticatedRequest(`/api/user/${safeId}/followStatuses`, {
+                    headers: {
+                        'X-Refresh-Token': localStorage.getItem('refreshToken') || ''
+                    }
+                });
+                if (!response.ok) {
+                    const errorData = await parseErrorResponse(response);
+                    throw new Error(errorData.error || 'Failed to fetch follow statuses');
+                }
+                const data = await response.json();
+                usersFollowing = data.filter(follow => follow.followerId == userId && follow.status == 'FOLLOWING');
+                usersFollowedBy = data.filter(follow => follow.followeeId == userId && follow.status == 'FOLLOWING');
+                usersWantToFollow = data.filter(follow => follow.followeeId == userId && follow.status == 'REQUESTED');
+                usersRequestedToFollow = data.filter(follow => follow.followerId == userId && follow.status == 'REQUESTED');
+            } catch (err) {
+                console.error('Error fetching follow statuses:', err);
+            }
             
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
@@ -981,7 +1014,10 @@ const Profile = ({ Login, Logout }) => {
                 // favoriteManga: topManga?.title || '',
                 favoriteGenres: data.favoriteGenres || [],
                 // age: data.age || '',
-                users
+                usersFollowing: usersFollowing || [],
+                usersFollowedBy: usersFollowedBy || [],
+                usersWantToFollow: usersWantToFollow || [],
+                usersRequestedToFollow: usersRequestedToFollow || []
             });
             setOriginalUsername(data.username || '');
             setOriginalEmail(data.emailAddress || '');
@@ -990,7 +1026,7 @@ const Profile = ({ Login, Logout }) => {
             setLoggedIn(true);
         } catch (err) {
             handleLogout();
-            setError(err.message);
+            console.error(err);
         } finally {
             setIsLoadingProfile(false);
         }
@@ -1000,7 +1036,6 @@ const Profile = ({ Login, Logout }) => {
         e?.preventDefault();
         setIsLoadingProfile(true);
         setIsSavingProfile(true);
-        setError(null);
 
         const dataToSend = updatedData || editedProfileData;
 
@@ -1023,7 +1058,8 @@ const Profile = ({ Login, Logout }) => {
             handleGetProfile(id);
             setIsSavingProfile(false);
         } catch (err) {
-            setError(err.message);
+            console.error(err);
+            showToast("Error updating profile");
             setIsLoadingProfile(false);
             setIsSavingProfile(false); 
         }
@@ -1049,7 +1085,11 @@ const Profile = ({ Login, Logout }) => {
             // favoriteAnime: '',
             // favoriteManga: '',
             favoriteGenres: [],
-            // age: ''
+            // age: '',
+            usersFollowing: [],
+            usersFollowedBy: [],
+            usersWantToFollow: [],
+            usersRequestedToFollow: []
         });
         setEditedProfileData({
             bio: '',
@@ -1343,9 +1383,7 @@ const Profile = ({ Login, Logout }) => {
                                         <button onClick={() => setActiveListTab('anime')} data-testid="list-anime-tab" className={`anime-tab-button ${activeListTab === 'anime' ? 'active' : ''}`}>Anime</button>
                                         <button onClick={() => setActiveListTab('manga')} data-testid="list-manga-tab" className={`manga-tab-button ${activeListTab === 'manga' ? 'active' : ''}`}>Manga</button>
                                     </div>
-                                    {error && !selectedListItem ? (
-                                        <p className="error-message" data-testid="list-error">{error}</p>
-                                    ) : ( isLoadingList ? (
+                                    {isLoadingList ? (
                                         <div className="loading-placeholder" style={{ textAlign: 'center', padding: '80px 40px' }}>
                                             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Loading your list...</p>
                                         </div>
@@ -1382,7 +1420,7 @@ const Profile = ({ Login, Logout }) => {
                                                 </ul>
                                             )}
                                         </div>
-                                    ))}
+                                    )}
                                     {selectedListItem && (
                                         <div className="modal-overlay" onClick={() => setSelectedListItem(null)}>
                                             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1524,9 +1562,8 @@ const Profile = ({ Login, Logout }) => {
                                     {/* Watched grid - Show only in watched view */}
                                     {animeWatchedView === 'watched' && (
                                         <>
-                                        {error && !selectedWatchedItem ? (
-                                        <p className="error-message">{error}</p>
-                                    ) : isLoadingWatched ? (
+                                        {/* error display removed */}
+                                    {isLoadingWatched ? (
                                         <div className="loading-placeholder">
                                             <p>Loading watched anime...</p>
                                         </div>
@@ -1775,9 +1812,8 @@ const Profile = ({ Login, Logout }) => {
                                     )}
                                     {mangaReadView === 'read' && (
                                     <>
-                                    {error && !selectedWatchedItem ? (
-                                        <p className="error-message">{error}</p>
-                                    ) : isLoadingWatched ? (
+                                    {/* error display removed */}
+                                    {isLoadingWatched ? (
                                         <div className="loading-placeholder">
                                             <p>Loading read manga...</p>
                                         </div>
@@ -2144,7 +2180,7 @@ const Profile = ({ Login, Logout }) => {
                                                 />
                                             </div> */}
                                             
-                                            {error && <p className="error-message" data-testid="profile-edit-error">{error}</p>}
+                                            {/* error display removed */}
                                             
                                             <div className="form-actions">
                                                 <button type="submit" disabled={isSavingProfile || !isUsernameAvailable || !isEmailAvailable} className="save-button" data-testid="save-profile-button">
