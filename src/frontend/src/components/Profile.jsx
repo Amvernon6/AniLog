@@ -32,7 +32,7 @@ const Profile = ({ Login, Logout }) => {
     // const [signupAge, setSignupAge] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
     const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
     const [isLoadingList, setIsLoadingList] = useState(false);
     const [isLoadingItem, setIsLoadingItem] = useState(false);
@@ -956,7 +956,9 @@ const Profile = ({ Login, Logout }) => {
             //     ? mangaData.find(i => i.id === mangaRankingOrder[0])
             //     : mangaData[0];
 
-            handleGetFollowStatuses(userId);
+            await handleGetFollowStatuses(userId);
+
+            setIsLoadingProfile(true);
             
             const safeId = encodeURIComponent(userId);
             const response = await makeAuthenticatedRequest(`/api/profile/${safeId}`, {
@@ -979,6 +981,7 @@ const Profile = ({ Login, Logout }) => {
                 // favoriteManga: topManga?.title || '',
                 favoriteGenres: data.favoriteGenres || [],
                 // age: data.age || '',
+                users
             });
             setOriginalUsername(data.username || '');
             setOriginalEmail(data.emailAddress || '');
