@@ -22,6 +22,7 @@ Link to website: https://anilog-lb1p.onrender.com/
 - **Reading/Watch lists & Watched/Read Lists:** Track series users want to watch or have completed, with ranking functionality coming soon. ⭐
 - **Anime & Manga Rankings:** Rank titles you’ve watched or read to build your personal leaderboard. 📚
 - **Watchlist & Readlist:** Keep track of what you’re currently watching, planning to watch, or have completed. ✅
+- **Following:** Users can follow other users to see their watched titles and rankings
 
 ---
 
