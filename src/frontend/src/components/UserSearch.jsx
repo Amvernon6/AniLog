@@ -3,7 +3,7 @@ import '../css/usersearch.css';
 import UserProfile from './UserProfile';
 import { makeAuthenticatedRequest, parseErrorResponse } from '../utils/authHelper';
 
-export default function UserSearch({ loggedIn }) {
+export default function UserSearch({ loggedIn, showToast }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [searchExecuted, setSearchExecuted] = useState(false);
@@ -11,7 +11,7 @@ export default function UserSearch({ loggedIn }) {
     const [selectedItem, setSelectedItem] = useState(null);
     const [addedItems, setAddedItems] = useState([]);
     const [inProgressItems, setInProgressItems] = useState([]);
-    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+    // Toast logic removed, now handled globally
     const [usersFollowing, setUsersFollowing] = useState([]);
     const [usersFollowers, setUsersFollowers] = useState([]);
     const [usersRequested, setUsersRequested] = useState([]);
@@ -339,12 +339,7 @@ export default function UserSearch({ loggedIn }) {
         setSelectedItem(null);
     };
 
-    const showToast = (message, type = 'info', duration = 3000) => {
-        setToast({ visible: true, message, type });
-        setTimeout(() => {
-            setToast({ visible: false, message: '', type: 'info' });
-        }, duration);
-    }
+    // Toast logic removed, now handled globally
 
     return (
         <div className="search-page" data-testid="search-page">
@@ -404,11 +399,7 @@ export default function UserSearch({ loggedIn }) {
                     <p className="no-results" data-testid="no-results-message">No results found.</p>
                 ) : null}
             </div>
-            {toast.visible && (
-            <div className={`toast toast-${toast.type}`} role="status" aria-live="polite">
-                {toast.message}
-            </div>
-            )}
+            {/* Toast UI removed, now handled globally in App.js */}
         </div>
     );
 }

@@ -21,7 +21,7 @@ const genres = [
     'Thriller'
 ];
 
-const Profile = ({ Login, Logout }) => {
+const Profile = ({ Login, Logout, showToast }) => {
     const [error, setError] = useState(null);
     const [id, setId] = useState(null);
     const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -84,8 +84,7 @@ const Profile = ({ Login, Logout }) => {
         // age: ''
     });
     const [selectedUser, setSelectedUser] = useState(null);
-    const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
-    const toastTimerRef = useRef(null);
+    // Toast logic removed, now handled globally
 
     // Drag-and-drop ranking state for all watched titles
     const [animeRankingOrder, setAnimeRankingOrder] = useState([]);
@@ -330,16 +329,6 @@ const Profile = ({ Login, Logout }) => {
         setDraggingMangaIndex(null);
         setDragOverMangaIndex(null);
     };
-    
-    const showToast = (message, type = 'info', duration = 3200) => {
-        if (toastTimerRef.current) {
-            clearTimeout(toastTimerRef.current);
-        }
-        setToast({ message, type, visible: true });
-        toastTimerRef.current = setTimeout(() => {
-            setToast((prev) => ({ ...prev, visible: false }));
-        }, duration);
-    };
 
     const handleRequestUser = async () => {
         const userId = localStorage.getItem('userId');
@@ -353,9 +342,10 @@ const Profile = ({ Login, Logout }) => {
             }
             setProfileData(prev => ({
                 ...prev,
-                usersWantToFollow: [...prev.usersWantToFollow, selectedUser.id]
+                usersRequestedToFollow: [...prev.usersRequestedToFollow, selectedUser.id]
             }));
             showToast("Successfully sent follow request!");
+            await handleGetFollowStatuses(userId);
             // Only try to parse JSON if response is JSON
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
@@ -364,8 +354,8 @@ const Profile = ({ Login, Logout }) => {
                 return null;
             }
         } catch (err) {
-            console.log(err);
-            showToast("Error requesting user");
+            console.error('Error requesting user:', err);
+            showToast("Error requesting user", 'error');
             return null;
         }
     };
@@ -378,16 +368,25 @@ const Profile = ({ Login, Logout }) => {
             });
             if (!response.ok) {
                 const errorData = await parseErrorResponse(response);
-                throw new Error(errorData.error || 'Failed to follow user');
+                console.error('Error following user:', errorData);
+                throw new Error('Failed to follow user');
             }
             setProfileData(prev => ({
                 ...prev,
                 usersFollowing: [...prev.usersFollowing, selectedUser.id]
             }));
             showToast("Successfully followed user!");
-            return await response.json();
+            await handleGetFollowStatuses(userId);
+            // Only parse JSON if response has content and is ok
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return null;
+            }
         } catch (err) {
-            showToast("Error following user");
+            console.error('Error following user:', err);
+            showToast("Error following user", 'error');
             return null;
         }
     };
@@ -407,6 +406,7 @@ const Profile = ({ Login, Logout }) => {
                 usersFollowedBy: prev.usersFollowedBy.filter(f => f !== selectedUser.id)
             }));
             showToast("Successfully unfollowed user!");
+            await handleGetFollowStatuses(userId);
             // Only try to parse JSON if response is JSON
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
@@ -415,8 +415,8 @@ const Profile = ({ Login, Logout }) => {
                 return null;
             }
         } catch (err) {
-            console.log(err);
-            showToast("Error unfollowing user");
+            console.error('Error unfollowing user:', err);
+            showToast("Error unfollowing user", 'error');
             return null;
         }
     };
@@ -476,7 +476,7 @@ const Profile = ({ Login, Logout }) => {
             setUserList(data);
         } catch (err) {
             console.error(err);
-            showToast("Error fetching user list");
+            showToast("Error fetching user list", 'error');
         } finally {
             setIsLoadingList(false);
         }
@@ -500,7 +500,7 @@ const Profile = ({ Login, Logout }) => {
             setSelectedListItem(fullItemData[0]);
         } catch (err) {
             console.error(err);
-            showToast("Error fetching item details");
+            showToast("Error fetching item details", 'error');
         } finally {
             setIsLoadingItem(false);
         }
@@ -537,7 +537,7 @@ const Profile = ({ Login, Logout }) => {
             setWatchedItems(data);
         } catch (err) {
             console.error(err);
-            showToast("Error fetching watched items");
+            showToast("Error fetching watched items", 'error');
         } finally {
             setIsLoadingWatched(false);
         }
@@ -565,7 +565,7 @@ const Profile = ({ Login, Logout }) => {
             setSelectedWatchedItem(null);
         } catch (err) {
             console.error(err);
-            showToast("Error updating watched item");
+            showToast("Error updating watched item", 'error');
         } finally {
             setIsSavingWatchedItem(false);
         }
@@ -595,7 +595,7 @@ const Profile = ({ Login, Logout }) => {
             setSelectedWatchedItem(null);
         } catch (err) {
             console.error(err);
-            showToast("Error removing watched item");
+            showToast("Error removing watched item", 'error');
         }
     };
 
@@ -651,7 +651,7 @@ const Profile = ({ Login, Logout }) => {
             }
         } catch (err) {
             console.error(err);
-            showToast("Error adding item to in-progress list");
+            showToast("Error adding item to in-progress list", 'error');
         }
     };
 
@@ -681,6 +681,7 @@ const Profile = ({ Login, Logout }) => {
             handleGetProfile(data.userId);
         } catch (err) {
             console.error(err);
+            showToast(err.message, 'error');
             setError(err.message);
         } finally {
             setIsLoading(false);
@@ -721,6 +722,7 @@ const Profile = ({ Login, Logout }) => {
         } catch (err) {
             console.error(err);
             setError(err.message);
+            showToast(err.message, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -1059,7 +1061,7 @@ const Profile = ({ Login, Logout }) => {
             setIsSavingProfile(false);
         } catch (err) {
             console.error(err);
-            showToast("Error updating profile");
+            showToast("Error updating profile", 'error');
             setIsLoadingProfile(false);
             setIsSavingProfile(false); 
         }
@@ -1127,10 +1129,10 @@ const Profile = ({ Login, Logout }) => {
                 usersWantToFollow: prev.usersWantToFollow.filter(r => r !== requestingUserId)
             }));
             setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
-            showToast("Successfully accepted follow request!");
+            showToast("Successfully accepted follow request!", 'success');
             return await response.json();
         } catch (err) {
-            showToast("Error accepting follow request");
+            showToast("Error accepting follow request", 'error');
             return null;
         }
     };
@@ -1150,10 +1152,10 @@ const Profile = ({ Login, Logout }) => {
                 usersWantToFollow: prev.usersWantToFollow.filter(r => r !== requestingUserId)
             }));
             setUserModalList(prev => prev.filter(u => u.id !== requestingUserId));
-            showToast("Successfully declined follow request!");
+            showToast("Successfully declined follow request!", 'success');
             return await response.json();
         } catch (err) {
-            showToast("Error declining follow request");
+            showToast("Error declining follow request", 'error');
             return null;
         }
     };

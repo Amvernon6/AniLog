@@ -57,7 +57,7 @@ const sortOptions = [
     { value: 'TITLE_ENGLISH', label: 'Title Z-A' }
 ];
 
-const Search = ({ loggedIn }) => {
+const Search = ({ loggedIn, showToast }) => {
     const [query, setQuery] = useState('');
     const [type, setType] = useState('');
     const [format, setFormat] = useState([]);
@@ -81,7 +81,7 @@ const Search = ({ loggedIn }) => {
     const sortRef = useRef(null);
     const toastTimerRef = useRef(null);
     const savedScrollPosition = useRef(0);
-    const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
+    // Toast logic removed, now handled globally
     const [addedItems, setAddedItems] = useState(new Set());
     const [watchedItems, setWatchedItems] = useState(new Set());
     const [inProgressItems, setInProgressItems] = useState(new Map());
@@ -163,15 +163,7 @@ const Search = ({ loggedIn }) => {
         setSortBy(value);
     };
 
-    const showToast = (message, type = 'info', duration = 3200) => {
-        if (toastTimerRef.current) {
-            clearTimeout(toastTimerRef.current);
-        }
-        setToast({ message, type, visible: true });
-        toastTimerRef.current = setTimeout(() => {
-            setToast((prev) => ({ ...prev, visible: false }));
-        }, duration);
-    };
+    // Toast logic removed, now handled globally
 
     const handleSearch = async () => {
         if (!query.trim() 
@@ -640,11 +632,7 @@ const Search = ({ loggedIn }) => {
                     <p className="no-results" data-testid="no-results-message">No results found.</p>
                 ) : null}
             </div>
-            {toast.visible && (
-            <div className={`toast toast-${toast.type}`} role="status" aria-live="polite">
-                {toast.message}
-            </div>
-            )}
+            {/* Toast UI removed, now handled globally in App.js */}
         </div>
     );
 };

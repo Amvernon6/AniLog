@@ -10,7 +10,7 @@ import TitleDetail from './TitleDetail';
 
 const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
 
-const Discover = ({ loggedIn }) => {
+const Discover = ({ loggedIn, showToast }) => {
     const getCachedData = () => {
         try {
             const cached = localStorage.getItem('discoverData');
@@ -195,7 +195,7 @@ const Discover = ({ loggedIn }) => {
         
         const userId = localStorage.getItem('userId');
         if (!loggedIn || !userId) {
-            alert('You must be logged in to add items to your list.');
+            showToast('You must be logged in to add items to your list.', 'error');
             return;
         }
 
@@ -213,6 +213,7 @@ const Discover = ({ loggedIn }) => {
         }).then(response => {
             if (response.ok) {
                 setAddedItems(prev => new Set([...prev, item.id]));
+                showToast('Item added to your list.', 'success');
             }
         }).catch(err => console.error('Error adding to list:', err));
     };
@@ -232,6 +233,7 @@ const Discover = ({ loggedIn }) => {
                     updated.delete(item.id);
                     return updated;
                 });
+                showToast('Item removed from your list.', 'success');
             }
         }).catch(err => console.error('Error removing from list:', err));
     };
@@ -242,7 +244,7 @@ const Discover = ({ loggedIn }) => {
         const userId = localStorage.getItem('userId');
         const accessToken = localStorage.getItem('accessToken');
         if (!loggedIn || !userId || !accessToken) {
-            alert('You must be logged in to mark items as in-progress.');
+            showToast('You must be logged in to mark items as in-progress.', 'error');
             return;
         }
 
@@ -269,6 +271,7 @@ const Discover = ({ loggedIn }) => {
             if (response.ok) {
                 setInProgressItems(prev => new Map(prev).set(item.id, statusType));
                 handleRemoveFromList(item);
+                showToast('Item marked as in-progress.', 'success');
             }
         }).catch(err => console.error('Error adding to in-progress:', err));
     };

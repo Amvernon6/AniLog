@@ -63,13 +63,6 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
         }
     }, [currUserInProgressItems, selectedItem]);
 
-    const showToast = (message, type = 'info', duration = 3000) => {
-        setToast({ visible: true, message, type });
-        setTimeout(() => {
-            setToast({ visible: false, message: '', type: 'info' });
-        }, duration);
-    }
-
     const parseErrorResponse = async (response) => {
         const text = await response.text();
         try {
@@ -217,21 +210,16 @@ const UserProfile = ({ selectedItem, accessToken, usersFollowing, usersFollowers
                                             Requested
                                         </button>
                                     ) : (
-                                        <button onClick={(e) => { e.stopPropagation(); handleUnfollowUser(selectedItem.id); }} className="follow-button added">
+                                        <button onClick={async (e) => { e.stopPropagation(); await handleUnfollowUser(selectedItem.id); }} className="follow-button added">
                                             Unfollow
                                         </button>
                                     )
                                 ) : (
-                                    !usersFollowers?.find(userID => userID == selectedItem.id) ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleRequestUser(selectedItem.id); }} className="follow-button">
+                                        <button onClick={async (e) => { e.stopPropagation(); await handleRequestUser(selectedItem.id); }} className="follow-button">
                                             + Request to Follow
                                         </button>
-                                    ) : (
-                                        <button onClick={(e) => { e.stopPropagation(); handleFollowUser(selectedItem.id); }} className="follow-button">
-                                            + Follow Back
-                                        </button>
                                     )
-                                )}
+                                }
                             </div>
                     
                             <div className="profile-details">

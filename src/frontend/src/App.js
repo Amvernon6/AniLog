@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './css/App.css';
 import Search from './components/Search';
 import Profile from './components/Profile';
@@ -8,6 +8,21 @@ import UserSearch from './components/UserSearch';
 function App() {
   const [activeTab, setActiveTab] = useState('discover');
   const [loggedIn, setLoggedIn] = useState(false);
+
+  // Global toast state
+  const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
+  const toastTimerRef = useRef(null);
+
+  // Global showToast function
+  const showToast = (message, type = 'info', duration = 3200) => {
+    setToast({ message, type, visible: true });
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, duration);
+  };
 
   const handleLogin = (data) => {
     setLoggedIn(true);
@@ -32,15 +47,15 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'discover':
-        return <Discover loggedIn={loggedIn} />;
+        return <Discover loggedIn={loggedIn} showToast={showToast} />;
       case 'search':
-        return <Search loggedIn={loggedIn} />;
+        return <Search loggedIn={loggedIn} showToast={showToast} />;
       case 'library':
-        return <Profile Login={handleLogin} Logout={handleLogout} />;
+        return <Profile Login={handleLogin} Logout={handleLogout} showToast={showToast} />;
       case 'users':
-        return <UserSearch loggedIn={loggedIn} />;
+        return <UserSearch loggedIn={loggedIn} showToast={showToast} />;
       default:
-        return <Profile Login={handleLogin} Logout={handleLogout} />;
+        return <Profile Login={handleLogin} Logout={handleLogout} showToast={showToast} />;
     }
   };
 
@@ -77,6 +92,11 @@ function App() {
       </header>
       <main>
         {renderTabContent()}
+        {toast.visible && (
+          <div className={`toast toast-${toast.type}`} role="status" aria-live="polite">
+            {toast.message}
+          </div>
+        )}
       </main>
     </div>
   );
